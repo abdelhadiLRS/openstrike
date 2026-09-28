@@ -4,6 +4,7 @@ extends RefCounted
 ## Authoritative state replicated from the server.
 ## Keep this payload small and deterministic so it can be sent at a fixed rate.
 var tick: int = 0
+var peer_id: int = 0
 var acknowledged_input_sequence: int = 0
 var position := Vector3.ZERO
 var velocity := Vector3.ZERO
@@ -23,6 +24,7 @@ var reserve: int = 0
 func to_dict() -> Dictionary:
 	return {
 		"tick": tick,
+		"peer_id": peer_id,
 		"ack": acknowledged_input_sequence,
 		"position": position,
 		"velocity": velocity,
@@ -43,6 +45,7 @@ func to_dict() -> Dictionary:
 static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	var snapshot := OpenStrikeSnapshot.new()
 	snapshot.tick = int(data.get("tick", 0))
+	snapshot.peer_id = int(data.get("peer_id", 0))
 	snapshot.acknowledged_input_sequence = int(data.get("ack", 0))
 	snapshot.position = data.get("position", Vector3.ZERO)
 	snapshot.velocity = data.get("velocity", Vector3.ZERO)
