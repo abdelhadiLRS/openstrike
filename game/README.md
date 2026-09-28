@@ -8,7 +8,10 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Team-aware target damage filtering
 - Multiple BLUE player spawn points
 - Multiple RED enemy spawn points
-- Round freeze phase before combat
+- 10-second buy phase before combat
+- Original round economy with persistent credits
+- AR-17 and PX-9 purchase costs
+- Round win/loss and elimination rewards
 - Live combat phase with a 120-second round timer
 - Post-round result phase with automatic next-round start
 - Round score tracking
@@ -21,6 +24,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Jumping
 - Crouch movement with reduced player height and camera height
 - Two original weapon profiles: AR-17 and PX-9
+- Buy-phase weapon selection and primary purchase
 - Weapon switching
 - Magazine and reserve ammunition per weapon
 - Reload
@@ -39,6 +43,8 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Left mouse: fire
 - R: reload
 - E: switch weapon
+- 1: buy/select AR-17 during buy phase
+- 2: select PX-9 during buy phase
 - ESC: release mouse
 
 This prototype uses original code and procedurally generated geometry. It does not use Counter-Strike proprietary code or assets.
