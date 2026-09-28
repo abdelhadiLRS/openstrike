@@ -41,6 +41,9 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Obstacle-aware graph navigation between defensive objective sites
 - Procedural cover points with LOS-validated low-health retreat and bounded peek behavior
 - RED bots switch to planted-site defense and attack the BLUE player when detected
+- RED defenders select cover positions around their assigned A/B site, while the roamer rotates between sites
+- Planted-bomb defuse uses an explicit active defuser instead of a shared anonymous timer
+- Bomb drops at the player's death position and can be recovered after respawn
 - Damageable combat units
 - Procedural graybox training range
 - Minimal HUD and crosshair
