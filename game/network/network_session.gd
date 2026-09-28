@@ -52,17 +52,20 @@ func _ready() -> void:
 
 func _configure_from_command_line() -> void:
 	# Optional launch-time networking keeps the default game offline while
-	# allowing repeatable dedicated-server/LAN smoke-test commands.
+	# allowing repeatable authoritative-host/LAN smoke-test commands.
 	var args := OS.get_cmdline_user_args()
 	var launch_server := false
 	var connect_address := ""
 	var launch_port := DEFAULT_PORT
 	var max_clients := MAX_CLIENTS
+	var show_help := false
 
 	for arg_value in args:
 		var arg := str(arg_value).strip_edges()
 		if arg == "--server":
 			launch_server = true
+		elif arg == "--help" or arg == "-h":
+			show_help = true
 		elif arg.begins_with("--connect="):
 			connect_address = arg.trim_prefix("--connect=").strip_edges()
 		elif arg.begins_with("--port="):
@@ -70,10 +73,16 @@ func _configure_from_command_line() -> void:
 		elif arg.begins_with("--max-clients="):
 			max_clients = clampi(int(arg.trim_prefix("--max-clients=")), 1, MAX_CLIENTS)
 
-	if launch_server:
-		host(launch_port, max_clients)
-	elif not connect_address.is_empty():
+	if show_help:
+		print("OpenStrike network flags: --server | --connect=<address> | --port=<1..65535> | --max-clients=<1..16>")
+		return
+	if launch_server and not connect_address.is_empty():
+		push_error("OpenStrike: --server and --connect cannot be used together.")
+		return
+	if not launch_server and not connect_address.is_empty():
 		connect_to_server(connect_address, launch_port)
+	elif launch_server:
+		host(launch_port, max_clients)
 
 func host(port: int = DEFAULT_PORT, max_clients: int = MAX_CLIENTS) -> Error:
 	_shutdown_peer()
