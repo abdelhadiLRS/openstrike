@@ -193,11 +193,15 @@ func last_server_input_sequence(peer_id: int) -> int:
 func _submit_input(payload: Dictionary) -> void:
 	if not is_server:
 		return
+	var move_value = payload.get("move", Vector2.ZERO)
+	var look_value = payload.get("look_delta", Vector2.ZERO)
+	if not move_value is Vector2 or not look_value is Vector2:
+		return
 	var command := OpenStrikeInputCommand.new()
 	command.sequence = int(payload.get("sequence", 0))
 	command.tick = int(payload.get("tick", 0))
-	command.move = payload.get("move", Vector2.ZERO)
-	command.look_delta = payload.get("look_delta", Vector2.ZERO)
+	command.move = move_value
+	command.look_delta = look_value
 	command.fire = bool(payload.get("fire", false))
 	command.reload = bool(payload.get("reload", false))
 	command.crouch = bool(payload.get("crouch", false))
