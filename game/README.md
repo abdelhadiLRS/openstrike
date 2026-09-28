@@ -283,3 +283,11 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Threat transitions are reflected explicitly as **SEARCH**, **TRACKED**, or **LOST** instead of allowing the director phase to lag behind the squad threat state.
 - A meaningful threat revision immediately refreshes the director revision, allowing bots to invalidate stale command timing without waiting for the normal 0.20-second director interval.
 - Duplicate threat-role selection code was removed from the main match controller so the squad role allocator has one authoritative implementation.
+
+
+### Bomb-objective combat role coordination
+- The squad role allocator now considers an active **DROPPED** or **PLANTED** bomb before assigning generic combat roles.
+- During a dropped-bomb state, the closest suitable bot is preferentially retained as **SUPPORT** near the recovery objective while the remaining squad can continue PRESSURE/FLANK behavior.
+- During a planted-bomb state, two suitable bots can be allocated around the objective before the remaining bot receives the normal PRESSURE role.
+- Objective-guard selection prefers existing SUPPORT/FLANK continuity and accounts for the current CONTACT/TRACKED threat position, reducing unnecessary movement away from the bomb.
+- Existing bot objective states remain authoritative: **DEFUSE** and **BOMB_COVER** still take priority over generic combat posture.
