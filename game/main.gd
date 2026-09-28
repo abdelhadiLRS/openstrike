@@ -605,6 +605,15 @@ func _current_speed() -> float:
         return 2.8
     return float(_current_weapon()["speed"])
 
+func apply_authoritative_network_damage(damage: int) -> bool:
+	if dead or damage <= 0 or round_state != "LIVE":
+		return false
+	health = maxi(0, health - damage)
+	if health <= 0:
+		dead = true
+		respawn_timer = RESPAWN_DELAY
+	return true
+
 func _fire() -> void:
     if ammo <= 0:
         _reload()
