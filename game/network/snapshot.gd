@@ -99,7 +99,7 @@ static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	snapshot.ammo = int(data.get("ammo", 0))
 	snapshot.reserve = int(data.get("reserve", 0))
 	snapshot.credits = int(data.get("credits", 1200))
-	snapshot.bot_count = clampi(int(data.get("bot_count", 0)), 0, 15)
+	snapshot.bot_count = int(data.get("bot_count", 0))
 	var bot_value = data.get("bot_states", [])
 	if bot_value is Array:
 		for bot_state in bot_value:
