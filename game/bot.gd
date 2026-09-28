@@ -166,7 +166,12 @@ func _physics_process(delta: float) -> void:
 
     var director_can_fire := combat_director_fire_ready or combat_assignment == "PRESSURE"
     var threat_allows_fire := squad_threat_state == "CONTACT"
-    if (state == "ATTACK" or state == "FLANK" or state == "SUPPRESS" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION") and threat_allows_fire and _has_line_of_sight() and director_can_fire:
+    var has_fire_los := _has_line_of_sight()
+    var fire_state := state == "ATTACK" or state == "FLANK" or state == "SUPPRESS" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION"
+    if not threat_allows_fire or not has_fire_los or not fire_state:
+        burst_remaining = 0
+        burst_pause = 0.0
+    elif director_can_fire:
         _fire()
 
     if not is_on_floor():
