@@ -825,7 +825,13 @@ func _get_bot_combat_director(bot: Node) -> Dictionary:
     elif threat == "TRACKED":
         phase = "TRACKED"
         command = "HOLD"
-    elif last_known_player_timer > 0.0:
+    elif threat == "SEARCHING":
+        phase = "SEARCH"
+        command = "HOLD"
+    elif threat == "TRACKED":
+        phase = "TRACKED"
+        command = "HOLD"
+    else:
         phase = "LOST"
         command = "HOLD"
 
@@ -938,6 +944,78 @@ func _get_bot_squad_search_goal(bot: Node) -> Vector3:
     goal.y = center.y
     return goal
 
+func _get_threat_role_score(bot: Node, role: String) -> float:
+    var threat_position := squad_threat_position
+    if threat_position == Vector3.ZERO:
+        threat_position = player.global_position
+
+    var distance := bot.global_position.distance_to(threat_position)
+    var slot := int(bot.get("combat_slot"))
+    var score := distance
+
+    if squad_threat_state == "CONTACT":
+        if role == "PRESSURE":
+            score += float(maxi(0, 2 - slot)) * 1.5
+            score -= float(bot.get("health")) * 0.025
+        elif role == "SUPPORT":
+            score += absf(float(slot) - 1.0) * 1.0
+            score += float(maxi(0, 55 - int(bot.get("health")))) * 0.02
+        elif role == "FLANK":
+            score += absf(float(slot) - 1.0) * 0.4
+            score -= absf(float(slot) - 1.0) * 0.8
+    elif squad_threat_state == "TRACKED":
+        if role == "PRESSURE":
+            score -= 2.5
+            score -= float(bot.get("health")) * 0.015
+        elif role == "SUPPORT":
+            score += 1.0
+            score += absf(float(slot) - 1.0) * 0.35
+        elif role == "FLANK":
+            score -= absf(float(slot) - 1.0) * 1.5
+            score += 0.5
+    elif squad_threat_state == "SEARCHING":
+        var center_bias := absf(float(slot) - 2.0)
+        if role == "PRESSURE":
+            score += center_bias * 2.0
+            score -= 2.0
+        elif role == "SUPPORT":
+            score += absf(float(slot) - 0.0) * 0.8
+        elif role == "FLANK":
+            score += absf(float(slot) - 1.0) * 0.4
+            score -= 0.8
+    else:
+        if role == "PRESSURE":
+            score += 4.0
+        elif role == "SUPPORT":
+            score += 1.0
+        elif role == "FLANK":
+            score += 1.5
+
+    return score
+
+func _select_threat_role_bot(candidates: Array[Node], role: String, previous_roles: Dictionary) -> Node:
+    var selected: Node = null
+    var best_score := INF
+    for bot in candidates:
+        if not is_instance_valid(bot) or bot.dead:
+            continue
+        var score := _get_threat_role_score(bot, role)
+
+        var previous_role := str(previous_roles.get(bot, ""))
+        if previous_role == role:
+            score -= 1.25
+
+        if squad_threat_state == "LOST":
+            if role == "PRESSURE" and previous_role == "PRESSURE":
+                score -= 0.5
+            elif role == "FLANK" and previous_role == "FLANK":
+                score -= 0.25
+
+        if score < best_score:
+            best_score = score
+            selected = bot
+    return selected
+
 func _update_combat_assignments() -> void:
     var active_bots: Array[Node] = []
     for bot in bots:
@@ -951,41 +1029,20 @@ func _update_combat_assignments() -> void:
     for bot in active_bots:
         previous_roles[bot] = str(bot.get("combat_assignment"))
 
-    active_bots.sort_custom(func(a: Node, b: Node) -> bool:
-        var da := a.global_position.distance_to(player.global_position)
-        var db := b.global_position.distance_to(player.global_position)
-        return da < db
-    )
-
-    var pressure_bot: Node = null
-    for bot in active_bots:
-        if previous_roles.get(bot, "") == "PRESSURE":
-            pressure_bot = bot
-            break
-    if pressure_bot == null:
-        pressure_bot = active_bots[0]
+    var remaining := active_bots.duplicate()
+    var pressure_bot := _select_threat_role_bot(remaining, "PRESSURE", previous_roles)
+    if pressure_bot != null:
+        remaining.erase(pressure_bot)
 
     var support_bot: Node = null
-    for bot in active_bots:
-        if bot != pressure_bot and previous_roles.get(bot, "") == "SUPPORT":
-            support_bot = bot
-            break
-    if support_bot == null:
-        for bot in active_bots:
-            if bot != pressure_bot:
-                support_bot = bot
-                break
+    if not remaining.is_empty():
+        support_bot = _select_threat_role_bot(remaining, "SUPPORT", previous_roles)
+        if support_bot != null:
+            remaining.erase(support_bot)
 
     var flank_bot: Node = null
-    for bot in active_bots:
-        if bot != pressure_bot and bot != support_bot and previous_roles.get(bot, "") == "FLANK":
-            flank_bot = bot
-            break
-    if flank_bot == null:
-        for bot in active_bots:
-            if bot != pressure_bot and bot != support_bot:
-                flank_bot = bot
-                break
+    if not remaining.is_empty():
+        flank_bot = _select_threat_role_bot(remaining, "FLANK", previous_roles)
 
     for bot in active_bots:
         var assignment := "SUPPORT"
@@ -996,7 +1053,8 @@ func _update_combat_assignments() -> void:
         elif bot == flank_bot:
             assignment = "FLANK"
 
-        if str(bot.get("combat_assignment")) != assignment:
+        var previous_assignment := str(bot.get("combat_assignment"))
+        if previous_assignment != assignment:
             bot.set("combat_assignment", assignment)
             bot.set("combat_engagement", "HANDOFF")
             combat_role_revision += 1
