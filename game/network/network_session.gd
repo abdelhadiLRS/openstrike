@@ -31,6 +31,8 @@ var last_server_sequence := 0
 var network_players: Dictionary = {}
 var snapshot_interval := 0.05
 var snapshot_accumulator := 0.0
+var observed_round_number := 0
+var observed_round_state := ""
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -87,7 +89,44 @@ func _on_peer_disconnected(peer_id: int) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_server or not is_online:
 		return
+	_sync_round_lifecycle()
 	_snapshot_server_players(delta)
+
+func _sync_round_lifecycle() -> void:
+	var root := _root()
+	if root == null:
+		return
+	var current_round := int(root.get("round_number"))
+	var current_state := str(root.get("round_state"))
+	if observed_round_number == 0:
+		observed_round_number = current_round
+		observed_round_state = current_state
+		return
+	if current_state == "POST" and observed_round_state != "POST":
+		var won := bool(root.get("round_won"))
+		var reward := 2200 if won else 1200
+		for peer_value in network_players.keys():
+			var player: OpenStrikeNetworkPlayer = network_players.get(peer_value)
+			if is_instance_valid(player):
+				player.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, player.credits + reward)
+	if current_round != observed_round_number:
+		for peer_value in network_players.keys():
+			var player: OpenStrikeNetworkPlayer = network_players.get(peer_value)
+			if is_instance_valid(player):
+				player.begin_round(_spawn_position_for_peer(int(peer_value)))
+		observed_round_number = current_round
+		observed_round_state = current_state
+	elif current_state != observed_round_state:
+		observed_round_state = current_state
+
+func _spawn_position_for_peer(peer_id: int) -> Vector3:
+	var root := _root()
+	if root == null:
+		return Vector3.ZERO
+	var spawn_points: Array = root.get("blue_spawn_points") if root.get("blue_spawn_points") is Array else []
+	if spawn_points.is_empty():
+		return Vector3.ZERO
+	return spawn_points[(peer_id - 1) % spawn_points.size()]
 
 func _root() -> Node:
 	return get_parent()
@@ -102,10 +141,7 @@ func _spawn_network_player(peer_id: int) -> OpenStrikeNetworkPlayer:
 	if root == null:
 		return null
 	var player := OpenStrikeNetworkPlayer.new()
-	var spawn_points: Array = root.get("blue_spawn_points") if root.get("blue_spawn_points") is Array else []
-	var spawn := Vector3.ZERO
-	if not spawn_points.is_empty():
-		spawn = spawn_points[(peer_id - 1) % spawn_points.size()]
+	var spawn := _spawn_position_for_peer(peer_id)
 	player.setup(peer_id, spawn, root.get("weapons") if root.get("weapons") is Array else [])
 	root.add_child(player)
 	network_players[peer_id] = player
