@@ -362,7 +362,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         return
     var was_dead := dead
     var previous_round_number := round_number
-    network_diagnostics.record_snapshot(snapshot.tick, snapshot.acknowledged_input_sequence)
+    network_diagnostics.record_snapshot(snapshot.peer_id, snapshot.tick, snapshot.acknowledged_input_sequence)
     var acknowledged_sequence := mini(snapshot.acknowledged_input_sequence, input_sequence)
     prediction.acknowledge(acknowledged_sequence)
     last_processed_input_sequence = maxi(last_processed_input_sequence, acknowledged_sequence)
