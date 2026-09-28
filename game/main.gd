@@ -335,6 +335,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     planted_site = snapshot.planted_site
     bomb_time_left = snapshot.bomb_time_left
     credits = clampi(snapshot.credits, 0, MAX_CREDITS)
+    primary_owned = snapshot.owned_weapons.has("ar_17")
     var authoritative_index := -1
     for i in weapons.size():
         if str(weapons[i].get("id", "")) == snapshot.weapon_id:
@@ -344,7 +345,6 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         weapon_index = authoritative_index
         ammo = snapshot.ammo
         reserve = snapshot.reserve
-        primary_owned = snapshot.weapon_id == "ar_17" or primary_owned
 
     if not dead and OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position):
         player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
