@@ -476,7 +476,7 @@ func _update_objective(delta: float) -> void:
 
     var network_actor := _network_objective_actor()
     if network_actor != null and objective_action == "":
-        if objective_state == "CARRIED":
+        if objective_state == "CARRIED" and bomb_carrier_peer_id == network_objective_peer_id:
             var network_site := _current_bomb_site()
             if network_site != "":
                 objective_site = network_site
@@ -1623,6 +1623,21 @@ func _kill_player() -> void:
     camera.current = false
 
 func on_network_player_eliminated(peer_id: int) -> void:
+    if peer_id <= 0 or bomb_carrier_peer_id != peer_id or objective_state != "CARRIED":
+        return
+    var carrier = network_session.network_players.get(peer_id) if network_session != null else null
+    if carrier is OpenStrikeNetworkPlayer:
+        objective_state = "DROPPED"
+        bomb_carrier_peer_id = 0
+        dropped_bomb_position = carrier.global_position + Vector3(0, 0.15, 0)
+        objective_site = ""
+        objective_action = ""
+        objective_action_time_left = 0.0
+        network_objective_peer_id = -1
+        network_objective_latched_peer_id = -1
+        _update_bomb_visual()
+
+func on_network_player_disconnected(peer_id: int) -> void:
     if peer_id <= 0 or bomb_carrier_peer_id != peer_id or objective_state != "CARRIED":
         return
     var carrier = network_session.network_players.get(peer_id) if network_session != null else null
