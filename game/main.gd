@@ -91,6 +91,7 @@ var hud: Label
 var hud_layer: CanvasLayer
 var network_debug_hud: Label
 var network_debug_visible := false
+var view_weapon_root: Node3D
 var hit_marker: Label
 var damage_flash: ColorRect
 var hit_feedback_timer := 0.0
@@ -965,6 +966,7 @@ func _switch_weapon() -> void:
     _store_weapon_ammo()
     weapon_index = (weapon_index + 1) % weapons.size()
     _load_weapon_ammo()
+    _refresh_view_weapon()
 
 func _buy_weapon(index: int) -> void:
     if dead or round_state != "BUY":
@@ -984,11 +986,13 @@ func _buy_weapon(index: int) -> void:
         ammo = int(primary["mag"])
         reserve = int(primary["reserve"])
         cooldown = 0.0
+        _refresh_view_weapon()
     elif index == 1:
         weapon_index = 1
         ammo = int(weapons[1]["mag"])
         reserve = int(weapons[1]["reserve"])
         cooldown = 0.0
+        _refresh_view_weapon()
 
 func _store_weapon_ammo() -> void:
     weapons[weapon_index]["loaded"] = ammo
@@ -2710,12 +2714,72 @@ func configure_network_bot_count(target_count: int) -> bool:
     return true
 
 func _player() -> void:
-
     player = CharacterBody3D.new()
+    player.name = "LocalPlayer"
     player.position = blue_spawn_points[1]
+
     player_shape = CollisionShape3D.new()
     player_capsule = CapsuleShape3D.new()
     player_capsule.height = STAND_HEIGHT
     player_capsule.radius = 0.35
     player_shape.shape = player_capsule
     player.add_child(player_shape)
+
+    camera = Camera3D.new()
+    camera.name = "PlayerCamera"
+    camera.position = Vector3(0.0, STAND_CAMERA_Y, 0.0)
+    camera.current = true
+    player.add_child(camera)
+
+    _create_view_weapon()
+    add_child(player)
+
+func _create_view_weapon() -> void:
+    view_weapon_root = Node3D.new()
+    view_weapon_root.name = "FirstPersonWeapon"
+    view_weapon_root.position = Vector3(0.28, -0.24, -0.56)
+    camera.add_child(view_weapon_root)
+    _refresh_view_weapon()
+
+func _refresh_view_weapon() -> void:
+    if view_weapon_root == null:
+        return
+    for child in view_weapon_root.get_children():
+        child.queue_free()
+
+    var is_rifle := str(_current_weapon().get("id", "")) == "ar_17"
+    var body_material := StandardMaterial3D.new()
+    body_material.albedo_color = Color(0.12, 0.15, 0.18) if is_rifle else Color(0.17, 0.19, 0.21)
+    body_material.metallic = 0.42
+    body_material.roughness = 0.48
+
+    var accent_material := StandardMaterial3D.new()
+    accent_material.albedo_color = Color(0.10, 0.56, 0.67) if is_rifle else Color(0.84, 0.47, 0.16)
+    accent_material.metallic = 0.22
+    accent_material.roughness = 0.52
+
+    var grip_material := StandardMaterial3D.new()
+    grip_material.albedo_color = Color(0.055, 0.065, 0.075)
+    grip_material.roughness = 0.94
+
+    _view_box(Vector3(0.0, 0.0, 0.0), Vector3(0.16, 0.13, 0.40 if is_rifle else 0.25), body_material)
+    _view_box(Vector3(0.0, 0.015, -0.26 if is_rifle else -0.17), Vector3(0.085, 0.085, 0.34 if is_rifle else 0.19), body_material)
+    _view_box(Vector3(0.0, 0.09, -0.045), Vector3(0.09, 0.055, 0.19 if is_rifle else 0.10), accent_material)
+    _view_box(Vector3(0.0, 0.105, 0.055), Vector3(0.12, 0.055, 0.16 if is_rifle else 0.09), grip_material)
+    _view_box(Vector3(0.025, -0.13, 0.055), Vector3(0.105, 0.22 if is_rifle else 0.17, 0.13), grip_material)
+    _view_box(Vector3(0.0, -0.13, 0.005), Vector3(0.12, 0.18, 0.13), body_material)
+    if is_rifle:
+        _view_box(Vector3(0.0, -0.005, 0.30), Vector3(0.13, 0.12, 0.28), grip_material)
+        _view_box(Vector3(0.0, 0.14, -0.02), Vector3(0.09, 0.07, 0.10), accent_material)
+    else:
+        _view_box(Vector3(0.0, 0.09, 0.11), Vector3(0.09, 0.07, 0.08), accent_material)
+
+func _view_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> void:
+    var mesh_instance := MeshInstance3D.new()
+    var mesh := BoxMesh.new()
+    mesh.size = size
+    mesh_instance.mesh = mesh
+    mesh_instance.position = pos
+    mesh_instance.material_override = material
+    mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    view_weapon_root.add_child(mesh_instance)
