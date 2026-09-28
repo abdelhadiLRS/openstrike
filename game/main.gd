@@ -106,6 +106,9 @@ var combat_engagement_revision := 0
 var combat_role_revision := 0
 var combat_assignment_contact_revision := -1
 var combat_assignment_threat_revision := -1
+var combat_assignment_objective_state := ""
+var combat_assignment_objective_site := ""
+var combat_assignment_dropped_position := Vector3.ZERO
 var tactical_memory_position := Vector3.ZERO
 var tactical_memory_timer := 0.0
 var tactical_memory_revision := 0
@@ -544,6 +547,9 @@ func _start_round() -> void:
     combat_engagement_revision += 1
     combat_role_revision += 1
     combat_assignment_contact_revision = -1
+    combat_assignment_objective_state = ""
+    combat_assignment_objective_site = ""
+    combat_assignment_dropped_position = Vector3.ZERO
     dropped_bomb_position = Vector3.ZERO
     tactical_memory_position = Vector3.ZERO
     tactical_memory_timer = 0.0
@@ -605,11 +611,17 @@ func _update_bots(delta: float) -> void:
     combat_assignment_update_timer = maxf(0.0, combat_assignment_update_timer - delta)
     var contact_revision_changed := squad_contact_revision != combat_assignment_contact_revision
     var threat_revision_changed := squad_threat_revision != combat_assignment_threat_revision
-    if combat_assignment_update_timer <= 0.0 or contact_revision_changed or threat_revision_changed:
+    var objective_state_changed := str(objective_state) != combat_assignment_objective_state
+    var objective_site_changed := str(planted_site) != combat_assignment_objective_site
+    var dropped_position_changed := objective_state == "DROPPED" and dropped_bomb_position.distance_to(combat_assignment_dropped_position) >= 0.5
+    if combat_assignment_update_timer <= 0.0 or contact_revision_changed or threat_revision_changed or objective_state_changed or objective_site_changed or dropped_position_changed:
         _update_combat_assignments()
         combat_assignment_update_timer = COMBAT_ASSIGNMENT_UPDATE_INTERVAL
         combat_assignment_contact_revision = squad_contact_revision
         combat_assignment_threat_revision = squad_threat_revision
+        combat_assignment_objective_state = str(objective_state)
+        combat_assignment_objective_site = str(planted_site)
+        combat_assignment_dropped_position = dropped_bomb_position
 
     for bot in bots:
         if is_instance_valid(bot) and not bot.dead:
