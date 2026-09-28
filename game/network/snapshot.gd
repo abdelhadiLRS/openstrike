@@ -14,6 +14,8 @@ var health: int = 100
 var dead: bool = false
 var round_state: String = "BUY"
 var round_number: int = 1
+var round_won: bool = false
+var round_outcome_reason: String = ""
 var objective_state: String = "CARRIED"
 var planted_site: String = ""
 var bomb_time_left: float = 0.0
@@ -36,6 +38,8 @@ func to_dict() -> Dictionary:
 		"dead": dead,
 		"round_state": round_state,
 		"round_number": round_number,
+		"round_won": round_won,
+		"round_outcome_reason": round_outcome_reason,
 		"objective_state": objective_state,
 		"planted_site": planted_site,
 		"bomb_time_left": bomb_time_left,
@@ -59,6 +63,8 @@ static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	snapshot.dead = bool(data.get("dead", false))
 	snapshot.round_state = str(data.get("round_state", "BUY"))
 	snapshot.round_number = int(data.get("round_number", 1))
+	snapshot.round_won = bool(data.get("round_won", false))
+	snapshot.round_outcome_reason = str(data.get("round_outcome_reason", ""))
 	snapshot.objective_state = str(data.get("objective_state", "CARRIED"))
 	snapshot.planted_site = str(data.get("planted_site", ""))
 	snapshot.bomb_time_left = float(data.get("bomb_time_left", 0.0))
