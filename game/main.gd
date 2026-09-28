@@ -1914,6 +1914,7 @@ func _respawn_player() -> void:
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _world() -> void:
+    _create_visual_environment()
     _box(Vector3(0,-0.5,0), Vector3(36,1,36), Color(0.18,0.20,0.23))
     _box(Vector3(0,2,-18), Vector3(36,4,1), Color(0.10,0.12,0.15))
     _box(Vector3(0,2,18), Vector3(36,4,1), Color(0.10,0.12,0.15))
@@ -1935,10 +1936,77 @@ func _world() -> void:
         _box(data["p"], data["s"], Color(0.22,0.25,0.29))
     _setup_navigation_points()
     _setup_cover_points()
+    _create_map_dressing()
     _spawn_bots()
     _objective_site(BOMB_SITE_A, "A")
     _objective_site(BOMB_SITE_B, "B")
     _create_bomb_visual()
+
+func _create_visual_environment() -> void:
+    var environment_node := WorldEnvironment.new()
+    environment_node.name = "OpenStrikeWorldEnvironment"
+    var environment := Environment.new()
+    environment.background_mode = Environment.BG_COLOR
+    environment.background_color = Color(0.055, 0.075, 0.105)
+    environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+    environment.ambient_light_color = Color(0.48, 0.58, 0.72)
+    environment.ambient_light_energy = 0.65
+    environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+    environment_node.environment = environment
+    add_child(environment_node)
+
+    var sun := DirectionalLight3D.new()
+    sun.name = "MapKeyLight"
+    sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
+    sun.light_color = Color(0.80, 0.87, 1.0)
+    sun.light_energy = 1.05
+    sun.shadow_enabled = true
+    sun.directional_shadow_max_distance = 45.0
+    add_child(sun)
+
+func _create_map_dressing() -> void:
+    # Low-cost, non-colliding markings improve map readability without
+    # changing movement, cover, or bot navigation.
+    var lane_material := StandardMaterial3D.new()
+    lane_material.albedo_color = Color(0.12, 0.48, 0.62)
+    lane_material.roughness = 0.82
+    var warning_material := StandardMaterial3D.new()
+    warning_material.albedo_color = Color(0.92, 0.58, 0.18)
+    warning_material.roughness = 0.78
+
+    for x in [-15.0, 15.0]:
+        _visual_box(Vector3(x, 0.012, 0.0), Vector3(0.10, 0.025, 31.0), lane_material)
+    for z in [-15.0, 15.0]:
+        _visual_box(Vector3(0.0, 0.012, z), Vector3(31.0, 0.025, 0.10), lane_material)
+
+    # Subtle tactical lane dashes; visual only.
+    for z in range(-12, 13, 4):
+        _visual_box(Vector3(0.0, 0.014, float(z)), Vector3(2.4, 0.028, 0.07), lane_material)
+
+    # Amber corner markers around both objective zones.
+    for site_pos in [BOMB_SITE_A, BOMB_SITE_B]:
+        for offset in [
+            Vector3(-2.8, 0.025, -2.8), Vector3(2.8, 0.025, -2.8),
+            Vector3(-2.8, 0.025, 2.8), Vector3(2.8, 0.025, 2.8)
+        ]:
+            _visual_box(site_pos + offset, Vector3(0.65, 0.035, 0.10), warning_material)
+
+    # Thin illuminated-looking trims on the existing cover blocks.
+    for p in [
+        Vector3(-7.0, 2.04, -5.0), Vector3(6.0, 2.04, -2.0),
+        Vector3(-3.0, 2.04, 7.0), Vector3(10.0, 2.04, 9.0)
+    ]:
+        _visual_box(p, Vector3(2.5, 0.045, 0.06), warning_material)
+
+func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> void:
+    var mesh_instance := MeshInstance3D.new()
+    var mesh := BoxMesh.new()
+    mesh.size = size
+    mesh_instance.mesh = mesh
+    mesh_instance.position = pos
+    mesh_instance.material_override = material
+    mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(mesh_instance)
 
 func _create_bomb_visual() -> void:
     bomb_visual = MeshInstance3D.new()
@@ -2499,8 +2567,59 @@ func _create_bot(index: int) -> CharacterBody3D:
     capsule.radius = 0.42
     mesh.mesh = capsule
     var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.75, 0.20, 0.16)
+    mat.albedo_color = Color(0.24, 0.085, 0.075)
+    mat.roughness = 0.88
     mesh.material_override = mat
+
+    # Lightweight layered silhouette: vest, head, helmet and team identifier.
+    var vest := MeshInstance3D.new()
+    var vest_mesh := BoxMesh.new()
+    vest_mesh.size = Vector3(0.58, 0.48, 0.34)
+    vest.mesh = vest_mesh
+    vest.position = Vector3(0.0, 0.92, -0.015)
+    var vest_material := StandardMaterial3D.new()
+    vest_material.albedo_color = Color(0.34, 0.12, 0.09)
+    vest_material.roughness = 0.92
+    vest.material_override = vest_material
+    vest.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    var head := MeshInstance3D.new()
+    var head_mesh := SphereMesh.new()
+    head_mesh.radius = 0.22
+    head_mesh.height = 0.44
+    head.mesh = head_mesh
+    head.position = Vector3(0.0, 1.43, 0.0)
+    var head_material := StandardMaterial3D.new()
+    head_material.albedo_color = Color(0.48, 0.34, 0.25)
+    head_material.roughness = 0.95
+    head.material_override = head_material
+    head.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    var helmet := MeshInstance3D.new()
+    var helmet_mesh := SphereMesh.new()
+    helmet_mesh.radius = 0.245
+    helmet_mesh.height = 0.30
+    helmet.mesh = helmet_mesh
+    helmet.position = Vector3(0.0, 1.62, 0.0)
+    var helmet_material := StandardMaterial3D.new()
+    helmet_material.albedo_color = Color(0.12, 0.16, 0.19)
+    helmet_material.metallic = 0.12
+    helmet_material.roughness = 0.72
+    helmet.material_override = helmet_material
+    helmet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    var team_band := MeshInstance3D.new()
+    var band_mesh := BoxMesh.new()
+    band_mesh.size = Vector3(0.62, 0.075, 0.36)
+    team_band.mesh = band_mesh
+    team_band.position = Vector3(0.0, 1.18, -0.20)
+    var band_material := StandardMaterial3D.new()
+    band_material.albedo_color = Color(0.95, 0.28, 0.12)
+    band_material.emission_enabled = true
+    band_material.emission = Color(0.65, 0.08, 0.025)
+    band_material.emission_energy_multiplier = 0.18
+    team_band.material_override = band_material
+    team_band.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
     var shape := CollisionShape3D.new()
     var capsule_shape := CapsuleShape3D.new()
@@ -2509,6 +2628,10 @@ func _create_bot(index: int) -> CharacterBody3D:
     shape.shape = capsule_shape
 
     bot.add_child(mesh)
+    bot.add_child(vest)
+    bot.add_child(head)
+    bot.add_child(helmet)
+    bot.add_child(team_band)
     bot.add_child(shape)
     bot.add_to_group("bots")
     add_child(bot)
