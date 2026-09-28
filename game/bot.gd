@@ -132,7 +132,7 @@ func _physics_process(delta: float) -> void:
     _move_toward_goal(delta)
 
     var director_can_fire := combat_director_fire_ready or combat_assignment == "PRESSURE"
-    if (state == "ATTACK" or state == "SUPPRESS" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION") and _has_line_of_sight() and director_can_fire:
+    if (state == "ATTACK" or state == "FLANK" or state == "SUPPRESS" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION") and _has_line_of_sight() and director_can_fire:
         _fire()
 
     if not is_on_floor():
@@ -203,16 +203,6 @@ func _update_state() -> void:
             route.clear()
             route_index = 0
         return
-
-    if state == "FLANK":
-        var flank_offset := current_goal - global_position
-        flank_offset.y = 0.0
-        if flank_offset.length() <= COVER_REACHED:
-            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
-            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
-            var flank_look := (target.global_position - global_position).normalized()
-            look_at(global_position + Vector3(flank_look.x, 0.0, flank_look.z), Vector3.UP)
-            return
 
     if state == "REENGAGE":
         if _has_line_of_sight():
@@ -532,6 +522,16 @@ func _move_toward_goal(delta: float) -> void:
                 var side := Vector3(-bomb_look.z, 0.0, bomb_look.x) * strafe_sign
                 velocity.x = move_toward(velocity.x, side.x * 0.8, 6.0 * delta)
                 velocity.z = move_toward(velocity.z, side.z * 0.8, 6.0 * delta)
+            return
+
+    if state == "FLANK":
+        var flank_offset := current_goal - global_position
+        flank_offset.y = 0.0
+        if flank_offset.length() <= COVER_REACHED:
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+            var flank_look := (target.global_position - global_position).normalized()
+            look_at(global_position + Vector3(flank_look.x, 0.0, flank_look.z), Vector3.UP)
             return
 
     if state == "REENGAGE":
