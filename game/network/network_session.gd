@@ -378,6 +378,10 @@ func process_host_fire(origin: Vector3, direction: Vector3, weapon_id_value: Str
         var target: OpenStrikeNetworkPlayer = network_players.get(peer_value)
         if not is_instance_valid(target) or target.dead:
             continue
+        # Do not let a friendly network player win the candidate selection and
+        # incorrectly block a hostile target farther along the shot line.
+        if target.team == str(root.get("player_team")):
+            continue
         var target_position := target.global_position + Vector3(0, 0.65, 0)
         var ray_distance := _point_to_ray_distance(target_position, origin, normalized_direction)
         if ray_distance <= 0.75 and ray_distance < best_distance:
