@@ -29,6 +29,8 @@ const PUSH_HEALTH_THRESHOLD := 70
 const RECENT_HIT_REACTION_TIME := 1.2
 const COMBAT_REPOSITION_INTERVAL := 3.5
 const COMBAT_REPOSITION_MIN_DISTANCE := 3.0
+const ROUTE_REPLAN_INTERVAL := 1.2
+const ROUTE_GOAL_CHANGE_DISTANCE := 2.5
 
 var team := "RED"
 var max_health := 100
@@ -59,6 +61,8 @@ var recently_hit_timer := 0.0
 var combat_reposition_timer := 0.0
 var combat_slot := 0
 var combat_reposition_goal := Vector3.ZERO
+var route_goal := Vector3.ZERO
+var route_replan_timer := 0.0
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -77,6 +81,7 @@ func _physics_process(delta: float) -> void:
     combat_decision_timer = maxf(0.0, combat_decision_timer - delta)
     recently_hit_timer = maxf(0.0, recently_hit_timer - delta)
     combat_reposition_timer = maxf(0.0, combat_reposition_timer - delta)
+    route_replan_timer = maxf(0.0, route_replan_timer - delta)
     burst_pause = maxf(0.0, burst_pause - delta)
     strafe_time = maxf(0.0, strafe_time - delta)
     if strafe_time <= 0.0:
@@ -294,11 +299,15 @@ func _select_cover_point() -> void:
     cover_index = best
 
 func _ensure_route(goal: Vector3) -> void:
-    if route.size() > 0 and route_index < route.size():
+    var goal_changed := route_goal == Vector3.ZERO or route_goal.distance_to(goal) >= ROUTE_GOAL_CHANGE_DISTANCE
+    var route_finished := route.is_empty() or route_index >= route.size()
+    if not goal_changed and not route_finished and route_replan_timer > 0.0:
         return
 
     route = main.call("_find_navigation_route", global_position, goal)
     route_index = 0
+    route_goal = goal
+    route_replan_timer = ROUTE_REPLAN_INTERVAL
 
 func _move_toward_goal(delta: float) -> void:
     if state == "REPOSITION":
@@ -442,6 +451,8 @@ func take_damage(amount: int) -> void:
     combat_reposition_goal = Vector3.ZERO
     route.clear()
     route_index = 0
+    route_goal = Vector3.ZERO
+    route_replan_timer = 0.0
     if health == 0:
         _die()
 
@@ -455,6 +466,8 @@ func reset_target() -> void:
         collision_shape.disabled = false
     route.clear()
     route_index = 0
+    route_goal = Vector3.ZERO
+    route_replan_timer = 0.0
     last_state = "DEFEND"
     current_goal = Vector3.ZERO
     cover_index = -1
