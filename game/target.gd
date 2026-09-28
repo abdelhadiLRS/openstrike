@@ -1,8 +1,15 @@
 extends StaticBody3D
 
-var health := 100
+@export var max_health := 100
+var health := max_health
 
 func take_damage(amount: int) -> void:
-    health -= amount
-    if health <= 0:
-        health = 100
+    health = maxi(0, health - amount)
+    if health == 0:
+        visible = false
+        process_mode = Node.PROCESS_MODE_DISABLED
+
+func reset_target() -> void:
+    health = max_health
+    visible = true
+    process_mode = Node.PROCESS_MODE_INHERIT
