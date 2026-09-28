@@ -671,8 +671,10 @@ func _refresh_network_bot_cache() -> void:
 
 func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
 	var root := _root()
+	var roster_changed := false
 	if root != null and not is_server and root.has_method("configure_network_bot_count"):
-		root.configure_network_bot_count(states.size())
+		roster_changed = bool(root.configure_network_bot_count(states.size()))
+	if roster_changed:
 		_refresh_network_bot_cache()
 	if network_bot_cache.is_empty():
 		_refresh_network_bot_cache()
