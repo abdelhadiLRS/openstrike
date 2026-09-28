@@ -4,17 +4,21 @@ extends RefCounted
 var sent_commands: int = 0
 var received_snapshots: int = 0
 var rejected_inputs: int = 0
-var sequence_gaps: int = 0
+var snapshot_tick_gaps: int = 0
 var prediction_corrections: int = 0
 var last_acknowledged_sequence: int = 0
 var last_snapshot_tick: int = 0
+var last_snapshot_tick_by_peer: Dictionary = {}
 
 func record_command() -> void:
 	sent_commands += 1
 
-func record_snapshot(tick: int, acknowledged_sequence: int) -> void:
-	if last_snapshot_tick > 0 and tick > last_snapshot_tick + 1:
-		sequence_gaps += tick - last_snapshot_tick - 1
+func record_snapshot(peer_id: int, tick: int, acknowledged_sequence: int) -> void:
+	var previous_tick := int(last_snapshot_tick_by_peer.get(peer_id, -1))
+	if previous_tick >= 0 and tick > previous_tick + 1:
+		snapshot_tick_gaps += tick - previous_tick - 1
+	if previous_tick < 0 or tick > previous_tick:
+		last_snapshot_tick_by_peer[peer_id] = tick
 	last_snapshot_tick = maxi(last_snapshot_tick, tick)
 	last_acknowledged_sequence = maxi(last_acknowledged_sequence, acknowledged_sequence)
 	received_snapshots += 1
@@ -30,7 +34,7 @@ func snapshot() -> Dictionary:
 		"sent_commands": sent_commands,
 		"received_snapshots": received_snapshots,
 		"rejected_inputs": rejected_inputs,
-		"sequence_gaps": sequence_gaps,
+		"snapshot_tick_gaps": snapshot_tick_gaps,
 		"prediction_corrections": prediction_corrections,
 		"last_acknowledged_sequence": last_acknowledged_sequence,
 		"last_snapshot_tick": last_snapshot_tick
