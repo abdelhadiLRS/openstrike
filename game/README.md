@@ -291,3 +291,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - During a planted-bomb state, two suitable bots can be allocated around the objective before the remaining bot receives the normal PRESSURE role.
 - Objective-guard selection prefers existing SUPPORT/FLANK continuity and accounts for the current CONTACT/TRACKED threat position, reducing unnecessary movement away from the bomb.
 - Existing bot objective states remain authoritative: **DEFUSE** and **BOMB_COVER** still take priority over generic combat posture.
+
+
+### Bomb-site cover spacing and angle selection
+- Bomb-cover selection now reserves both the assigned cover position and the bot's peek/hold goal, reducing duplicate cover and peek lanes.
+- Candidate positions receive a spacing penalty when they are too close to another defender's current position or reserved bomb-cover position.
+- The selector adds a combat-slot-aware angle bias around the planted site, helping cover bots distribute across different approach directions instead of choosing only the nearest anchor.
+- Existing line-of-sight, distance, site-radius, and occupancy checks remain in place; if no valid candidate remains, the bot retains the existing site-position fallback.
