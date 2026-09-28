@@ -400,6 +400,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 
     if not dead and OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position):
         player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
+        player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.25)
         network_diagnostics.record_prediction_correction()
 
 
