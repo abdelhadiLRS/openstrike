@@ -103,12 +103,12 @@ func _on_peer_connected(peer_id: int) -> void:
 func _on_peer_disconnected(peer_id: int) -> void:
 	if peer_id > 0:
 		server_input_buffer.clear_peer(peer_id)
-		_remove_network_player(peer_id)
 		var root := _root()
 		if root != null and root.has_method("set_network_objective_input"):
 			root.set_network_objective_input(peer_id, false)
 		if root != null and root.has_method("on_network_player_disconnected"):
 			root.on_network_player_disconnected(peer_id)
+		_remove_network_player(peer_id)
 		peer_disconnected.emit(peer_id)
 
 func _physics_process(delta: float) -> void:
@@ -399,6 +399,7 @@ func _snapshot_server_players(delta: float) -> void:
 			str(root.get("planted_site")),
 			float(root.get("bomb_time_left")),
 			int(root.get("bomb_carrier_peer_id")),
+			root.get("dropped_bomb_position") if root.get("dropped_bomb_position") is Vector3 else Vector3.ZERO,
 			bool(root.get("round_won")),
 			str(root.get("round_outcome_reason"))
 		)
