@@ -19,6 +19,11 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Automatic respawn after player death
 - Round win condition when all opposing targets are eliminated
 - Round loss condition when the timer expires
+- Bomb objective with original A/B sites
+- Hold F to plant at an objective site
+- 30-second planted-bomb countdown
+- Hold F to defuse at the planted site
+- Objective win conditions for detonation and defusal
 - Round reset and target restoration
 - First-person movement and mouse look
 - Jumping
@@ -45,6 +50,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - E: switch weapon
 - 1: buy/select AR-17 during buy phase
 - 2: select PX-9 during buy phase
+- F: hold to plant/defuse the bomb at an objective site
 - ESC: release mouse
 
 This prototype uses original code and procedurally generated geometry. It does not use Counter-Strike proprietary code or assets.
