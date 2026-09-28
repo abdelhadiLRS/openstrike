@@ -41,7 +41,7 @@ This document adapts *systems ideas* observed in [VANTIX](https://github.com/van
 3. Make player and bot slot ownership explicit; test bot-to-player handoff and disconnect recovery.
 
 ### Phase 2 — Multiplayer foundation
-1. Define a versioned input/action packet and authoritative snapshot schema; the authoritative snapshot schema is now versioned and incompatible schemas are rejected before state application.
+1. Define a versioned input/action packet and authoritative snapshot schema; the authoritative snapshot schema is now versioned and incompatible schemas are rejected before state application. Bot roster snapshots also carry an explicit count, require a contiguous 1..N bot ID set, and are rejected before client roster mutation when malformed.
 2. Move all match-critical mutations to the server; validate team, phase, distance, cooldown, ammo, and ownership server-side.
 3. Add sequence numbers, bounded packet sizes, timeouts, and reconnect grace; test invalid and delayed packets.
 4. Add local prediction/reconciliation only after the authoritative loop is stable.
