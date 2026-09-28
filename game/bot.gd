@@ -235,6 +235,10 @@ func _move_toward_goal(delta: float) -> void:
                     route_index = 0
             elif peek_hold_timer <= 0.0:
                 peek_hold_timer = PEEK_HOLD
+            else:
+                state = "ATTACK"
+                route.clear()
+                route_index = 0
             return
 
     if route.size() == 0:
