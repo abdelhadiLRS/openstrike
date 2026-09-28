@@ -104,6 +104,9 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	if peer_id > 0:
 		server_input_buffer.clear_peer(peer_id)
 		_remove_network_player(peer_id)
+		var root := _root()
+		if root != null and root.has_method("set_network_objective_input"):
+			root.set_network_objective_input(peer_id, false)
 		peer_disconnected.emit(peer_id)
 
 func _physics_process(delta: float) -> void:
@@ -183,6 +186,9 @@ func _process_server_input(peer_id: int, delta: float) -> void:
 	var root := _root()
 	var round_state := str(root.get("round_state")) if root != null else "BUY"
 	player.apply_input(command, delta, round_state)
+	var root_for_objective := _root()
+	if root_for_objective != null and root_for_objective.has_method("set_network_objective_input"):
+		root_for_objective.set_network_objective_input(peer_id, command.objective)
 	player.record_snapshot(server_tick)
 	if command.fire and round_state == "LIVE":
 		_process_server_fire(player, command)
@@ -448,6 +454,7 @@ func _submit_input(payload: Dictionary) -> void:
 	command.reload = bool(payload.get("reload", false))
 	command.crouch = bool(payload.get("crouch", false))
 	command.jump = bool(payload.get("jump", false))
+	command.objective = bool(payload.get("objective", false))
 	var peer_id := multiplayer.get_remote_sender_id()
 	if peer_id <= 0 or not server_input_buffer.submit(peer_id, command, server_tick):
 		return
