@@ -44,6 +44,8 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - RED defenders select cover positions around their assigned A/B site, while the roamer rotates between sites
 - Planted-bomb defuse uses an explicit active defuser instead of a shared anonymous timer
 - Bomb drops at the player's death position and can be recovered after respawn
+- Visible original bomb entity with dropped/planted world states and planted-state blinking light
+- Planted-bomb defense distributes RED bots between one active defuser and separate tactical cover positions
 - Damageable combat units
 - Procedural graybox training range
 - Minimal HUD and crosshair
