@@ -13,6 +13,7 @@ signal snapshot_received(snapshot: OpenStrikeSnapshot)
 signal peer_connected(peer_id: int)
 signal peer_disconnected(peer_id: int)
 signal input_rejected(peer_id: int, command: OpenStrikeInputCommand)
+signal input_rejected_reason(peer_id: int, command: OpenStrikeInputCommand, reason: String)
 
 var server_input_buffer := OpenStrikeServerInputBuffer.new()
 var server_tick := 0
@@ -210,37 +211,47 @@ func _process_server_input(peer_id: int) -> void:
 		if command.fire and round_state == "LIVE":
 			_process_server_fire(player, command)
 
-func _validate_network_command(command: OpenStrikeInputCommand, round_state: String) -> bool:
+func _validate_network_command(command: OpenStrikeInputCommand, round_state: String) -> String:
 	if command == null:
-		return false
+		return "invalid_command"
 	# Match-critical actions are phase-gated on the server. Movement/look can
 	# remain valid outside LIVE so prediction does not need a separate protocol.
 	if round_state == "BUY":
-		if command.fire or command.reload or command.objective:
-			return false
+		if command.fire:
+			return "fire_not_allowed_in_buy"
+		if command.reload:
+			return "reload_not_allowed_in_buy"
+		if command.objective:
+			return "objective_not_allowed_in_buy"
 	elif round_state == "LIVE":
 		if command.buy_weapon_id != "":
-			return false
+			return "buy_not_allowed_in_live"
 	else:
-		# Weapon switching is a gameplay action too; do not allow stale queued
-		# UI input to mutate authoritative state after the round has ended.
-		if command.fire or command.reload or command.objective or command.buy_weapon_id != "" or command.switch_weapon:
-			return false
+		if command.fire:
+			return "fire_not_allowed_in_round_end"
+		if command.reload:
+			return "reload_not_allowed_in_round_end"
+		if command.objective:
+			return "objective_not_allowed_in_round_end"
+		if command.buy_weapon_id != "":
+			return "buy_not_allowed_in_round_end"
+		if command.switch_weapon:
+			return "switch_not_allowed_in_round_end"
 	# Reject contradictory weapon intents before they reach the authoritative
 	# player state. A buy request may select the purchased weapon, or a switch
 	# may request the alternate owned weapon, but never both semantics at once.
 	if command.buy_weapon_id != "":
 		if command.switch_weapon:
-			return false
+			return "buy_and_switch_conflict"
 		if command.weapon_id != "" and command.weapon_id != command.buy_weapon_id:
-			return false
+			return "buy_weapon_mismatch"
 		if _weapon_definition(command.buy_weapon_id).is_empty():
-			return false
+			return "unknown_buy_weapon"
 	elif command.switch_weapon and command.weapon_id != "":
-		return false
+		return "switch_weapon_conflict"
 	if command.weapon_id != "" and _weapon_definition(command.weapon_id).is_empty():
-		return false
-	return true
+		return "unknown_weapon"
+	return ""
 
 func _weapon_definition(weapon_id: String) -> Dictionary:
 	var root := _root()
@@ -531,18 +542,23 @@ func _submit_input(payload: Dictionary) -> void:
 	var peer_id := multiplayer.get_remote_sender_id()
 	var root := _root()
 	var round_state := str(root.get("round_state")) if root != null else "POST"
-	if not _validate_network_command(command, round_state):
-		input_rejected.emit(peer_id, command)
-		if peer_id > 0:
-			_notify_input_rejected.rpc_id(peer_id, command.to_dict())
+	var validation_reason := _validate_network_command(command, round_state)
+	if validation_reason != "":
+		_reject_input(peer_id, command, validation_reason)
 		return
 	if peer_id <= 0 or not server_input_buffer.submit(peer_id, command, server_tick):
-		input_rejected.emit(peer_id, command)
-		if peer_id > 0:
-			_notify_input_rejected.rpc_id(peer_id, command.to_dict())
+		_reject_input(peer_id, command, "input_buffer_rejected")
 		return
 	input_received.emit(command)
 	peer_input_received.emit(peer_id, command)
+
+func _reject_input(peer_id: int, command: OpenStrikeInputCommand, reason: String) -> void:
+	input_rejected.emit(peer_id, command)
+	input_rejected_reason.emit(peer_id, command, reason)
+	if peer_id > 0:
+		var payload := command.to_dict()
+		payload["rejection_reason"] = reason
+		_notify_input_rejected.rpc_id(peer_id, payload)
 
 @rpc("authority", "reliable", INPUT_CHANNEL)
 func _notify_input_rejected(payload: Dictionary) -> void:
@@ -551,7 +567,9 @@ func _notify_input_rejected(payload: Dictionary) -> void:
 	if payload == null:
 		return
 	var command := OpenStrikeInputCommand.from_dict(payload)
+	var reason := str(payload.get("rejection_reason", "input_rejected"))
 	input_rejected.emit(1, command)
+	input_rejected_reason.emit(1, command, reason)
 
 @rpc("authority", "unreliable_ordered", SNAPSHOT_CHANNEL)
 func _broadcast_snapshot(payload: Dictionary) -> void:
