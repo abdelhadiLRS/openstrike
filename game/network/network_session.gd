@@ -291,6 +291,8 @@ func _submit_input(payload: Dictionary) -> void:
 	command.sequence = int(payload.get("sequence", 0))
 	command.tick = int(payload.get("tick", 0))
 	command.weapon_id = str(payload.get("weapon_id", "px_9"))
+	command.buy_weapon_id = str(payload.get("buy_weapon_id", ""))
+	command.switch_weapon = bool(payload.get("switch_weapon", false))
 	command.move = move_value
 	command.look_delta = look_value
 	command.fire = bool(payload.get("fire", false))
