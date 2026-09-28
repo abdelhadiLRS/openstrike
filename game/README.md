@@ -58,6 +58,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Damageable combat units
 - Procedural graybox training range with cool ambient lighting and directional shadows
 - Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
+- Industrial perimeter wall panels, hazard accents on cover, and concentric objective-site floor rings (visual-only; no collision or navigation changes)
 - RED combatants use a layered low-poly silhouette with vest, head, helmet, and a readable team-color band
 - First-person AR-17/PX-9 geometric viewmodels that follow weapon selection and authoritative network weapon state
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
