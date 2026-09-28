@@ -871,9 +871,6 @@ func _load_weapon_catalog() -> void:
         if asset == null or not asset.is_valid():
             push_error("OpenStrike weapon catalog contains an invalid weapon resource.")
             continue
-        if not asset.is_valid():
-            push_error("OpenStrike weapon catalog contains an invalid weapon definition.")
-            continue
         var weapon_id := String(asset.weapon_id)
         if weapon_id.is_empty() or seen_ids.has(weapon_id):
             push_error("OpenStrike weapon catalog contains a duplicate or empty weapon id: %s" % weapon_id)
