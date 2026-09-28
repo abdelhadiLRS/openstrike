@@ -593,6 +593,36 @@ func _get_bot_tactical_memory(bot: Node) -> Dictionary:
         "revision": tactical_memory_revision
     }
 
+func _get_bot_squad_engagement_target(bot: Node) -> Vector3:
+    if not is_instance_valid(player):
+        return Vector3.ZERO
+
+    var target_position := player.global_position
+    var bot_assignment := str(bot.get("combat_assignment"))
+    var memory_position := tactical_memory_position
+    var memory_active := memory_position != Vector3.ZERO and tactical_memory_timer > 0.0
+
+    if not bot._has_line_of_sight() and memory_active:
+        target_position = memory_position
+
+    if not memory_active or bot._has_line_of_sight():
+        return target_position
+
+    var from_memory := bot.global_position - memory_position
+    from_memory.y = 0.0
+    if from_memory.length() < 0.1:
+        from_memory = Vector3(0, 0, 1)
+    var forward := from_memory.normalized()
+    var side := Vector3(-forward.z, 0.0, forward.x)
+
+    if bot_assignment == "FLANK":
+        var flank_side := -1.0 if int(bot.get("combat_slot")) == 0 else 1.0
+        target_position += side * flank_side * 4.0
+    elif bot_assignment == "SUPPORT":
+        target_position -= side * 2.5
+
+    return target_position
+
 func _update_combat_assignments() -> void:
     if not is_instance_valid(player):
         return
