@@ -100,6 +100,7 @@ var bomb_cover_anchors: Array[Dictionary] = []
 var combat_slot_update_timer := 0.0
 var combat_assignment_update_timer := 0.0
 var combat_engagement_revision := 0
+var combat_role_revision := 0
 var combat_assignment_contact_revision := -1
 var tactical_memory_position := Vector3.ZERO
 var tactical_memory_timer := 0.0
@@ -531,6 +532,7 @@ func _start_round() -> void:
     combat_slot_update_timer = 0.0
     combat_assignment_update_timer = 0.0
     combat_engagement_revision += 1
+    combat_role_revision += 1
     combat_assignment_contact_revision = -1
     dropped_bomb_position = Vector3.ZERO
     tactical_memory_position = Vector3.ZERO
@@ -756,6 +758,7 @@ func _get_bot_combat_director(bot: Node) -> Dictionary:
         "fire_ready": fire_ready,
         "revision": combat_director_revision,
         "contact_revision": squad_contact_revision,
+        "role_revision": combat_role_revision,
         "contact_source": squad_contact_source
     }
 
@@ -916,6 +919,7 @@ func _update_combat_assignments() -> void:
         if str(bot.get("combat_assignment")) != assignment:
             bot.set("combat_assignment", assignment)
             bot.set("combat_engagement", "HANDOFF")
+            combat_role_revision += 1
             combat_engagement_revision += 1
 
     combat_assignment_contact_revision = squad_contact_revision
