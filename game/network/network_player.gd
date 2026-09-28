@@ -68,6 +68,22 @@ func _sync_active_weapon() -> void:
 	reserve = state.reserve_ammo
 	fire_cooldown = state.cooldown_remaining
 
+func begin_round(start_position: Vector3) -> void:
+	global_position = start_position
+	velocity = Vector3.ZERO
+	health = 100
+	dead = false
+	crouched = false
+	primary_owned = false
+	weapon_id = "px_9"
+	for state in weapon_states.values():
+		if state is OpenStrikeWeaponRuntimeState:
+			state.owned = state.weapon_id == "px_9"
+			state.set_loaded_state(state.magazine_size, state.reserve_ammo)
+			state.cooldown_remaining = 0.0
+	_select_weapon("px_9")
+	_sync_active_weapon()
+
 func purchase_weapon(requested_id: String, round_state: String) -> bool:
 	if dead or round_state != "BUY":
 		return false
