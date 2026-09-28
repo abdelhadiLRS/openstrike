@@ -188,7 +188,7 @@ func _ready() -> void:
     network_session = OpenStrikeNetworkSession.new()
     add_child(network_session)
     network_session.snapshot_received.connect(_on_authoritative_snapshot)
-	network_session.input_rejected.connect(_on_network_input_rejected)
+    network_session.input_rejected.connect(_on_network_input_rejected)
     bomb_site_a = BOMB_SITE_A
     bomb_site_b = BOMB_SITE_B
     _world()
@@ -429,6 +429,11 @@ func _replay_pending_prediction(delta: float) -> void:
     if player == null or prediction_replay_commands.is_empty():
         pending_prediction_replay = false
         prediction_replay_commands.clear()
+        if deferred_prediction_snapshot != null:
+            var latest_snapshot := deferred_prediction_snapshot
+            deferred_prediction_snapshot = null
+            if not dead:
+                _start_prediction_replay(latest_snapshot)
         return
 
     # Roll back to the authoritative state, then replay only movement/look
