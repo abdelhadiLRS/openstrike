@@ -27,6 +27,9 @@ var is_server := false
 var is_online := false
 var local_input_sequence := 0
 var last_server_sequence := 0
+var network_players: Dictionary = {}
+var snapshot_interval := 0.05
+var snapshot_accumulator := 0.0
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -77,7 +80,79 @@ func _on_peer_connected(peer_id: int) -> void:
 func _on_peer_disconnected(peer_id: int) -> void:
 	if peer_id > 0:
 		server_input_buffer.clear_peer(peer_id)
+		_remove_network_player(peer_id)
 		peer_disconnected.emit(peer_id)
+
+func _physics_process(delta: float) -> void:
+	if not is_server or not is_online:
+		return
+	_snapshot_server_players(delta)
+
+func _root() -> Node:
+	return get_parent()
+
+func _spawn_network_player(peer_id: int) -> OpenStrikeNetworkPlayer:
+	if peer_id <= 0:
+		return null
+	var existing: OpenStrikeNetworkPlayer = network_players.get(peer_id)
+	if is_instance_valid(existing):
+		return existing
+	var root := _root()
+	if root == null:
+		return null
+	var player := OpenStrikeNetworkPlayer.new()
+	var spawn_points: Array = root.get("blue_spawn_points") if root.get("blue_spawn_points") is Array else []
+	var spawn := Vector3.ZERO
+	if not spawn_points.is_empty():
+		spawn = spawn_points[(peer_id - 1) % spawn_points.size()]
+	player.setup(peer_id, spawn)
+	root.add_child(player)
+	network_players[peer_id] = player
+	return player
+
+func _remove_network_player(peer_id: int) -> void:
+	var player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
+	if is_instance_valid(player):
+		player.queue_free()
+	network_players.erase(peer_id)
+
+func _process_server_input(peer_id: int, delta: float) -> void:
+	var player := _spawn_network_player(peer_id)
+	if player == null:
+		return
+	var command := server_input_buffer.pop_next(peer_id)
+	if command == null:
+		return
+	var root := _root()
+	if root != null and str(root.get("round_state")) != "LIVE":
+		player.last_processed_sequence = maxi(player.last_processed_sequence, command.sequence)
+		return
+	player.apply_input(command, delta)
+
+func _snapshot_server_players(delta: float) -> void:
+	for peer_id in network_players.keys():
+		_process_server_input(int(peer_id), delta)
+
+	snapshot_accumulator += delta
+	if snapshot_accumulator < snapshot_interval:
+		return
+	snapshot_accumulator = 0.0
+	var root := _root()
+	if root == null:
+		return
+	for peer_id in network_players.keys():
+		var player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
+		if not is_instance_valid(player):
+			continue
+		var snapshot := player.make_snapshot(
+			server_tick,
+			str(root.get("round_state")),
+			int(root.get("round_number")),
+			str(root.get("objective_state")),
+			str(root.get("planted_site")),
+			float(root.get("bomb_time_left"))
+		)
+		broadcast_snapshot(snapshot)
 
 func set_server_tick(tick: int) -> void:
 	server_tick = maxi(0, tick)
@@ -139,7 +214,18 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 		return
 	var snapshot := OpenStrikeSnapshot.from_dict(payload)
 	last_server_sequence = maxi(last_server_sequence, snapshot.acknowledged_input_sequence)
-	snapshot_received.emit(snapshot)
+	if snapshot.peer_id == multiplayer.get_unique_id():
+		snapshot_received.emit(snapshot)
+	else:
+		_apply_remote_snapshot(snapshot)
+
+func _apply_remote_snapshot(snapshot: OpenStrikeSnapshot) -> void:
+	if snapshot == null or snapshot.peer_id <= 0:
+		return
+	var player := _spawn_network_player(snapshot.peer_id)
+	if player == null:
+		return
+	player.apply_snapshot(snapshot)
 
 func _shutdown_peer() -> void:
 	server_input_buffer.clear()
