@@ -38,8 +38,8 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Three RED combat bots with role-based defense, detection, line-of-sight, shooting, and death states
 - RED bot combat roles: Defender A, Defender B, and Roamer
 - Combat standoff range, retreat behavior, strafing, burst fire, and accuracy spread
-- Waypoint-based bot navigation between defensive objective sites
-- Procedural cover points with low-health retreat and peek behavior
+- Obstacle-aware graph navigation between defensive objective sites
+- Procedural cover points with LOS-validated low-health retreat and bounded peek behavior
 - RED bots switch to planted-site defense and attack the BLUE player when detected
 - Damageable combat units
 - Procedural graybox training range
@@ -78,4 +78,4 @@ The tactical match foundation is now organized around:
 9. LAN multiplayer
 10. dedicated server
 
-The current enemy units are original RED combat bots. Their navigation uses a lightweight waypoint graph suited to the procedural graybox, while direct line-of-sight is used for combat. Full multiplayer navigation remains a separate layer.
+The current enemy units are original RED combat bots. Their navigation uses a lightweight waypoint graph suited to the procedural graybox, while obstacle-aware graph routing and direct line-of-sight are used for movement and combat. Full multiplayer navigation remains a separate layer.
