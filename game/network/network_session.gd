@@ -381,7 +381,7 @@ func _build_bot_snapshots(root: Node) -> Array[Dictionary]:
 		var bot_id := int(bot.get("network_bot_id"))
 		if bot_id <= 0:
 			bot_id = int(bot.get("combat_slot")) + 1
-		states.append({"id": bot_id, "position": bot.global_position, "velocity": bot.velocity, "yaw": bot.rotation.y, "health": int(bot.get("health")), "dead": bool(bot.get("dead")), "state": str(bot.get("state")), "assignment": str(bot.get("combat_assignment"))})
+		states.append({"id": bot_id, "position": bot.global_position, "velocity": bot.velocity, "yaw": bot.rotation.y, "health": int(bot.get("health")), "dead": bool(bot.get("dead")), "state": str(bot.get("state")), "assignment": str(bot.get("combat_assignment")), "round_number": int(root.get("round_number"))})
 	return states
 func _snapshot_server_players(delta: float) -> void:
 	var root := _root()
