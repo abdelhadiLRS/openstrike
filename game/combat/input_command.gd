@@ -9,6 +9,7 @@ var fire: bool = false
 var reload: bool = false
 var crouch: bool = false
 var jump: bool = false
+var weapon_id: String = "px_9"
 
 func to_dict() -> Dictionary:
 	return {
