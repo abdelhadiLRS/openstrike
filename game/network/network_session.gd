@@ -128,6 +128,98 @@ func _process_server_input(peer_id: int, delta: float) -> void:
 		player.last_processed_sequence = maxi(player.last_processed_sequence, command.sequence)
 		return
 	player.apply_input(command, delta)
+	player.record_snapshot(server_tick)
+	if command.fire:
+		_process_server_fire(player, command)
+
+func _weapon_definition(weapon_id: String) -> Dictionary:
+	var root := _root()
+	if root == null:
+		return {}
+	var catalog = root.get("weapons")
+	if not catalog is Array:
+		return {}
+	for weapon in catalog:
+		if weapon is Dictionary and str(weapon.get("id", "")) == weapon_id:
+			return weapon
+	return {}
+
+func _point_to_ray_distance(point: Vector3, origin: Vector3, direction: Vector3) -> float:
+	var offset := point - origin
+	var along := offset.dot(direction)
+	if along < 0.0 or along > 120.0:
+		return INF
+	return (offset - direction * along).length()
+
+func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeInputCommand) -> void:
+	if shooter == null or shooter.dead or not command.fire:
+		return
+	var root := _root()
+	if root == null or str(root.get("round_state")) != "LIVE":
+		return
+	var weapon := _weapon_definition(command.weapon_id)
+	if weapon.is_empty():
+		return
+	if shooter.weapon_id != command.weapon_id:
+		shooter.weapon_id = command.weapon_id
+	if shooter.fire_cooldown > 0.0 or shooter.ammo <= 0:
+		return
+	var delay := float(weapon.get("delay", 0.1))
+	var damage := int(weapon.get("damage", 0))
+	if delay <= 0.0 or damage <= 0:
+		return
+
+	shooter.fire_cooldown = delay
+	shooter.ammo -= 1
+	var origin := shooter.global_position + Vector3(0, 0.55, 0)
+	var yaw_basis := Basis(Vector3.UP, shooter.yaw)
+	var direction := (yaw_basis * Vector3(0, 0, -1)).normalized()
+	var pitch_basis := Basis(Vector3.RIGHT, shooter.pitch)
+	direction = (yaw_basis * pitch_basis * Vector3(0, 0, -1)).normalized()
+
+	var best_target: Node = null
+	var best_distance := INF
+	var requested_tick := OpenStrikeLagCompensation.clamp_requested_tick(command.tick, server_tick, OpenStrikeServerInputBuffer.MAX_REWIND_TICKS)
+
+	for peer_value in network_players.keys():
+		var target: OpenStrikeNetworkPlayer = network_players.get(peer_value)
+		if not is_instance_valid(target) or target == shooter or target.dead:
+			continue
+		var historical := OpenStrikeLagCompensation.rewind_position(target.snapshot_history, requested_tick)
+		if historical == Vector3.ZERO:
+			continue
+		historical += Vector3(0, 0.65, 0)
+		var ray_distance := _point_to_ray_distance(historical, origin, direction)
+		if ray_distance <= 0.75 and ray_distance < best_distance:
+			best_distance = ray_distance
+			best_target = target
+
+	if best_target == null:
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * 120.0)
+		query.exclude = [shooter]
+		var hit := root.get_world_3d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty() and hit.collider != null:
+			best_target = hit.collider
+			best_distance = origin.distance_to(hit.position)
+
+	var events: OpenStrikeCombatEvents = root.get("combat_events")
+	if events != null:
+		events.emit_shot(str(shooter.peer_id), command.weapon_id, shooter.ammo, shooter.reserve)
+
+	if best_target == null:
+		return
+	var target_team := str(best_target.get("team"))
+	if best_target is OpenStrikeNetworkPlayer:
+		best_target.health = maxi(0, best_target.health - damage)
+		best_target.dead = best_target.health <= 0
+		if events != null:
+			events.emit_hit(str(shooter.peer_id), str(best_target.peer_id), command.weapon_id, damage, best_target.global_position, true)
+			if best_target.dead:
+				events.emit_elimination(str(shooter.peer_id), str(best_target.peer_id), command.weapon_id, true)
+	elif best_target.has_method("take_damage") and target_team != "BLUE":
+		best_target.take_damage(damage)
+		if events != null:
+			events.emit_hit(str(shooter.peer_id), str(best_target.get_instance_id()), command.weapon_id, damage, best_target.global_position, true)
 
 func _snapshot_server_players(delta: float) -> void:
 	for peer_id in network_players.keys():
@@ -200,6 +292,7 @@ func _submit_input(payload: Dictionary) -> void:
 	var command := OpenStrikeInputCommand.new()
 	command.sequence = int(payload.get("sequence", 0))
 	command.tick = int(payload.get("tick", 0))
+	command.weapon_id = str(payload.get("weapon_id", "px_9"))
 	command.move = move_value
 	command.look_delta = look_value
 	command.fire = bool(payload.get("fire", false))
