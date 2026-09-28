@@ -89,6 +89,8 @@ var recoil_kick := 0.0
 var crouched := false
 var hud: Label
 var hud_layer: CanvasLayer
+var crosshair_root: Control
+var crosshair_segments: Array[ColorRect] = []
 var network_debug_hud: Label
 var network_debug_visible := false
 var view_weapon_root: Node3D
@@ -211,6 +213,7 @@ func _ready() -> void:
     _player()
     _world()
     _hud()
+    _create_crosshair()
     _create_network_debug_hud()
     _start_round()
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -258,6 +261,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
     _update_view_weapon_motion(delta)
+    _update_crosshair()
 
 func _update_view_weapon_motion(delta: float) -> void:
     if not is_instance_valid(view_weapon_root) or not is_instance_valid(player):
@@ -1078,6 +1082,53 @@ func _hud() -> void:
     panel.add_child(hud)
     hud_layer.add_child(panel)
     add_child(hud_layer)
+
+func _create_crosshair() -> void:
+    # Minimal four-piece reticle: screen-space only, with no physics or scene cost.
+    crosshair_root = Control.new()
+    crosshair_root.name = "OpenStrikeCrosshair"
+    crosshair_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    crosshair_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud_layer.add_child(crosshair_root)
+
+    for index in 5:
+        var segment := ColorRect.new()
+        segment.name = "ReticlePart%d" % index
+        segment.color = Color(0.78, 0.96, 1.0, 0.96) if index < 4 else Color(1.0, 0.68, 0.20, 1.0)
+        segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        crosshair_root.add_child(segment)
+        crosshair_segments.append(segment)
+    _update_crosshair()
+
+
+func _update_crosshair() -> void:
+    if crosshair_root == null or crosshair_segments.size() < 5:
+        return
+    crosshair_root.visible = not dead
+    if dead:
+        return
+
+    var viewport_size := get_viewport().get_visible_rect().size
+    var center := viewport_size * 0.5
+    var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length() if is_instance_valid(player) else 0.0
+    var spread := 5.0 + clampf(horizontal_speed * 1.25, 0.0, 10.0) + clampf(recoil_kick * 16.0, 0.0, 8.0)
+    if crouched:
+        spread *= 0.72
+    var thickness := 2.0
+    var length := 9.0
+
+    # Left, right, top, bottom, then a tiny warm center dot.
+    crosshair_segments[0].position = center + Vector2(-spread - length, -thickness * 0.5)
+    crosshair_segments[0].size = Vector2(length, thickness)
+    crosshair_segments[1].position = center + Vector2(spread, -thickness * 0.5)
+    crosshair_segments[1].size = Vector2(length, thickness)
+    crosshair_segments[2].position = center + Vector2(-thickness * 0.5, -spread - length)
+    crosshair_segments[2].size = Vector2(thickness, length)
+    crosshair_segments[3].position = center + Vector2(-thickness * 0.5, spread)
+    crosshair_segments[3].size = Vector2(thickness, length)
+    crosshair_segments[4].position = center - Vector2(1.0, 1.0)
+    crosshair_segments[4].size = Vector2(2.0, 2.0)
+
 
 func _create_network_debug_hud() -> void:
     network_debug_hud = Label.new()
