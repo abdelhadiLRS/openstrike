@@ -69,6 +69,7 @@ var combat_reposition_goal := Vector3.ZERO
 var retreat_cover_goal := Vector3.ZERO
 var route_goal := Vector3.ZERO
 var route_replan_timer := 0.0
+var route_failed_goal := Vector3.ZERO
 var close_retreat_route_active := false
 var search_goal := Vector3.ZERO
 var search_revision := -1
@@ -677,13 +678,17 @@ func _select_cover_point() -> void:
 
 func _ensure_route(goal: Vector3) -> void:
     var goal_changed := route_goal == Vector3.ZERO or route_goal.distance_to(goal) >= ROUTE_GOAL_CHANGE_DISTANCE
-    var route_finished := route.is_empty() or route_index >= route.size()
+    var route_finished := not route.is_empty() and route_index >= route.size()
+    var failed_goal_matches := route_failed_goal != Vector3.ZERO and route_failed_goal.distance_to(goal) < ROUTE_GOAL_CHANGE_DISTANCE
     if not goal_changed and not route_finished and route_replan_timer > 0.0:
+        return
+    if not goal_changed and failed_goal_matches and route_replan_timer > 0.0:
         return
 
     route = main.call("_find_navigation_route", global_position, goal)
     route_index = 0
     route_goal = goal
+    route_failed_goal = goal if route.is_empty() else Vector3.ZERO
     route_replan_timer = ROUTE_REPLAN_INTERVAL
 
 func _move_toward_goal(delta: float) -> void:
@@ -925,6 +930,7 @@ func reset_target() -> void:
     route_index = 0
     route_goal = Vector3.ZERO
     route_replan_timer = 0.0
+    route_failed_goal = Vector3.ZERO
     close_retreat_route_active = false
     state = "DEFEND"
     last_state = "DEFEND"
