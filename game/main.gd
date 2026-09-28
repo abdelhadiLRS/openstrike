@@ -595,9 +595,15 @@ func _finish_round(won: bool) -> void:
 
 func _reset_targets() -> void:
     var count := 0
+    var spawn_index := 0
     for bot in bots:
         if is_instance_valid(bot):
             bot.reset_target()
+            if not red_spawn_points.is_empty():
+                bot.global_position = red_spawn_points[spawn_index % red_spawn_points.size()]
+            bot.velocity = Vector3.ZERO
+            bot.rotation = Vector3.ZERO
+            spawn_index += 1
             count += 1
     enemies_alive = count
 
