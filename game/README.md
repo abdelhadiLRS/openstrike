@@ -276,3 +276,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 
 ### Combat Director cleanup
 - The Combat Director threat fallback now has a single TRACKED branch, removing a redundant state path while preserving the existing command behavior.
+
+
+### Combat Director threat synchronization
+- The Combat Director now tracks both contact revisions and threat revisions when deciding whether its cached phase is still current.
+- Threat transitions are reflected explicitly as **SEARCH**, **TRACKED**, or **LOST** instead of allowing the director phase to lag behind the squad threat state.
+- A meaningful threat revision immediately refreshes the director revision, allowing bots to invalidate stale command timing without waiting for the normal 0.20-second director interval.
+- Duplicate threat-role selection code was removed from the main match controller so the squad role allocator has one authoritative implementation.
