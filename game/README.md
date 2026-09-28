@@ -122,3 +122,11 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Bots now retain the current route goal and periodically re-evaluate navigation instead of following a stale path indefinitely.
 - Significant goal movement triggers an immediate route rebuild.
 - A short replan interval keeps dynamic tactical movement responsive while avoiding per-frame pathfinding.
+
+
+### Coordinated combat angle assignment
+- Combat repositioning now uses explicit left/right/center tactical slots.
+- Bots penalize positions already occupied or reserved by another bot's reposition goal.
+- Near-but-not-identical positions receive a softer separation penalty instead of being discarded immediately, preserving fallback options when the map is constrained.
+- Attack-angle scoring now favors lateral separation around the player so bots are less likely to stack behind the same peek point.
+- Existing adaptive route replanning continues to rebuild the route when the selected combat position changes.
