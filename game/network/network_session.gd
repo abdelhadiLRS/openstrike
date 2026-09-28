@@ -630,6 +630,8 @@ func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 		return false
 	if snapshot.schema_version != SNAPSHOT_SCHEMA_VERSION:
 		return false
+	if not _valid_bot_roster_payload(snapshot):
+		return false
 	var peer_id := snapshot.peer_id
 	var last_round := int(last_received_snapshot_round_by_peer.get(peer_id, -1))
 	var last_tick := int(last_received_snapshot_tick_by_peer.get(peer_id, -1))
