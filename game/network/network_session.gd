@@ -20,6 +20,8 @@ var server_tick := 0
 const DEFAULT_PORT := 27015
 const MAX_CLIENTS := 16
 const KILL_REWARD := 300
+const ROUND_WIN_REWARD := 2200
+const ROUND_LOSS_REWARD := 1200
 const INPUT_CHANNEL := 0
 const SNAPSHOT_CHANNEL := 1
 
@@ -122,7 +124,7 @@ func _sync_round_lifecycle() -> void:
 		return
 	if current_state == "POST" and observed_round_state != "POST":
 		var won := bool(root.get("round_won"))
-		var reward := 2200 if won else 1200
+		var reward := ROUND_WIN_REWARD if won else ROUND_LOSS_REWARD
 		for peer_value in network_players.keys():
 			var player: OpenStrikeNetworkPlayer = network_players.get(peer_value)
 			if is_instance_valid(player):
