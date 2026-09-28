@@ -1053,19 +1053,43 @@ func _update_combat_assignments() -> void:
     for bot in active_bots:
         previous_roles[bot] = str(bot.get("combat_assignment"))
 
-    var remaining := active_bots.duplicate()
-    var pressure_bot := _select_threat_role_bot(remaining, "PRESSURE", previous_roles)
-    if pressure_bot != null:
-        remaining.erase(pressure_bot)
+    var objective_state_now := str(objective_state)
+    var objective_active := objective_state_now == "DROPPED" or objective_state_now == "PLANTED"
+    var planted_objective := objective_state_now == "PLANTED"
+    var objective_position := dropped_bomb_position
+    if planted_objective:
+        objective_position = bomb_site_a if planted_site == "A" else bomb_site_b
+    elif objective_state_now == "DROPPED" and objective_position == Vector3.ZERO:
+        objective_active = false
 
+    var remaining := active_bots.duplicate()
+    var pressure_bot: Node = null
     var support_bot: Node = null
+    var flank_bot: Node = null
+
+    if objective_active:
+        var objective_guard: Node = _select_objective_guard_bot(remaining, objective_position, previous_roles)
+        if objective_guard != null:
+            support_bot = objective_guard
+            remaining.erase(objective_guard)
+
+        if planted_objective:
+            var objective_cover: Node = _select_objective_guard_bot(remaining, objective_position, previous_roles)
+            if objective_cover != null:
+                flank_bot = objective_cover
+                remaining.erase(objective_cover)
+
     if not remaining.is_empty():
+        pressure_bot = _select_threat_role_bot(remaining, "PRESSURE", previous_roles)
+        if pressure_bot != null:
+            remaining.erase(pressure_bot)
+
+    if not remaining.is_empty() and support_bot == null:
         support_bot = _select_threat_role_bot(remaining, "SUPPORT", previous_roles)
         if support_bot != null:
             remaining.erase(support_bot)
 
-    var flank_bot: Node = null
-    if not remaining.is_empty():
+    if not remaining.is_empty() and flank_bot == null:
         flank_bot = _select_threat_role_bot(remaining, "FLANK", previous_roles)
 
     for bot in active_bots:
@@ -1086,6 +1110,34 @@ func _update_combat_assignments() -> void:
 
     combat_assignment_contact_revision = squad_contact_revision
     combat_assignment_threat_revision = squad_threat_revision
+
+func _select_objective_guard_bot(candidates: Array[Node], objective_position: Vector3, previous_roles: Dictionary) -> Node:
+    var selected: Node = null
+    var best_score := INF
+    for bot in candidates:
+        if not is_instance_valid(bot) or bot.dead:
+            continue
+
+        var distance := bot.global_position.distance_to(objective_position)
+        var previous_role := str(previous_roles.get(bot, ""))
+        var score := distance
+
+        if previous_role == "SUPPORT":
+            score -= 1.5
+        elif previous_role == "FLANK":
+            score -= 0.5
+
+        if squad_threat_state == "CONTACT":
+            var threat_distance := bot.global_position.distance_to(squad_threat_position)
+            score += minf(threat_distance * 0.15, 3.0)
+        elif squad_threat_state == "TRACKED":
+            score += minf(bot.global_position.distance_to(squad_threat_position) * 0.08, 2.0)
+
+        if score < best_score:
+            best_score = score
+            selected = bot
+
+    return selected
 
 func _update_combat_slots() -> void:
     if not is_instance_valid(player):
