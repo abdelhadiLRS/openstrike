@@ -93,3 +93,9 @@ The tactical match foundation is now organized around:
 10. dedicated server
 
 The current enemy units are original RED combat bots. Their navigation uses a lightweight waypoint graph suited to the procedural graybox, while obstacle-aware graph routing and direct line-of-sight are used for movement and combat. Full multiplayer navigation remains a separate layer.
+
+### Combat reaction and repositioning
+- Bots now react to recent hits with a short break-contact window, especially when health is already reduced.
+- Retreating bots select validated combat cover instead of blindly reusing a generic cover slot.
+- Combat cover selection checks line of sight, usable peek geometry, travel distance, and occupancy by other bots so multiple enemies are less likely to stack on one position.
+- A retreating bot remains behind cover rather than immediately entering the peek cycle, reducing exposed re-peeks while under pressure.
