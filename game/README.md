@@ -51,6 +51,9 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Bomb-defense assignments are revisioned so a replacement defuser invalidates stale cover assignments
 - A/B site defenders score cover using player approach direction and role-aware spacing, while the roamer uses a different tactical bias
 - Bomb-cover defenders hold their assigned angle, face the BLUE player, and apply controlled lateral movement while maintaining the defensive position
+- RED bots use a throttled tactical combat-intent layer: HOLD, PUSH, or RETREAT based on health, distance, line-of-sight, role, and site proximity
+- Low-health bots prioritize validated cover instead of continuously chasing the player
+- Roamers can pressure visible targets at a larger tactical distance, while site defenders only push aggressively when the player is close to their assigned site
 - Bomb recovery uses a tighter pickup radius than the plant/defuse site radius
 - Damageable combat units
 - Procedural graybox training range
