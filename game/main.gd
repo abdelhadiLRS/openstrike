@@ -2427,38 +2427,59 @@ func _configure_bot_count_from_command_line() -> void:
         bot_count = clampi(int(raw_count), 0, MAX_BOT_COUNT)
         return
 
+func _create_bot(index: int) -> CharacterBody3D:
+    var bot := CharacterBody3D.new()
+    bot.set_script(load("res://bot.gd"))
+    bot.position = red_spawn_points[index % red_spawn_points.size()]
+    bot.set("team", enemy_team)
+    bot.set("network_bot_id", index + 1)
+    bot.set("role", "DEFENDER_A" if index == 0 else ("DEFENDER_B" if index == 1 else "ROAMER"))
+    bot.set("combat_slot", index)
+
+    var mesh := MeshInstance3D.new()
+    var capsule := CapsuleMesh.new()
+    capsule.height = 2.0
+    capsule.radius = 0.42
+    mesh.mesh = capsule
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = Color(0.75, 0.20, 0.16)
+    mesh.material_override = mat
+
+    var shape := CollisionShape3D.new()
+    var capsule_shape := CapsuleShape3D.new()
+    capsule_shape.height = 2.0
+    capsule_shape.radius = 0.42
+    shape.shape = capsule_shape
+
+    bot.add_child(mesh)
+    bot.add_child(shape)
+    bot.add_to_group("bots")
+    add_child(bot)
+    bot.eliminated.connect(_on_enemy_eliminated)
+    return bot
+
 func _spawn_bots() -> void:
     bots.clear()
     for i in bot_count:
-        var bot := CharacterBody3D.new()
-        bot.set_script(load("res://bot.gd"))
-        bot.position = red_spawn_points[i % red_spawn_points.size()]
-        bot.set("team", enemy_team)
+        bots.append(_create_bot(i))
+
+func configure_network_bot_count(target_count: int) -> void:
+    if network_session == null or not network_session.is_online or network_session.is_server:
+        return
+    var target := clampi(target_count, 0, MAX_BOT_COUNT)
+    bot_count = target
+    while bots.size() > target:
+        var bot := bots.pop_back()
+        if is_instance_valid(bot):
+            bot.queue_free()
+    while bots.size() < target:
+        bots.append(_create_bot(bots.size()))
+    for i in bots.size():
+        var bot = bots[i]
+        if not is_instance_valid(bot):
+            continue
         bot.set("network_bot_id", i + 1)
-        bot.set("role", "DEFENDER_A" if i == 0 else ("DEFENDER_B" if i == 1 else "ROAMER"))
         bot.set("combat_slot", i)
-
-        var mesh := MeshInstance3D.new()
-        var capsule := CapsuleMesh.new()
-        capsule.height = 2.0
-        capsule.radius = 0.42
-        mesh.mesh = capsule
-        var mat := StandardMaterial3D.new()
-        mat.albedo_color = Color(0.75, 0.20, 0.16)
-        mesh.material_override = mat
-
-        var shape := CollisionShape3D.new()
-        var capsule_shape := CapsuleShape3D.new()
-        capsule_shape.height = 2.0
-        capsule_shape.radius = 0.42
-        shape.shape = capsule_shape
-
-        bot.add_child(mesh)
-        bot.add_child(shape)
-        bot.add_to_group("bots")
-        add_child(bot)
-        bot.eliminated.connect(_on_enemy_eliminated)
-        bots.append(bot)
 
 func _player() -> void:
 
