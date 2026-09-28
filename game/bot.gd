@@ -9,6 +9,12 @@ const DETECTION_RANGE := 26.0
 const FIRE_RANGE := 22.0
 const FIRE_DELAY := 0.34
 const DAMAGE := 12
+const OPTIMAL_RANGE := 15.0
+const MIN_COMBAT_RANGE := 8.0
+const ACCURACY := 0.86
+const BURST_SHOTS := 3
+const BURST_PAUSE := 0.65
+const STRAFE_INTERVAL := 0.9
 const WAYPOINT_REACHED := 1.1
 const SITE_RADIUS := 2.8
 
@@ -17,9 +23,14 @@ var max_health := 100
 var health := 100
 var dead := false
 var fire_cooldown := 0.0
+var burst_remaining := 0
+var burst_pause := 0.0
+var strafe_time := 0.0
+var strafe_sign := 1.0
 var target: Node3D
 var main: Node3D
 var state := "DEFEND"
+var role := "DEFENDER_A"
 var route := []
 var route_index := 0
 var current_goal := Vector3.ZERO
@@ -37,6 +48,11 @@ func _physics_process(delta: float) -> void:
         return
 
     fire_cooldown = maxf(0.0, fire_cooldown - delta)
+    burst_pause = maxf(0.0, burst_pause - delta)
+    strafe_time = maxf(0.0, strafe_time - delta)
+    if strafe_time <= 0.0:
+        strafe_time = STRAFE_INTERVAL
+        strafe_sign *= -1.0
     target = main.get("player")
     if not is_instance_valid(target):
         return
@@ -79,12 +95,18 @@ func _update_goal() -> void:
         return
 
     if state == "ATTACK":
-        current_goal = target.global_position
+        var distance := global_position.distance_to(target.global_position)
+        if distance > OPTIMAL_RANGE:
+            current_goal = target.global_position
+        else:
+            current_goal = global_position
         route.clear()
         route_index = 0
         return
 
-    var defend_site := "A" if int(get_index()) % 2 == 0 else "B"
+    var defend_site := "A" if role == "DEFENDER_A" else "B"
+    if role == "ROAMER":
+        defend_site = "B" if int(Time.get_ticks_msec() / 5000.0) % 2 == 0 else "A"
     current_goal = main.get("bomb_site_a") if defend_site == "A" else main.get("bomb_site_b")
     _ensure_route(current_goal)
 
@@ -121,6 +143,22 @@ func _ensure_route(goal: Vector3) -> void:
     route.append(goal)
 
 func _move_toward_goal(delta: float) -> void:
+    if state == "ATTACK":
+        var distance := global_position.distance_to(target.global_position)
+        if distance <= OPTIMAL_RANGE and distance >= MIN_COMBAT_RANGE:
+            var to_target := (target.global_position - global_position).normalized()
+            var strafe := Vector3(-to_target.z, 0.0, to_target.x) * strafe_sign
+            velocity.x = move_toward(velocity.x, strafe.x * 1.5, 10.0 * delta)
+            velocity.z = move_toward(velocity.z, strafe.z * 1.5, 10.0 * delta)
+            look_at(global_position + Vector3(to_target.x, 0.0, to_target.z), Vector3.UP)
+            return
+        if distance < MIN_COMBAT_RANGE:
+            var away := (global_position - target.global_position).normalized()
+            velocity.x = move_toward(velocity.x, away.x * MOVE_SPEED, 12.0 * delta)
+            velocity.z = move_toward(velocity.z, away.z * MOVE_SPEED, 12.0 * delta)
+            look_at(global_position + Vector3(-away.x, 0.0, -away.z), Vector3.UP)
+            return
+
     if route.size() == 0:
         return
 
@@ -155,17 +193,27 @@ func _has_line_of_sight() -> bool:
     return hit.is_empty() or hit.collider == target
 
 func _fire() -> void:
-    if fire_cooldown > 0.0:
+    if fire_cooldown > 0.0 or burst_pause > 0.0:
         return
+    if burst_remaining <= 0:
+        burst_remaining = BURST_SHOTS
+
     fire_cooldown = FIRE_DELAY
+    burst_remaining -= 1
 
     var origin := global_position + Vector3(0, 1.0, 0)
-    var target_position := target.global_position + Vector3(0, 0.5, 0)
-    var query := PhysicsRayQueryParameters3D.create(origin, target_position)
+    var aim := target.global_position + Vector3(0, 0.5, 0)
+    if randf() > ACCURACY:
+        aim += Vector3(randf_range(-0.45, 0.45), randf_range(-0.30, 0.30), randf_range(-0.45, 0.45))
+
+    var query := PhysicsRayQueryParameters3D.create(origin, aim)
     query.exclude = [self]
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
     if not hit.is_empty() and hit.collider == target:
         main.call("_apply_damage", DAMAGE)
+
+    if burst_remaining <= 0:
+        burst_pause = BURST_PAUSE
 
 func take_damage(amount: int) -> void:
     if dead:
@@ -186,6 +234,10 @@ func reset_target() -> void:
     route_index = 0
     last_state = "DEFEND"
     fire_cooldown = 0.0
+    burst_remaining = 0
+    burst_pause = 0.0
+    strafe_time = STRAFE_INTERVAL
+    strafe_sign = 1.0
 
 func _die() -> void:
     dead = true
