@@ -1038,55 +1038,6 @@ func _threat_role_aggression(bot: Node) -> float:
         return 0.18
     return 0.05
 
-
-    var threat_position := squad_threat_position
-    if threat_position == Vector3.ZERO:
-        threat_position = player.global_position
-
-    var distance := bot.global_position.distance_to(threat_position)
-    var slot := int(bot.get("combat_slot"))
-    var score := distance
-
-    if squad_threat_state == "CONTACT":
-        if role == "PRESSURE":
-            score += float(maxi(0, 2 - slot)) * 1.5
-            score -= float(bot.get("health")) * 0.025
-        elif role == "SUPPORT":
-            score += absf(float(slot) - 1.0) * 1.0
-            score += float(maxi(0, 55 - int(bot.get("health")))) * 0.02
-        elif role == "FLANK":
-            score += absf(float(slot) - 1.0) * 0.4
-            score -= absf(float(slot) - 1.0) * 0.8
-    elif squad_threat_state == "TRACKED":
-        if role == "PRESSURE":
-            score -= 2.5
-            score -= float(bot.get("health")) * 0.015
-        elif role == "SUPPORT":
-            score += 1.0
-            score += absf(float(slot) - 1.0) * 0.35
-        elif role == "FLANK":
-            score -= absf(float(slot) - 1.0) * 1.5
-            score += 0.5
-    elif squad_threat_state == "SEARCHING":
-        var center_bias := absf(float(slot) - 2.0)
-        if role == "PRESSURE":
-            score += center_bias * 2.0
-            score -= 2.0
-        elif role == "SUPPORT":
-            score += absf(float(slot) - 0.0) * 0.8
-        elif role == "FLANK":
-            score += absf(float(slot) - 1.0) * 0.4
-            score -= 0.8
-    else:
-        if role == "PRESSURE":
-            score += 4.0
-        elif role == "SUPPORT":
-            score += 1.0
-        elif role == "FLANK":
-            score += 1.5
-
-    return score
-
 func _select_threat_role_bot(candidates: Array[Node], role: String, previous_roles: Dictionary) -> Node:
     var selected: Node = null
     var best_score := INF
