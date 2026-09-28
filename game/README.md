@@ -260,3 +260,9 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - **CONTACT / FLANK** receives a wider lateral engagement window while retaining a stronger health requirement.
 - **TRACKED** can reposition toward the tracked threat but remains conservative because stale information does not authorize blind fire.
 - **SEARCHING** and **LOST** remain non-aggressive states; the dedicated search/defense logic controls movement.
+
+
+### Bot fire discipline
+- Bot fire now respects the explicit `FIRE_RANGE` limit instead of firing at any target that happens to have a clear raycast.
+- Attempts to fire beyond that range cancel the pending burst rather than carrying it into a later engagement.
+- The existing threat gate still requires `CONTACT` plus direct line of sight before a shot can be taken.
