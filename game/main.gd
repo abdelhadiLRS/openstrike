@@ -407,7 +407,9 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         ammo = snapshot.ammo
         reserve = snapshot.reserve
 
-    if not dead and OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position):
+    var position_correction_needed := OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position)
+    var rotation_correction_needed := OpenStrikeReconciliation.rotation_correction_needed(snapshot.yaw, player.rotation.y, snapshot.pitch, pitch)
+    if not dead and (position_correction_needed or rotation_correction_needed):
         prediction_replay_position = snapshot.position
         prediction_replay_velocity = snapshot.velocity
         prediction_replay_yaw = snapshot.yaw
@@ -420,8 +422,12 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         if pending_prediction_replay:
             network_diagnostics.record_prediction_correction()
         else:
-            player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
-            player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.25)
+            if position_correction_needed:
+                player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
+                player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.25)
+            if rotation_correction_needed:
+                player.rotation.y = OpenStrikeReconciliation.corrected_angle(snapshot.yaw, player.rotation.y, 0.35)
+                pitch = OpenStrikeReconciliation.corrected_angle(snapshot.pitch, pitch, 0.35)
 
 
 func _replay_pending_prediction(delta: float) -> void:
