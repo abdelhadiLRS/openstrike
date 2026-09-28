@@ -1522,7 +1522,13 @@ func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
             var route: Array = []
             for index in indices:
                 route.append(points[index])
-            if route.is_empty() or route[route.size() - 1].distance_to(goal) > WAYPOINT_REACHED:
+            if route.is_empty():
+                return []
+            if not _navigation_visible(start, route[0]):
+                return []
+            if route[route.size() - 1].distance_to(goal) > WAYPOINT_REACHED:
+                if not _navigation_visible(route[route.size() - 1], goal):
+                    return []
                 route.append(goal)
             return _simplify_navigation_route(route)
 
