@@ -105,3 +105,9 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Attackers periodically request a new validated peek position after a short reposition interval, with occupancy and line-of-sight checks.
 - Repositioning is a dedicated movement state, so the bot can travel to the new angle without immediately cancelling the maneuver through the normal combat-intent loop.
 - The shared selector favors useful lateral separation around the player while preserving cover-to-peek geometry.
+
+
+### Navigation and pathfinding
+- The procedural waypoint network is now compiled into a static visibility graph after the graybox geometry is created.
+- Bot route selection uses A* with Euclidean distance as the heuristic instead of breadth-first search, so longer detours are compared by travel cost.
+- Start and goal anchors still require direct visibility, while the cached graph handles repeated static-obstacle routing more efficiently.
