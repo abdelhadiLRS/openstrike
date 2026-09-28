@@ -204,6 +204,20 @@ func _ensure_route(goal: Vector3) -> void:
     route_index = 0
 
 func _move_toward_goal(delta: float) -> void:
+    if state == "BOMB_COVER" and str(main.get("objective_state")) == "PLANTED":
+        var bomb_cover_offset := current_goal - global_position
+        bomb_cover_offset.y = 0.0
+        if bomb_cover_offset.length() <= COVER_REACHED:
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+            var bomb_look := (target.global_position - global_position).normalized()
+            look_at(global_position + Vector3(bomb_look.x, 0.0, bomb_look.z), Vector3.UP)
+            if _has_line_of_sight():
+                var side := Vector3(-bomb_look.z, 0.0, bomb_look.x) * strafe_sign
+                velocity.x = move_toward(velocity.x, side.x * 0.8, 6.0 * delta)
+                velocity.z = move_toward(velocity.z, side.z * 0.8, 6.0 * delta)
+            return
+
     if state == "ATTACK":
         var distance := global_position.distance_to(target.global_position)
         if distance <= OPTIMAL_RANGE and distance >= MIN_COMBAT_RANGE:
