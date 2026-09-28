@@ -258,6 +258,8 @@ func _physics_process(delta: float) -> void:
     )
     command.buy_weapon_id = pending_buy_weapon_id
     command.switch_weapon = pending_switch_weapon
+    if pending_buy_weapon_id != "":
+        command.weapon_id = pending_buy_weapon_id
     pending_look_delta = Vector2.ZERO
     pending_buy_weapon_id = ""
     pending_switch_weapon = false
