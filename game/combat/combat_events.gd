@@ -9,8 +9,13 @@ var tick: int = 0
 var validator := OpenStrikeCombatValidator.new()
 var history: Array[OpenStrikeCombatEvent] = []
 
-func advance_tick() -> int:
+func _ready() -> void:
+	process_physics_priority = -100
+
+func _physics_process(_delta: float) -> void:
 	tick += 1
+
+func advance_tick() -> int:
 	return tick
 
 func record(event: OpenStrikeCombatEvent) -> void:
