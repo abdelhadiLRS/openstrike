@@ -235,6 +235,7 @@ func _update_round_state(delta: float) -> void:
             round_state = "LIVE"
             round_state_time_left = ROUND_TIME
             round_time_left = ROUND_TIME
+            _set_bots_active(true)
     elif round_state == "LIVE":
         round_time_left = maxf(0.0, round_time_left - delta)
         round_state_time_left = round_time_left
@@ -574,6 +575,7 @@ func _update_hud() -> void:
 
 func _start_round() -> void:
     _reset_targets()
+    _set_bots_active(false)
     primary_owned = false
     weapon_index = 1
     ammo = int(weapons[1]["mag"])
@@ -637,6 +639,7 @@ func _finish_round(won: bool) -> void:
         return
     round_state = "POST"
     round_state_time_left = POST_ROUND_TIME
+    _set_bots_active(false)
     round_won = won
     if won:
         team_score += 1
@@ -658,6 +661,12 @@ func _reset_targets() -> void:
             spawn_index += 1
             count += 1
     enemies_alive = count
+
+func _set_bots_active(active: bool) -> void:
+    var mode := Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+    for bot in bots:
+        if is_instance_valid(bot):
+            bot.process_mode = mode
 
 func _update_bots(delta: float) -> void:
     if round_state != "LIVE":
