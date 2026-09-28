@@ -68,6 +68,8 @@ var tactical_memory_revision := -1
 var combat_reposition_goal := Vector3.ZERO
 var route_goal := Vector3.ZERO
 var route_replan_timer := 0.0
+var search_goal := Vector3.ZERO
+var search_revision := -1
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -135,6 +137,23 @@ func _update_state() -> void:
     if objective_state == "DROPPED":
         combat_intent = "HOLD"
         state = "DEFEND"
+        return
+
+    if bool(main.call("_is_squad_search_active")) and combat_intent == "HOLD" and not _has_line_of_sight():
+        state = "SEARCH"
+        return
+
+    if state == "SEARCH":
+        if _has_line_of_sight():
+            state = "ATTACK" if combat_intent == "PUSH" else "DEFEND"
+            route.clear()
+            route_index = 0
+            return
+        if not bool(main.call("_is_squad_search_active")):
+            state = "DEFEND"
+            route.clear()
+            route_index = 0
+            return
         return
 
     if state == "REPOSITION":
@@ -260,6 +279,18 @@ func _update_goal() -> void:
         _ensure_route(current_goal)
         return
 
+    if state == "SEARCH":
+        var active_search_revision := int(main.get("squad_search_revision"))
+        if search_revision != active_search_revision or search_goal == Vector3.ZERO:
+            var selected_search_goal = main.call("_get_bot_squad_search_goal", self)
+            search_goal = selected_search_goal if selected_search_goal is Vector3 else Vector3.ZERO
+            search_revision = active_search_revision
+            route.clear()
+            route_index = 0
+        current_goal = search_goal
+        _ensure_route(current_goal)
+        return
+
     if state == "ATTACK":
         if combat_reposition_timer <= 0.0:
             var tactical_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
@@ -380,6 +411,16 @@ func _move_toward_goal(delta: float) -> void:
                 var side := Vector3(-bomb_look.z, 0.0, bomb_look.x) * strafe_sign
                 velocity.x = move_toward(velocity.x, side.x * 0.8, 6.0 * delta)
                 velocity.z = move_toward(velocity.z, side.z * 0.8, 6.0 * delta)
+            return
+
+    if state == "SEARCH":
+        var search_offset := current_goal - global_position
+        search_offset.y = 0.0
+        if search_offset.length() <= COVER_REACHED:
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+            var search_look := (current_goal - global_position).normalized()
+            look_at(global_position + Vector3(search_look.x, 0.0, search_look.z), Vector3.UP)
             return
 
     if state == "ATTACK":
@@ -529,6 +570,8 @@ func reset_target() -> void:
     combat_decision_timer = 0.0
     recently_hit_timer = 0.0
     combat_reposition_timer = 0.0
+    search_goal = Vector3.ZERO
+    search_revision = -1
     fire_cooldown = 0.0
     burst_remaining = 0
     burst_pause = 0.0
