@@ -33,6 +33,11 @@ const ROUTE_REPLAN_INTERVAL := 1.2
 const ROUTE_GOAL_CHANGE_DISTANCE := 2.5
 
 var team := "RED"
+var network_bot_id := 0
+var network_target_position := Vector3.ZERO
+var network_target_velocity := Vector3.ZERO
+var network_target_yaw := 0.0
+var network_snapshot_fresh := false
 var max_health := 100
 var health := 100
 var dead := false
@@ -96,6 +101,10 @@ func _ready() -> void:
     target = main.get("player")
 
 func _physics_process(delta: float) -> void:
+    var network_session = main.get("network_session") if main != null else null
+    if network_session != null and network_session.is_online and not network_session.is_server:
+        _update_network_presentation(delta)
+        return
     if dead:
         return
 
@@ -944,6 +953,40 @@ func _move_toward_goal(delta: float) -> void:
     velocity.z = move_toward(velocity.z, direction.z * speed, 12.0 * delta)
     look_at(global_position + Vector3(direction.x, 0.0, direction.z), Vector3.UP)
 
+func apply_network_snapshot(snapshot: Dictionary) -> void:
+	if snapshot.is_empty():
+		return
+	network_target_position = snapshot.get("position", global_position)
+	network_target_velocity = snapshot.get("velocity", Vector3.ZERO)
+	network_target_yaw = float(snapshot.get("yaw", rotation.y))
+	network_snapshot_fresh = true
+	health = int(snapshot.get("health", health))
+	var snapshot_dead := bool(snapshot.get("dead", false))
+	state = str(snapshot.get("state", state))
+	combat_assignment = str(snapshot.get("assignment", combat_assignment))
+	if snapshot_dead and not dead:
+		dead = true
+		velocity = Vector3.ZERO
+		visible = false
+		if collision_shape:
+			collision_shape.disabled = true
+		collision_layer = 0
+		collision_mask = 0
+	elif not snapshot_dead and dead:
+		dead = false
+		visible = true
+		if collision_shape:
+			collision_shape.disabled = false
+		collision_layer = 1
+		collision_mask = 1
+
+func _update_network_presentation(delta: float) -> void:
+	if not network_snapshot_fresh:
+		return
+	global_position = global_position.lerp(network_target_position, minf(delta * 14.0, 1.0))
+	velocity = network_target_velocity
+	rotation.y = lerp_angle(rotation.y, network_target_yaw, minf(delta * 16.0, 1.0))
+	visible = not dead
 func _has_line_of_sight() -> bool:
     var origin := global_position + Vector3(0, 1.0, 0)
     var target_position := target.global_position + Vector3(0, 0.5, 0)
