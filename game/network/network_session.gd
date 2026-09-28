@@ -269,10 +269,20 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 			shooter.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, shooter.credits + KILL_REWARD)
 			if events != null:
 				events.emit_elimination(str(shooter.peer_id), str(best_target.peer_id), shooter.weapon_id, true)
+	elif root.has_method("apply_authoritative_network_damage") and best_target == root.get("player"):
+		var was_alive := not bool(root.get("dead"))
+		if root.apply_authoritative_network_damage(damage):
+			if events != null:
+				events.emit_hit(str(shooter.peer_id), "host", shooter.weapon_id, damage, root.get("player").global_position, true)
+			if was_alive and bool(root.get("dead")):
+				shooter.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, shooter.credits + KILL_REWARD)
+				if events != null:
+					events.emit_elimination(str(shooter.peer_id), "host", shooter.weapon_id, true)
 	elif best_target.has_method("take_damage") and target_team != "BLUE":
 		best_target.take_damage(damage)
 		if events != null:
 			events.emit_hit(str(shooter.peer_id), str(best_target.get_instance_id()), shooter.weapon_id, damage, best_target.global_position, true)
+
 
 func _snapshot_server_players(delta: float) -> void:
 	var root := _root()
