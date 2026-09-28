@@ -240,6 +240,10 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	health = snapshot.health
 	dead = snapshot.dead
 	last_processed_sequence = snapshot.acknowledged_input_sequence
+	for weapon_value in weapon_states.keys():
+		var state = weapon_states.get(weapon_value)
+		if state is OpenStrikeWeaponRuntimeState:
+			state.owned = snapshot.owned_weapons.has(str(weapon_value))
 	if snapshot.weapon_id != "":
 		_select_weapon(snapshot.weapon_id)
 	var state := _weapon_state()
