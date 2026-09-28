@@ -333,8 +333,14 @@ func _update_bot_defuse(delta: float) -> void:
         active_defuser = null
         bot_defuse_time_left = 0.0
 
+    if active_defuser != null:
+        var defuser_distance := active_defuser.global_position.distance_to(site_position)
+        if defuser_distance > BOMB_SITE_RADIUS:
+            active_defuser = null
+            bot_defuse_time_left = 0.0
+            bomb_defense_revision += 1
+
     if active_defuser == null:
-        var previous_defuser: Node = active_defuser
         var nearest_bot: Node = null
         var nearest_distance := INF
         for bot in bots:
@@ -348,8 +354,7 @@ func _update_bot_defuse(delta: float) -> void:
         if nearest_bot != null:
             active_defuser = nearest_bot
             bot_defuse_time_left = DEFUSE_TIME
-            if active_defuser != previous_defuser:
-                bomb_defense_revision += 1
+            bomb_defense_revision += 1
 
     if active_defuser != null:
         var defuser_distance := active_defuser.global_position.distance_to(site_position)
