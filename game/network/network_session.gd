@@ -641,7 +641,7 @@ func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 		return false
 	if snapshot.schema_version != SNAPSHOT_SCHEMA_VERSION:
 		return false
-	if not _valid_bot_roster_payload(snapshot):
+	if not _valid_snapshot_payload(snapshot):
 		return false
 	var peer_id := snapshot.peer_id
 	var last_round := int(last_received_snapshot_round_by_peer.get(peer_id, -1))
@@ -654,6 +654,27 @@ func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 	last_received_snapshot_round_by_peer[peer_id] = snapshot.round_number
 	last_received_snapshot_tick_by_peer[peer_id] = snapshot.tick
 	return true
+
+func _valid_snapshot_payload(snapshot: OpenStrikeSnapshot) -> bool:
+	if snapshot.tick < 0 or snapshot.round_number < 1:
+		return false
+	if not snapshot.position.is_finite() or not snapshot.velocity.is_finite():
+		return false
+	if not snapshot.dropped_bomb_position.is_finite():
+		return false
+	if not is_finite(snapshot.yaw) or not is_finite(snapshot.pitch):
+		return false
+	if not is_finite(snapshot.bomb_time_left) or snapshot.bomb_time_left < 0.0:
+		return false
+	if not is_finite(snapshot.objective_action_time_left) or snapshot.objective_action_time_left < 0.0:
+		return false
+	if snapshot.health < 0 or snapshot.health > 100:
+		return false
+	if snapshot.ammo < 0 or snapshot.reserve < 0:
+		return false
+	if snapshot.credits < 0 or snapshot.credits > OpenStrikeNetworkPlayer.MAX_CREDITS:
+		return false
+	return _valid_bot_roster_payload(snapshot)
 
 func _valid_bot_roster_payload(snapshot: OpenStrikeSnapshot) -> bool:
 	if snapshot.bot_count < 0 or snapshot.bot_count > 15:
