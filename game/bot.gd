@@ -520,7 +520,7 @@ func _update_goal() -> void:
     if role == "ROAMER":
         defend_site = "B" if int(Time.get_ticks_msec() / 5000.0) % 2 == 0 else "A"
     var site_position: Vector3 = main.get("bomb_site_a") if defend_site == "A" else main.get("bomb_site_b")
-    var tactical_cover = main.call("_select_bot_site_cover", site_position, target.global_position, role)
+    var tactical_cover = main.call("_select_bot_site_cover", self, site_position, target.global_position, role)
     if tactical_cover is Vector3 and tactical_cover != Vector3.ZERO:
         current_goal = tactical_cover
     else:
