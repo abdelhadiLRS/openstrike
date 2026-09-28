@@ -12,6 +12,7 @@ signal peer_input_received(peer_id: int, command: OpenStrikeInputCommand)
 signal snapshot_received(snapshot: OpenStrikeSnapshot)
 signal peer_connected(peer_id: int)
 signal peer_disconnected(peer_id: int)
+signal input_rejected(peer_id: int, command: OpenStrikeInputCommand)
 
 var server_input_buffer := OpenStrikeServerInputBuffer.new()
 var server_tick := 0
@@ -488,6 +489,7 @@ func _submit_input(payload: Dictionary) -> void:
 	command.objective = bool(payload.get("objective", false))
 	var peer_id := multiplayer.get_remote_sender_id()
 	if peer_id <= 0 or not server_input_buffer.submit(peer_id, command, server_tick):
+		input_rejected.emit(peer_id, command)
 		return
 	input_received.emit(command)
 	peer_input_received.emit(peer_id, command)
