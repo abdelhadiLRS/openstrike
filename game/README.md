@@ -84,6 +84,7 @@ The prototype remains offline by default. Optional user arguments can start the 
 - `--server`: start as the authoritative host
 - `--port=27015`: choose the ENet port
 - `--max-clients=16`: cap connected clients
+- `--bots=3`: choose the number of AI bots (0..15)
 - `--connect=127.0.0.1`: connect as a client to a host
 - `--help`: print the OpenStrike network launch options
 
@@ -93,6 +94,7 @@ Examples:
 
 - Server: `godot --path game -- --server --port=27015 --max-clients=8`
 - Client: `godot --path game -- --connect=127.0.0.1 --port=27015`
+- Server with a custom bot count: `godot --path game -- --server --port=27015 --bots=5`
 
 The flags are parsed only at startup; without them the existing offline flow is unchanged.
 
