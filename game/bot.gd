@@ -943,6 +943,7 @@ func take_damage(amount: int) -> void:
     route.clear()
     route_index = 0
     route_goal = Vector3.ZERO
+    route_failed_goal = Vector3.ZERO
     route_replan_timer = 0.0
     if health == 0:
         _die()
