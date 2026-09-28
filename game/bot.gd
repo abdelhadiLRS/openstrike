@@ -31,6 +31,9 @@ const COMBAT_REPOSITION_INTERVAL := 3.5
 const COMBAT_REPOSITION_MIN_DISTANCE := 3.0
 const ROUTE_REPLAN_INTERVAL := 1.2
 const ROUTE_GOAL_CHANGE_DISTANCE := 2.5
+const NETWORK_SNAPSHOT_STALE_TIME := 0.35
+const NETWORK_EXTRAPOLATION_TIME := 0.12
+const NETWORK_SNAP_DISTANCE := 6.0
 
 var team := "RED"
 var network_bot_id := 0
@@ -38,6 +41,8 @@ var network_target_position := Vector3.ZERO
 var network_target_velocity := Vector3.ZERO
 var network_target_yaw := 0.0
 var network_snapshot_fresh := false
+var network_snapshot_age := 0.0
+var network_round_number := 0
 var max_health := 100
 var health := 100
 var dead := false
@@ -1001,9 +1006,23 @@ func _move_toward_goal(delta: float) -> void:
 func apply_network_snapshot(snapshot: Dictionary) -> void:
 	if snapshot.is_empty():
 		return
+	var snapshot_round := int(snapshot.get("round_number", network_round_number))
+	if network_round_number != snapshot_round:
+		network_round_number = snapshot_round
+		network_snapshot_age = 0.0
+		network_snapshot_fresh = false
+		velocity = Vector3.ZERO
+		global_position = snapshot.get("position", global_position)
+		dead = false
+		visible = true
+		if collision_shape:
+			collision_shape.disabled = false
+		collision_layer = 1
+		collision_mask = 1
 	network_target_position = snapshot.get("position", global_position)
 	network_target_velocity = snapshot.get("velocity", Vector3.ZERO)
 	network_target_yaw = float(snapshot.get("yaw", rotation.y))
+	network_snapshot_age = 0.0
 	network_snapshot_fresh = true
 	health = int(snapshot.get("health", health))
 	var snapshot_dead := bool(snapshot.get("dead", false))
@@ -1028,10 +1047,20 @@ func apply_network_snapshot(snapshot: Dictionary) -> void:
 func _update_network_presentation(delta: float) -> void:
 	if not network_snapshot_fresh:
 		return
-	global_position = global_position.lerp(network_target_position, minf(delta * 14.0, 1.0))
-	velocity = network_target_velocity
+	network_snapshot_age += delta
+	if network_snapshot_age <= NETWORK_EXTRAPOLATION_TIME:
+		var predicted_position := network_target_position + network_target_velocity * network_snapshot_age
+		if global_position.distance_to(predicted_position) > NETWORK_SNAP_DISTANCE:
+			global_position = network_target_position
+		else:
+			global_position = global_position.lerp(predicted_position, minf(delta * 18.0, 1.0))
+	else:
+		global_position = global_position.lerp(network_target_position, minf(delta * 10.0, 1.0))
+	velocity = network_target_velocity if network_snapshot_age <= NETWORK_SNAPSHOT_STALE_TIME else Vector3.ZERO
 	rotation.y = lerp_angle(rotation.y, network_target_yaw, minf(delta * 16.0, 1.0))
 	visible = not dead
+	if network_snapshot_age > NETWORK_SNAPSHOT_STALE_TIME:
+		velocity = Vector3.ZERO
 func _has_line_of_sight() -> bool:
     var origin := global_position + Vector3(0, 1.0, 0)
     var target_position := target.global_position + Vector3(0, 0.5, 0)
@@ -1092,6 +1121,12 @@ func take_damage(amount: int, source_id: String = "player") -> void:
         _die()
 
 func reset_target() -> void:
+    network_snapshot_fresh = false
+    network_snapshot_age = 0.0
+    network_round_number = 0
+    network_target_position = Vector3.ZERO
+    network_target_velocity = Vector3.ZERO
+    network_target_yaw = 0.0
     health = max_health
     dead = false
     last_damage_source_id = ""
