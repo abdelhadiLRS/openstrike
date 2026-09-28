@@ -10,6 +10,8 @@ signal connection_failed
 signal input_received(command: OpenStrikeInputCommand)
 signal peer_input_received(peer_id: int, command: OpenStrikeInputCommand)
 signal snapshot_received(snapshot: OpenStrikeSnapshot)
+signal peer_connected(peer_id: int)
+signal peer_disconnected(peer_id: int)
 
 var server_input_buffer := OpenStrikeServerInputBuffer.new()
 var server_tick := 0
@@ -25,6 +27,10 @@ var is_server := false
 var is_online := false
 var local_input_sequence := 0
 var last_server_sequence := 0
+
+func _ready() -> void:
+	multiplayer.peer_connected.connect(_on_peer_connected)
+	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
 func host(port: int = DEFAULT_PORT, max_clients: int = MAX_CLIENTS) -> Error:
 	_shutdown_peer()
@@ -63,6 +69,15 @@ func shutdown() -> void:
 	is_online = false
 	is_server = false
 	disconnected.emit()
+
+func _on_peer_connected(peer_id: int) -> void:
+	if is_server and peer_id > 0:
+		peer_connected.emit(peer_id)
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	if peer_id > 0:
+		server_input_buffer.clear_peer(peer_id)
+		peer_disconnected.emit(peer_id)
 
 func set_server_tick(tick: int) -> void:
 	server_tick = maxi(0, tick)
