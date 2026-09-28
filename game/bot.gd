@@ -81,6 +81,7 @@ var combat_director_fire_ready := false
 var squad_threat_state := "LOST"
 var squad_threat_position := Vector3.ZERO
 var squad_threat_revision := -1
+var applied_threat_revision := -1
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -124,7 +125,18 @@ func _physics_process(delta: float) -> void:
         combat_director_fire_ready = bool(director.get("fire_ready", false))
         squad_threat_state = str(director.get("threat", "LOST"))
         squad_threat_position = director.get("threat_position", Vector3.ZERO)
-        squad_threat_revision = int(director.get("threat_revision", -1))
+        var next_threat_revision := int(director.get("threat_revision", -1))
+        if next_threat_revision != applied_threat_revision:
+            applied_threat_revision = next_threat_revision
+            combat_decision_timer = 0.0
+            combat_reposition_timer = 0.0
+            combat_reposition_goal = Vector3.ZERO
+            route.clear()
+            route_index = 0
+            route_goal = Vector3.ZERO
+            if squad_threat_state != "CONTACT":
+                combat_intent = "HOLD"
+        squad_threat_revision = next_threat_revision
         var next_role_revision := int(director.get("role_revision", -1))
         if next_role_revision != combat_role_revision:
             combat_role_revision = next_role_revision
@@ -148,7 +160,8 @@ func _physics_process(delta: float) -> void:
     _move_toward_goal(delta)
 
     var director_can_fire := combat_director_fire_ready or combat_assignment == "PRESSURE"
-    if (state == "ATTACK" or state == "FLANK" or state == "SUPPRESS" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION") and _has_line_of_sight() and director_can_fire:
+    var threat_allows_fire := squad_threat_state == "CONTACT"
+    if (state == "ATTACK" or state == "FLANK" or state == "SUPPRESS" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION") and threat_allows_fire and _has_line_of_sight() and director_can_fire:
         _fire()
 
     if not is_on_floor():
@@ -310,6 +323,18 @@ func _decide_combat_intent() -> void:
         return
 
     if distance > DETECTION_RANGE:
+        combat_intent = "HOLD"
+        return
+
+    if squad_threat_state == "SEARCHING":
+        combat_intent = "HOLD"
+        return
+
+    if squad_threat_state == "TRACKED" and not has_los:
+        combat_intent = "HOLD"
+        return
+
+    if squad_threat_state == "LOST":
         combat_intent = "HOLD"
         return
 
@@ -754,6 +779,7 @@ func reset_target() -> void:
     combat_director_revision = -1
     combat_role_revision = -1
     combat_director_fire_ready = false
+    applied_threat_revision = -1
     fire_cooldown = 0.0
     burst_remaining = 0
     burst_pause = 0.0
