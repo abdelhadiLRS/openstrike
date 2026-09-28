@@ -97,6 +97,7 @@ var bomb_cover_anchors: Array[Dictionary] = []
 var combat_slot_update_timer := 0.0
 var combat_assignment_update_timer := 0.0
 var combat_engagement_revision := 0
+var combat_assignment_contact_revision := -1
 var tactical_memory_position := Vector3.ZERO
 var tactical_memory_timer := 0.0
 var tactical_memory_revision := 0
@@ -521,6 +522,7 @@ func _start_round() -> void:
     combat_slot_update_timer = 0.0
     combat_assignment_update_timer = 0.0
     combat_engagement_revision += 1
+    combat_assignment_contact_revision = -1
     dropped_bomb_position = Vector3.ZERO
     tactical_memory_position = Vector3.ZERO
     tactical_memory_timer = 0.0
@@ -569,12 +571,11 @@ func _update_bots(delta: float) -> void:
         combat_slot_update_timer = COMBAT_SLOT_UPDATE_INTERVAL
 
     combat_assignment_update_timer = maxf(0.0, combat_assignment_update_timer - delta)
-    var contact_revision_changed := squad_contact_revision != combat_engagement_revision
+    var contact_revision_changed := squad_contact_revision != combat_assignment_contact_revision
     if combat_assignment_update_timer <= 0.0 or contact_revision_changed:
         _update_combat_assignments()
         combat_assignment_update_timer = COMBAT_ASSIGNMENT_UPDATE_INTERVAL
-        if contact_revision_changed:
-            combat_engagement_revision = squad_contact_revision
+        combat_assignment_contact_revision = squad_contact_revision
 
     for bot in bots:
         if is_instance_valid(bot) and not bot.dead:
