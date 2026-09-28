@@ -387,7 +387,9 @@ func _snapshot_server_players(delta: float) -> void:
 			int(root.get("round_number")),
 			str(root.get("objective_state")),
 			str(root.get("planted_site")),
-			float(root.get("bomb_time_left"))
+			float(root.get("bomb_time_left")),
+			bool(root.get("round_won")),
+			str(root.get("round_outcome_reason"))
 		)
 		broadcast_snapshot(snapshot)
 
