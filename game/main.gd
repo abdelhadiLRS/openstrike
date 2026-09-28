@@ -344,6 +344,8 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     if snapshot.round_state != "":
         round_state = snapshot.round_state
     round_number = snapshot.round_number
+    round_won = snapshot.round_won
+    round_outcome_reason = snapshot.round_outcome_reason
     objective_state = snapshot.objective_state
     planted_site = snapshot.planted_site
     bomb_time_left = snapshot.bomb_time_left
