@@ -87,6 +87,7 @@ var cover_points: Array[Dictionary] = []
 var bomb_cover_anchors: Array[Dictionary] = []
 var combat_slot_update_timer := 0.0
 var combat_assignment_update_timer := 0.0
+var combat_engagement_revision := 0
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -494,6 +495,7 @@ func _start_round() -> void:
     bomb_defense_revision += 1
     combat_slot_update_timer = 0.0
     combat_assignment_update_timer = 0.0
+    combat_engagement_revision += 1
     dropped_bomb_position = Vector3.ZERO
 
 func _finish_round(won: bool) -> void:
@@ -561,6 +563,8 @@ func _update_combat_assignments() -> void:
         var candidate_score := distance + maxf(0.0, 70.0 - float(health_value)) * 0.08
         if slot == 2:
             candidate_score -= 1.5
+        if str(bot.get("combat_assignment")) == "PRESSURE":
+            candidate_score -= 1.0
         if candidate_score < pressure_score:
             pressure_score = candidate_score
             pressure_bot = bot
@@ -573,6 +577,8 @@ func _update_combat_assignments() -> void:
         var candidate_score := float(health_value) + distance * 0.35
         if health_value < 55:
             candidate_score -= 25.0
+        if str(bot.get("combat_assignment")) == "SUPPORT":
+            candidate_score -= 1.0
         if candidate_score < support_score:
             support_score = candidate_score
             support_bot = bot
@@ -585,20 +591,30 @@ func _update_combat_assignments() -> void:
         var candidate_score := distance
         if slot == 0 or slot == 1:
             candidate_score -= 2.0
+        if str(bot.get("combat_assignment")) == "FLANK":
+            candidate_score -= 1.0
         if candidate_score < flank_score:
             flank_score = candidate_score
             flank_bot = bot
 
     if active_bots.size() == 1:
         active_bots[0].set("combat_assignment", "PRESSURE")
+        active_bots[0].set("combat_engagement", "PRESSURE")
         return
 
     if pressure_bot != null:
         pressure_bot.set("combat_assignment", "PRESSURE")
+        pressure_bot.set("combat_engagement", "PRESSURE")
+
     if support_bot != null:
         support_bot.set("combat_assignment", "SUPPORT")
+        support_bot.set("combat_engagement", "HANDOFF" if pressure_bot == null or bool(pressure_bot.get("dead")) else "PRESSURE")
+
     if flank_bot != null:
         flank_bot.set("combat_assignment", "FLANK")
+        flank_bot.set("combat_engagement", "FLANK")
+
+    combat_engagement_revision += 1
 
 func _update_combat_slots() -> void:
     if not is_instance_valid(player):
