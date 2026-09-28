@@ -3,6 +3,9 @@ extends RefCounted
 
 ## Authoritative state replicated from the server.
 ## Keep this payload small and deterministic so it can be sent at a fixed rate.
+const SCHEMA_VERSION := 2
+
+var schema_version: int = SCHEMA_VERSION
 var tick: int = 0
 var peer_id: int = 0
 var acknowledged_input_sequence: int = 0
@@ -35,6 +38,7 @@ var bot_states: Array[Dictionary] = []
 
 func to_dict() -> Dictionary:
 	return {
+		"schema": SCHEMA_VERSION,
 		"tick": tick,
 		"peer_id": peer_id,
 		"ack": acknowledged_input_sequence,
@@ -68,6 +72,7 @@ func to_dict() -> Dictionary:
 
 static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	var snapshot := OpenStrikeSnapshot.new()
+	snapshot.schema_version = int(data.get("schema", 0))
 	snapshot.tick = int(data.get("tick", 0))
 	snapshot.peer_id = int(data.get("peer_id", 0))
 	snapshot.acknowledged_input_sequence = int(data.get("ack", 0))
