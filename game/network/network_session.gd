@@ -725,28 +725,36 @@ func _valid_bot_roster_payload(snapshot: OpenStrikeSnapshot) -> bool:
 	for state_value in snapshot.bot_states:
 		if not state_value is Dictionary:
 			return false
-		var bot_id := int(state_value.get("id", 0))
+		# Validate wire types before any int()/float() conversion. The roster
+		# is authoritative state, so coercible strings are not accepted.
+		if not state_value.has("id") or not state_value.id is int:
+			return false
+		if not state_value.has("round_number") or not state_value.round_number is int:
+			return false
+		if not state_value.has("position") or not state_value.position is Vector3:
+			return false
+		if not state_value.has("velocity") or not state_value.velocity is Vector3:
+			return false
+		if not state_value.has("yaw") or not (state_value.yaw is int or state_value.yaw is float):
+			return false
+		if not state_value.has("health") or not state_value.health is int:
+			return false
+		if not state_value.has("dead") or not state_value.dead is bool:
+			return false
+		if not state_value.has("state") or not state_value.state is String:
+			return false
+		if not state_value.has("assignment") or not state_value.assignment is String:
+			return false
+		var bot_id: int = state_value.id
 		if bot_id <= 0 or bot_id > snapshot.bot_count or seen_ids.has(bot_id):
 			return false
-		var position = state_value.get("position", null)
-		var velocity = state_value.get("velocity", null)
-		var yaw_value = state_value.get("yaw", null)
-		var health_value = state_value.get("health", null)
-		var dead_value = state_value.get("dead", null)
-		var bot_state_value = state_value.get("state", null)
-		var assignment_value = state_value.get("assignment", null)
-		var state_round := int(state_value.get("round_number", snapshot.round_number))
-		if not position is Vector3 or not velocity is Vector3:
+		if not state_value.position.is_finite() or not state_value.velocity.is_finite():
 			return false
-		if not position.is_finite() or not velocity.is_finite():
+		if not is_finite(float(state_value.yaw)):
 			return false
-		if yaw_value == null or not is_finite(float(yaw_value)):
+		if state_value.health < 0 or state_value.health > 100:
 			return false
-		if health_value == null or int(health_value) < 0 or int(health_value) > 100:
-			return false
-		if not dead_value is bool or not bot_state_value is String or not assignment_value is String:
-			return false
-		if state_round != snapshot.round_number:
+		if state_value.round_number != snapshot.round_number:
 			return false
 		seen_ids[bot_id] = true
 	# Require the complete stable ID range at validation time, not only during
