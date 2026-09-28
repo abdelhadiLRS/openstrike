@@ -4,12 +4,19 @@ Original Godot 4 vertical slice for the OpenStrike project.
 
 ## Current systems
 
+- Two-team foundation: BLUE player team and RED opposing team
+- Team-aware target damage filtering
+- Multiple BLUE player spawn points
+- Multiple RED enemy spawn points
+- Round freeze phase before combat
+- Live combat phase with a 120-second round timer
+- Post-round result phase with automatic next-round start
+- Round score tracking
 - Player health and death state
 - Automatic respawn after player death
-- Timed round lifecycle
-- Round win condition when all training targets are eliminated
+- Round win condition when all opposing targets are eliminated
+- Round loss condition when the timer expires
 - Round reset and target restoration
-
 - First-person movement and mouse look
 - Jumping
 - Crouch movement with reduced player height and camera height
@@ -38,15 +45,19 @@ This prototype uses original code and procedurally generated geometry. It does n
 
 Open the `game/` directory in Godot 4 and run `main.tscn`.
 
-## Next development layer
+## Architecture direction
 
-The next gameplay systems are planned around a proper tactical match architecture:
+The tactical match foundation is now organized around:
 
-1. player health and death state
-2. team and spawn system
-3. round lifecycle
-4. buy/economy layer
-5. objective/bomb mode
-6. bots and navigation
-7. LAN multiplayer
-8. dedicated server
+1. team identity
+2. spawn selection
+3. round state machine
+4. player health/death
+5. weapon and ammunition layer
+6. economy/buy layer
+7. objective/bomb mode
+8. bots and navigation
+9. LAN multiplayer
+10. dedicated server
+
+The current enemy units are stationary training targets. AI navigation and networked players are intentionally separate future layers.
