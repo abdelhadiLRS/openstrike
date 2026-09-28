@@ -107,6 +107,8 @@ func _on_peer_disconnected(peer_id: int) -> void:
 		var root := _root()
 		if root != null and root.has_method("set_network_objective_input"):
 			root.set_network_objective_input(peer_id, false)
+		if root != null and root.has_method("on_network_player_disconnected"):
+			root.on_network_player_disconnected(peer_id)
 		peer_disconnected.emit(peer_id)
 
 func _physics_process(delta: float) -> void:
