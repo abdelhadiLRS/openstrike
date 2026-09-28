@@ -832,6 +832,16 @@ func _move_toward_goal(delta: float) -> void:
     waypoint.y = global_position.y
     var offset := waypoint - global_position
     if offset.length() <= WAYPOINT_REACHED:
+        var can_advance_waypoint := true
+        if route_index == 0 and route.size() > 1:
+            var next_waypoint: Vector3 = route[1]
+            can_advance_waypoint = bool(main.call("_navigation_visible", global_position, next_waypoint))
+        if not can_advance_waypoint:
+            var close_direction := offset.normalized()
+            velocity.x = move_toward(velocity.x, close_direction.x * MOVE_SPEED, 12.0 * delta)
+            velocity.z = move_toward(velocity.z, close_direction.z * MOVE_SPEED, 12.0 * delta)
+            look_at(global_position + Vector3(close_direction.x, 0.0, close_direction.z), Vector3.UP)
+            return
         route_index += 1
         if route_index >= route.size():
             velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
@@ -898,66 +908,3 @@ func take_damage(amount: int) -> void:
     route_replan_timer = 0.0
     if health == 0:
         _die()
-
-func reset_target() -> void:
-    health = max_health
-    dead = false
-    visible = true
-    collision_layer = 1
-    collision_mask = 1
-    if collision_shape:
-        collision_shape.disabled = false
-    route.clear()
-    route_index = 0
-    route_goal = Vector3.ZERO
-    route_replan_timer = 0.0
-    close_retreat_route_active = false
-    state = "DEFEND"
-    last_state = "DEFEND"
-    current_goal = Vector3.ZERO
-    cover_index = -1
-    bomb_cover_goal = Vector3.ZERO
-    bomb_cover_site = ""
-    bomb_cover_revision = -1
-    peek_timer = 0.0
-    peek_hold_timer = 0.0
-    combat_intent = "HOLD"
-    combat_assignment = "SUPPORT"
-    combat_engagement = "READY"
-    tactical_memory_position = Vector3.ZERO
-    tactical_memory_timer = 0.0
-    tactical_memory_revision = -1
-    combat_decision_timer = 0.0
-    recently_hit_timer = 0.0
-    combat_reposition_timer = 0.0
-    retreat_cover_goal = Vector3.ZERO
-    search_goal = Vector3.ZERO
-    search_revision = -1
-    squad_contact_position = Vector3.ZERO
-    squad_contact_timer = 0.0
-    squad_contact_revision = -1
-    combat_director_phase = "IDLE"
-    combat_director_command = "HOLD"
-    squad_threat_state = "LOST"
-    squad_threat_position = Vector3.ZERO
-    squad_threat_revision = -1
-    combat_director_revision = -1
-    combat_role_revision = -1
-    combat_director_fire_ready = false
-    applied_threat_revision = -1
-    flank_goal_revision = -1
-    fire_cooldown = 0.0
-    burst_remaining = 0
-    burst_pause = 0.0
-    strafe_time = STRAFE_INTERVAL
-    strafe_sign = 1.0
-
-func _die() -> void:
-    dead = true
-    visible = false
-    if collision_shape:
-        collision_shape.disabled = true
-    collision_layer = 0
-    collision_mask = 0
-    velocity = Vector3.ZERO
-    eliminated.emit(self)
