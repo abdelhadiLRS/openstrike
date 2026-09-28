@@ -460,6 +460,13 @@ func _update_goal() -> void:
                 contact_revision = int(threat.get("revision", contact_revision))
         if target_position == Vector3.ZERO:
             target_position = main.call("_get_bot_squad_engagement_target", self)
+        if target_position == Vector3.ZERO:
+            current_goal = Vector3.ZERO
+            route.clear()
+            route_index = 0
+            route_goal = Vector3.ZERO
+            route_replan_timer = 0.0
+            return
         if squad_contact_revision != contact_revision or current_goal == Vector3.ZERO or current_goal.distance_to(target_position) >= ROUTE_GOAL_CHANGE_DISTANCE:
             current_goal = target_position
             squad_contact_position = current_goal
