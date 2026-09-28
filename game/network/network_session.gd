@@ -111,6 +111,8 @@ func _on_peer_connected(peer_id: int) -> void:
 func _on_peer_disconnected(peer_id: int) -> void:
 	if peer_id > 0:
 		server_input_buffer.clear_peer(peer_id)
+		last_received_snapshot_tick_by_peer.erase(peer_id)
+		last_received_snapshot_round_by_peer.erase(peer_id)
 		var root := _root()
 		if root != null and root.has_method("set_network_objective_input"):
 			root.set_network_objective_input(peer_id, false)
