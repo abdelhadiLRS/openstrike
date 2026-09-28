@@ -1514,21 +1514,53 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
             continue
 
         var occupied := false
+        var spacing_penalty := 0.0
         for other in bots:
             if other == bot or not is_instance_valid(other) or other.dead:
                 continue
+
+            var other_cover: Vector3 = other.get("bomb_cover_goal")
+            var other_peek: Vector3 = other.get("current_goal")
+            if str(other.state) == "BOMB_COVER":
+                if other_cover != Vector3.ZERO and other_cover.distance_to(cover_position) < 2.5:
+                    occupied = true
+                    break
+                if other_peek != Vector3.ZERO and other_peek.distance_to(peek_position) < 4.0:
+                    occupied = true
+                    break
+
             if other.global_position.distance_to(cover_position) < 2.5:
                 occupied = true
                 break
             if str(other.state) == "BOMB_COVER" and other.current_goal.distance_to(cover_position) < 2.5:
                 occupied = true
                 break
+
+            var separation := other.global_position.distance_to(peek_position)
+            if str(other.state) == "BOMB_COVER":
+                if other_cover != Vector3.ZERO:
+                    separation = minf(separation, other_cover.distance_to(peek_position))
+                if other_peek != Vector3.ZERO:
+                    separation = minf(separation, other_peek.distance_to(peek_position))
+            if separation < 4.5:
+                spacing_penalty += (4.5 - separation) * 1.8
+
         if occupied:
             continue
 
         var bot_distance := bot.global_position.distance_to(cover_position)
         var anchor_bonus := -1.0 if str(data["site"]) == str(planted_site) else 0.0
-        var score := site_distance * 1.15 + absf(player_distance - 14.0) * 0.22 + bot_distance * 0.18 + anchor_bonus
+        var player_to_site := site_position - player_position
+        player_to_site.y = 0.0
+        var site_to_peek := peek_position - site_position
+        site_to_peek.y = 0.0
+        var angle_penalty := 0.0
+        if player_to_site.length() > 0.1 and site_to_peek.length() > 0.1:
+            var approach_side := player_to_site.normalized().dot(site_to_peek.normalized())
+            var preferred_side := -1.0 if int(bot.get("combat_slot")) == 0 else (1.0 if int(bot.get("combat_slot")) == 1 else 0.0)
+            angle_penalty = absf(approach_side - preferred_side * 0.65) * 1.2
+
+        var score := site_distance * 1.15 + absf(player_distance - 14.0) * 0.22 + bot_distance * 0.18 + anchor_bonus + spacing_penalty + angle_penalty
         if score < best_score:
             best_score = score
             best = cover_position
