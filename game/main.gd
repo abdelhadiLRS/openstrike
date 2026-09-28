@@ -88,6 +88,8 @@ var cooldown := 0.0
 var recoil_kick := 0.0
 var crouched := false
 var hud: Label
+var network_debug_hud: Label
+var network_debug_visible := false
 var hit_marker: Label
 var damage_flash: ColorRect
 var hit_feedback_timer := 0.0
@@ -213,6 +215,10 @@ func _unhandled_input(event: InputEvent) -> void:
     elif event is InputEventKey and event.pressed and not event.echo:
         if event.keycode == KEY_ESCAPE:
             Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+        elif event.keycode == KEY_F3:
+            network_debug_visible = not network_debug_visible
+            if network_debug_hud != null:
+                network_debug_hud.visible = network_debug_visible
         elif event.keycode == KEY_1 and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_buy_weapon_id = str(weapons[0]["id"])
@@ -1008,9 +1014,42 @@ func _update_hud() -> void:
             weapons[0]["name"], weapons[0]["cost"], weapons[1]["name"], weapons[1]["cost"]
         ]
 
-    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse" % [
+    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse   F3 netgraph" % [
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
         credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive
+    ]
+    _update_network_debug_hud()
+
+func _update_network_debug_hud() -> void:
+    if network_debug_hud == null:
+        return
+    network_debug_hud.visible = network_debug_visible
+    if not network_debug_visible:
+        return
+
+    var mode := "OFFLINE"
+    if network_session != null and network_session.is_online:
+        mode = "SERVER" if network_session.is_server else "CLIENT"
+    var diagnostics := network_diagnostics.snapshot()
+    var reason_text := ""
+    var reasons = diagnostics.get("rejection_reasons", {})
+    if reasons is Dictionary and not reasons.is_empty():
+        var entries: Array[String] = []
+        for reason in reasons.keys():
+            entries.append("%s:%d" % [str(reason), int(reasons[reason])])
+        entries.sort()
+        reason_text = "\nReject reasons: " + ", ".join(entries.slice(0, 4))
+    network_debug_hud.text = "NETGRAPH [%s]\nTX %d  RX %d  ACK %d  PENDING %d\nREJECT %d  GAPS %d  CORR %d  TICK %d%s" % [
+        mode,
+        int(diagnostics.get("sent_commands", 0)),
+        int(diagnostics.get("received_snapshots", 0)),
+        int(diagnostics.get("last_acknowledged_sequence", 0)),
+        prediction.pending_count(),
+        int(diagnostics.get("rejected_inputs", 0)),
+        int(diagnostics.get("snapshot_tick_gaps", 0)),
+        int(diagnostics.get("prediction_corrections", 0)),
+        int(diagnostics.get("last_snapshot_tick", 0)),
+        reason_text
     ]
 
 func _start_round() -> void:
