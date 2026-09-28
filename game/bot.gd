@@ -74,6 +74,7 @@ var squad_contact_position := Vector3.ZERO
 var squad_contact_timer := 0.0
 var squad_contact_revision := -1
 var combat_director_phase := "IDLE"
+var combat_director_command := "HOLD"
 var combat_director_revision := -1
 var combat_director_fire_ready := false
 var collision_shape: CollisionShape3D
@@ -114,6 +115,7 @@ func _physics_process(delta: float) -> void:
     var director = main.call("_get_bot_combat_director", self)
     if director is Dictionary:
         combat_director_phase = str(director.get("phase", "IDLE"))
+        combat_director_command = str(director.get("command", "HOLD"))
         combat_director_revision = int(director.get("revision", -1))
         combat_director_fire_ready = bool(director.get("fire_ready", false))
 
@@ -157,12 +159,32 @@ func _update_state() -> void:
         if combat_assignment == "SUPPORT":
             state = "SUPPRESS"
             return
+        if combat_assignment == "FLANK":
+            state = "FLANK"
+            return
         if not _has_line_of_sight():
             state = "ATTACK" if combat_intent == "PUSH" else "REENGAGE"
             return
 
     if bool(main.call("_is_squad_search_active")) and combat_intent == "HOLD" and not _has_line_of_sight():
         state = "SEARCH"
+        return
+
+    if state == "FLANK":
+        if combat_intent == "RETREAT":
+            state = "COVER"
+            route.clear()
+            route_index = 0
+            return
+        if not bool(main.call("_is_squad_contact_active")):
+            state = "SEARCH" if bool(main.call("_is_squad_search_active")) else "DEFEND"
+            route.clear()
+            route_index = 0
+            return
+        if combat_director_command != "FLANK":
+            state = "ATTACK" if _has_line_of_sight() else "REENGAGE"
+            route.clear()
+            route_index = 0
         return
 
     if state == "SUPPRESS":
@@ -181,6 +203,16 @@ func _update_state() -> void:
             route.clear()
             route_index = 0
         return
+
+    if state == "FLANK":
+        var flank_offset := current_goal - global_position
+        flank_offset.y = 0.0
+        if flank_offset.length() <= COVER_REACHED:
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+            var flank_look := (target.global_position - global_position).normalized()
+            look_at(global_position + Vector3(flank_look.x, 0.0, flank_look.z), Vector3.UP)
+            return
 
     if state == "REENGAGE":
         if _has_line_of_sight():
@@ -355,6 +387,17 @@ func _update_goal() -> void:
             route_index = 0
         current_goal = search_goal
         _ensure_route(current_goal)
+        return
+
+    if state == "FLANK":
+        var flank_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
+        var flank_position = main.call("_select_bot_attack_position", self, flank_target, combat_slot)
+        if flank_position is Vector3 and flank_position != Vector3.ZERO:
+            current_goal = flank_position
+            _ensure_route(current_goal)
+        else:
+            current_goal = flank_target
+            _ensure_route(current_goal)
         return
 
     if state == "SUPPRESS":
@@ -664,6 +707,7 @@ func reset_target() -> void:
     squad_contact_timer = 0.0
     squad_contact_revision = -1
     combat_director_phase = "IDLE"
+    combat_director_command = "HOLD"
     combat_director_revision = -1
     combat_director_fire_ready = false
     fire_cooldown = 0.0
