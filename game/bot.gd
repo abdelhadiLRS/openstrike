@@ -677,8 +677,7 @@ func _select_cover_point() -> void:
 
 func _ensure_route(goal: Vector3) -> void:
     var goal_changed := route_goal == Vector3.ZERO or route_goal.distance_to(goal) >= ROUTE_GOAL_CHANGE_DISTANCE
-    var route_finished := route.is_empty() or route_index >= route.size()
-    if not goal_changed and not route_finished and route_replan_timer > 0.0:
+    if not goal_changed and route_replan_timer > 0.0:
         return
 
     route = main.call("_find_navigation_route", global_position, goal)
