@@ -189,6 +189,7 @@ func _ready() -> void:
     add_child(network_session)
     network_session.snapshot_received.connect(_on_authoritative_snapshot)
     network_session.input_rejected.connect(_on_network_input_rejected)
+    network_session.input_rejected_reason.connect(_on_network_input_rejected_reason)
     bomb_site_a = BOMB_SITE_A
     bomb_site_b = BOMB_SITE_B
     _world()
@@ -354,6 +355,9 @@ func _physics_process(delta: float) -> void:
 
 func _on_network_input_rejected(_peer_id: int, _command: OpenStrikeInputCommand) -> void:
 	network_diagnostics.record_rejected_input()
+
+func _on_network_input_rejected_reason(_peer_id: int, _command: OpenStrikeInputCommand, reason: String) -> void:
+	network_diagnostics.record_rejection_reason(reason)
 
 
 func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
