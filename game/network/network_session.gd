@@ -205,7 +205,6 @@ func _process_server_input(peer_id: int) -> void:
 		player.apply_input(command, input_step, round_state)
 		if root != null and root.has_method("set_network_objective_input"):
 			root.set_network_objective_input(peer_id, command.objective)
-		player.record_snapshot(command.tick)
 		if command.fire and round_state == "LIVE":
 			_process_server_fire(player, command)
 
@@ -404,10 +403,13 @@ func _snapshot_server_players(delta: float) -> void:
 		var respawn_player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
 		if is_instance_valid(respawn_player):
 			respawn_player.tick_respawn(delta, current_round_state, _spawn_position_for_peer(int(peer_id)))
+		_process_server_input(int(peer_id))
 		var player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
 		if is_instance_valid(player):
+			# History is keyed to the server simulation tick, not the client command tick.
+			# A late command is simulated now, so labeling that resulting state with its
+			# old client tick would make the rewind history non-monotonic and inaccurate.
 			player.record_snapshot(server_tick)
-		_process_server_input(int(peer_id))
 
 	snapshot_accumulator += delta
 	if snapshot_accumulator < snapshot_interval:
