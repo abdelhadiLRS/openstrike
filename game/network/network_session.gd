@@ -546,8 +546,9 @@ func _submit_input(payload: Dictionary) -> void:
 	if validation_reason != "":
 		_reject_input(peer_id, command, validation_reason)
 		return
-	if peer_id <= 0 or not server_input_buffer.submit(peer_id, command, server_tick):
-		_reject_input(peer_id, command, "input_buffer_rejected")
+	var buffer_reason := server_input_buffer.submit(peer_id, command, server_tick)
+	if buffer_reason != "":
+		_reject_input(peer_id, command, buffer_reason)
 		return
 	input_received.emit(command)
 	peer_input_received.emit(peer_id, command)
