@@ -262,7 +262,10 @@ func _update_goal() -> void:
 
     if state == "ATTACK":
         if combat_reposition_timer <= 0.0:
-            var attack_position = main.call("_select_bot_attack_position", self, target.global_position, combat_slot)
+            var tactical_target := target.global_position
+            if not _has_line_of_sight() and tactical_memory_position != Vector3.ZERO and tactical_memory_timer > 0.0:
+                tactical_target = tactical_memory_position
+            var attack_position = main.call("_select_bot_attack_position", self, tactical_target, combat_slot)
             if attack_position is Vector3 and attack_position != Vector3.ZERO and global_position.distance_to(attack_position) >= COMBAT_REPOSITION_MIN_DISTANCE:
                 combat_reposition_goal = attack_position
                 combat_reposition_timer = COMBAT_REPOSITION_INTERVAL
@@ -272,9 +275,12 @@ func _update_goal() -> void:
                 _ensure_route(combat_reposition_goal)
                 return
             combat_reposition_timer = COMBAT_REPOSITION_INTERVAL
-        var distance := global_position.distance_to(target.global_position)
+        var tactical_target := target.global_position
+        if not _has_line_of_sight() and tactical_memory_position != Vector3.ZERO and tactical_memory_timer > 0.0:
+            tactical_target = tactical_memory_position
+        var distance := global_position.distance_to(tactical_target)
         if distance > OPTIMAL_RANGE:
-            current_goal = target.global_position
+            current_goal = tactical_target
         else:
             current_goal = global_position
         route.clear()
