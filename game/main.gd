@@ -1480,7 +1480,7 @@ func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
     if start_index == goal_index:
         if _navigation_visible(start, goal):
             return [goal]
-        return []
+        return [points[start_index], goal]
 
     var open_set: Array[int] = [start_index]
     var closed_set := {}
