@@ -124,6 +124,12 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - A short replan interval keeps dynamic tactical movement responsive while avoiding per-frame pathfinding.
 
 
+### Dynamic combat slot reassignment
+- Combat slots are refreshed on a short tactical interval instead of remaining permanently tied to bot spawn order.
+- Active bots are classified relative to the BLUE player's current lateral view: left, right, and center.
+- When the player changes direction or the bots reposition around them, slot ownership can change so the attack-angle selector continues to distribute pressure around the current player position.
+- Single- and two-bot states degrade cleanly to center or left/right slots without requiring a full three-bot squad.
+
 ### Coordinated combat angle assignment
 - Combat repositioning now uses explicit left/right/center tactical slots.
 - Bots penalize positions already occupied or reserved by another bot's reposition goal.
