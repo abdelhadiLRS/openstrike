@@ -501,9 +501,32 @@ func _submit_input(payload: Dictionary) -> void:
 	var peer_id := multiplayer.get_remote_sender_id()
 	if peer_id <= 0 or not server_input_buffer.submit(peer_id, command, server_tick):
 		input_rejected.emit(peer_id, command)
+		if peer_id > 0:
+			_notify_input_rejected.rpc_id(peer_id, command.to_dict())
 		return
 	input_received.emit(command)
 	peer_input_received.emit(peer_id, command)
+
+@rpc("authority", "reliable", INPUT_CHANNEL)
+func _notify_input_rejected(payload: Dictionary) -> void:
+	if is_server:
+		return
+	if payload == null:
+		return
+	var command := OpenStrikeInputCommand.new()
+	command.sequence = int(payload.get("sequence", 0))
+	command.tick = int(payload.get("tick", 0))
+	command.weapon_id = str(payload.get("weapon_id", "px_9"))
+	command.buy_weapon_id = str(payload.get("buy_weapon_id", ""))
+	command.switch_weapon = bool(payload.get("switch_weapon", false))
+	command.move = payload.get("move", Vector2.ZERO)
+	command.look_delta = payload.get("look_delta", Vector2.ZERO)
+	command.fire = bool(payload.get("fire", false))
+	command.reload = bool(payload.get("reload", false))
+	command.crouch = bool(payload.get("crouch", false))
+	command.jump = bool(payload.get("jump", false))
+	command.objective = bool(payload.get("objective", false))
+	input_rejected.emit(1, command)
 
 @rpc("authority", "unreliable_ordered", SNAPSHOT_CHANNEL)
 func _broadcast_snapshot(payload: Dictionary) -> void:
