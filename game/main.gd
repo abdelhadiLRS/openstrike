@@ -187,6 +187,7 @@ func _ready() -> void:
     network_session = OpenStrikeNetworkSession.new()
     add_child(network_session)
     network_session.snapshot_received.connect(_on_authoritative_snapshot)
+	network_session.input_rejected.connect(_on_network_input_rejected)
     bomb_site_a = BOMB_SITE_A
     bomb_site_b = BOMB_SITE_B
     _world()
@@ -351,6 +352,10 @@ func _physics_process(delta: float) -> void:
     player.move_and_slide()
     camera.rotation.x = pitch + recoil_kick
     _update_hud()
+
+func _on_network_input_rejected(_peer_id: int, _command: OpenStrikeInputCommand) -> void:
+	network_diagnostics.record_rejected_input()
+
 
 func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     if snapshot == null:
