@@ -1007,6 +1007,7 @@ func reset_target() -> void:
     combat_decision_timer = 0.0
     recently_hit_timer = 0.0
     combat_reposition_timer = 0.0
+    combat_reposition_goal = Vector3.ZERO
     retreat_cover_goal = Vector3.ZERO
     search_goal = Vector3.ZERO
     search_revision = -1
