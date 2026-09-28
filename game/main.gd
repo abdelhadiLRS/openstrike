@@ -2048,6 +2048,51 @@ func _create_map_dressing() -> void:
     ]:
         _visual_box(p, Vector3(2.5, 0.045, 0.06), warning_material)
 
+    # Add a restrained industrial arena finish using visual-only geometry.
+    # These details do not add collision or alter combat/navigation.
+    var panel_material := StandardMaterial3D.new()
+    panel_material.albedo_color = Color(0.075, 0.105, 0.14)
+    panel_material.metallic = 0.28
+    panel_material.roughness = 0.62
+    var stripe_material := StandardMaterial3D.new()
+    stripe_material.albedo_color = Color(0.88, 0.64, 0.22)
+    stripe_material.roughness = 0.7
+
+    # Wall-mounted segmented panels break up the large flat perimeter walls.
+    for x in range(-14, 15, 4):
+        _visual_box(Vector3(float(x), 1.35, -17.43), Vector3(2.6, 1.7, 0.06), panel_material)
+        _visual_box(Vector3(float(x), 1.35, 17.43), Vector3(2.6, 1.7, 0.06), panel_material)
+    for z in range(-14, 15, 4):
+        _visual_box(Vector3(-17.43, 1.35, float(z)), Vector3(0.06, 1.7, 2.6), panel_material)
+        _visual_box(Vector3(17.43, 1.35, float(z)), Vector3(0.06, 1.7, 2.6), panel_material)
+
+    # Short hazard stripes identify exposed cover edges.
+    for data in [
+        {"p": Vector3(-12.0, 1.315, -7.0), "s": Vector3(0.34, 0.025, 1.05)},
+        {"p": Vector3(-2.0, 1.315, -8.0), "s": Vector3(0.34, 0.025, 1.05)},
+        {"p": Vector3(7.0, 1.315, -7.0), "s": Vector3(0.34, 0.025, 1.05)},
+        {"p": Vector3(-9.0, 1.315, 4.0), "s": Vector3(0.34, 0.025, 1.05)},
+        {"p": Vector3(2.0, 1.315, 5.0), "s": Vector3(0.34, 0.025, 1.05)},
+        {"p": Vector3(11.0, 1.315, 4.0), "s": Vector3(0.34, 0.025, 1.05)}
+    ]:
+        _visual_box(data["p"], data["s"], stripe_material)
+
+    # Objective-site concentric floor rings and directional approach marks.
+    for site_pos in [BOMB_SITE_A, BOMB_SITE_B]:
+        var ring := MeshInstance3D.new()
+        var ring_mesh := CylinderMesh.new()
+        ring_mesh.top_radius = BOMB_SITE_RADIUS + 0.24
+        ring_mesh.bottom_radius = BOMB_SITE_RADIUS + 0.24
+        ring_mesh.height = 0.025
+        ring.position = site_pos + Vector3(0.0, -0.055, 0.0)
+        ring.mesh = ring_mesh
+        ring.material_override = panel_material
+        ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        add_child(ring)
+        for side in [-1.0, 1.0]:
+            _visual_box(site_pos + Vector3(side * 3.8, 0.02, 0.0), Vector3(0.75, 0.035, 0.12), stripe_material)
+            _visual_box(site_pos + Vector3(0.0, 0.02, side * 3.8), Vector3(0.12, 0.035, 0.75), stripe_material)
+
 func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> void:
     var mesh_instance := MeshInstance3D.new()
     var mesh := BoxMesh.new()
