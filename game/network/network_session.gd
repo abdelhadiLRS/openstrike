@@ -210,6 +210,26 @@ func _process_server_input(peer_id: int) -> void:
 		if command.fire and round_state == "LIVE":
 			_process_server_fire(player, command)
 
+func _validate_network_command(command: OpenStrikeInputCommand, round_state: String) -> bool:
+	if command == null:
+		return false
+	# Match-critical actions are phase-gated on the server. Movement/look can
+	# remain valid outside LIVE so prediction does not need a separate protocol.
+	if round_state == "BUY":
+		if command.fire or command.reload or command.objective:
+			return false
+	elif round_state == "LIVE":
+		if command.buy_weapon_id != "":
+			return false
+	else:
+		if command.fire or command.reload or command.objective or command.buy_weapon_id != "":
+			return false
+	if command.buy_weapon_id != "" and _weapon_definition(command.buy_weapon_id).is_empty():
+		return false
+	if command.weapon_id != "" and _weapon_definition(command.weapon_id).is_empty():
+		return false
+	return true
+
 func _weapon_definition(weapon_id: String) -> Dictionary:
 	var root := _root()
 	if root == null:
@@ -489,6 +509,13 @@ func _submit_input(payload: Dictionary) -> void:
 		return
 	var command := OpenStrikeInputCommand.from_dict(payload)
 	var peer_id := multiplayer.get_remote_sender_id()
+	var root := _root()
+	var round_state := str(root.get("round_state")) if root != null else "POST"
+	if not _validate_network_command(command, round_state):
+		input_rejected.emit(peer_id, command)
+		if peer_id > 0:
+			_notify_input_rejected.rpc_id(peer_id, command.to_dict())
+		return
 	if peer_id <= 0 or not server_input_buffer.submit(peer_id, command, server_tick):
 		input_rejected.emit(peer_id, command)
 		if peer_id > 0:
