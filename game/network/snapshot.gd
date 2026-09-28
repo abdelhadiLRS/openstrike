@@ -29,6 +29,7 @@ var ammo: int = 0
 var reserve: int = 0
 var credits: int = 1200
 var owned_weapons: Array[String] = []
+var bot_states: Array[Dictionary] = []
 
 func to_dict() -> Dictionary:
 	return {
@@ -57,7 +58,8 @@ func to_dict() -> Dictionary:
 		"ammo": ammo,
 		"reserve": reserve,
 		"credits": credits,
-		"owned_weapons": owned_weapons
+		"owned_weapons": owned_weapons,
+		"bot_states": bot_states
 	}
 
 static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
@@ -87,6 +89,11 @@ static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	snapshot.ammo = int(data.get("ammo", 0))
 	snapshot.reserve = int(data.get("reserve", 0))
 	snapshot.credits = int(data.get("credits", 1200))
+	var bot_value = data.get("bot_states", [])
+	if bot_value is Array:
+		for bot_state in bot_value:
+			if bot_state is Dictionary:
+				snapshot.bot_states.append(bot_state)
 	var owned_value = data.get("owned_weapons", [])
 	if owned_value is Array:
 		for weapon_value in owned_value:
