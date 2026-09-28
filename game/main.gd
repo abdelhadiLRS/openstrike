@@ -74,6 +74,7 @@ var objective_action_time_left := 0.0
 var bot_defuse_time_left := 0.0
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
+var cover_points: Array[Dictionary] = []
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -505,6 +506,7 @@ func _world() -> void:
     for p in [Vector3(-7,1,-5), Vector3(6,1,-2), Vector3(-3,1,7), Vector3(10,1,9)]:
         _box(p, Vector3(3,2,2), Color(0.28,0.30,0.33))
     _setup_navigation_points()
+    _setup_cover_points()
     _spawn_bots()
     _objective_site(BOMB_SITE_A, "A")
     _objective_site(BOMB_SITE_B, "B")
@@ -563,6 +565,14 @@ func _setup_navigation_points() -> void:
         Vector3(13, 1.0, -13),
         Vector3(13, 1.0, 0),
         Vector3(13, 1.0, 13)
+    ]
+
+func _setup_cover_points() -> void:
+    cover_points = [
+        {"cover": Vector3(-9.0, 1.0, -5.0), "peek": Vector3(-7.2, 1.0, -3.6)},
+        {"cover": Vector3(4.0, 1.0, -3.0), "peek": Vector3(5.8, 1.0, -1.7)},
+        {"cover": Vector3(-5.0, 1.0, 6.0), "peek": Vector3(-3.2, 1.0, 7.4)},
+        {"cover": Vector3(8.0, 1.0, 8.0), "peek": Vector3(9.8, 1.0, 9.2)}
     ]
 
 func _spawn_bots() -> void:
