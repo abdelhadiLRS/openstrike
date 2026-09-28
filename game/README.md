@@ -48,6 +48,8 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Planted-bomb defense distributes RED bots between one active defuser and separate tactical cover positions
 - Bomb-cover assignments persist for the planted site instead of being recalculated every frame
 - Each bomb site has dedicated tactical cover anchors, with LOS and occupancy validation before assignment
+- Bomb-defense assignments are revisioned so a replacement defuser invalidates stale cover assignments
+- A/B site defenders score cover using player approach direction and role-aware spacing, while the roamer uses a different tactical bias
 - Bomb-cover defenders hold their assigned angle, face the BLUE player, and apply controlled lateral movement while maintaining the defensive position
 - Bomb recovery uses a tighter pickup radius than the plant/defuse site radius
 - Damageable combat units
