@@ -113,6 +113,8 @@ func setup(id: int, start_position: Vector3, catalog: Array = []) -> void:
 	snapshot_target_position = start_position
 	snapshot_buffer.clear()
 	snapshot_render_tick = 0.0
+	snapshot_history.clear()
+	snapshot_history.clear()
 	has_snapshot_target = false
 	yaw = rotation.y
 	_initialize_weapon_states(catalog)
