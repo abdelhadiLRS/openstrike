@@ -796,6 +796,21 @@ func _move_toward_goal(delta: float) -> void:
             route_index = 0
             return
 
+    if state == "BOMB_COVER" and str(main.get("objective_state")) == "DROPPED":
+        var dropped_position: Vector3 = main.get("dropped_bomb_position")
+        if dropped_position != Vector3.ZERO:
+            var dropped_offset := current_goal - global_position
+            dropped_offset.y = 0.0
+            if dropped_offset.length() <= WAYPOINT_REACHED:
+                velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+                velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+                var guard_look := (target.global_position - global_position).normalized()
+                look_at(global_position + Vector3(guard_look.x, 0.0, guard_look.z), Vector3.UP)
+                if _has_line_of_sight():
+                    var side := Vector3(-guard_look.z, 0.0, guard_look.x) * strafe_sign
+                    velocity.x = move_toward(velocity.x, side.x * 0.55, 5.0 * delta)
+                    velocity.z = move_toward(velocity.z, side.z * 0.55, 5.0 * delta)
+                return
     if state == "BOMB_COVER" and str(main.get("objective_state")) == "PLANTED":
         var bomb_cover_offset := current_goal - global_position
         bomb_cover_offset.y = 0.0
