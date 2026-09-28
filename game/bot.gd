@@ -626,7 +626,9 @@ func _update_goal() -> void:
     keep_current_defend_goal = keep_current_defend_goal and current_goal.distance_to(site_position) <= 10.0
     keep_current_defend_goal = keep_current_defend_goal and current_goal.distance_to(target.global_position) >= 5.0
     keep_current_defend_goal = keep_current_defend_goal and main.call("_bot_has_navigation_path", self, current_goal)
-    keep_current_defend_goal = keep_current_defend_goal and main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), current_goal)
+    var defend_goal_has_cover := main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), current_goal)
+    var defend_goal_is_site_fallback := current_goal.is_equal_approx(site_position)
+    keep_current_defend_goal = keep_current_defend_goal and (defend_goal_has_cover or defend_goal_is_site_fallback)
 
     if not keep_current_defend_goal:
         var tactical_cover = main.call("_select_bot_site_cover", self, site_position, target.global_position, role)
