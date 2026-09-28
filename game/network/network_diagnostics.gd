@@ -10,7 +10,6 @@ var last_acknowledged_sequence: int = 0
 var last_snapshot_tick: int = 0
 var last_snapshot_tick_by_peer: Dictionary = {}
 var rejection_reasons: Dictionary = {}
-var last_snapshot_tick_by_peer: Dictionary = {}
 
 func record_command() -> void:
 	sent_commands += 1
