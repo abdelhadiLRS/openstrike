@@ -41,6 +41,7 @@ var observed_round_state := ""
 var network_bot_cache: Dictionary = {}
 var last_received_snapshot_tick_by_peer: Dictionary = {}
 var last_received_snapshot_round_by_peer: Dictionary = {}
+var _last_received_bot_count: int = -1
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -526,6 +527,7 @@ func _snapshot_server_players(delta: float) -> void:
 			float(root.get("objective_action_time_left"))
 		)
 		snapshot.bot_states = _build_bot_snapshots(root)
+		snapshot.bot_count = snapshot.bot_states.size()
 		broadcast_snapshot(snapshot)
 
 func set_server_tick(tick: int) -> void:
@@ -615,6 +617,7 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 	if not _accept_snapshot(snapshot):
 		return
 	last_server_sequence = maxi(last_server_sequence, snapshot.acknowledged_input_sequence)
+	_last_received_bot_count = snapshot.bot_count
 	_apply_bot_snapshots(snapshot.bot_states)
 	if snapshot.peer_id == multiplayer.get_unique_id():
 		snapshot_received.emit(snapshot)
@@ -639,6 +642,7 @@ func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 func _reset_snapshot_receive_state() -> void:
 	last_received_snapshot_tick_by_peer.clear()
 	last_received_snapshot_round_by_peer.clear()
+	_last_received_bot_count = -1
 
 func _apply_remote_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if snapshot == null or snapshot.peer_id <= 0:
@@ -673,7 +677,10 @@ func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
 	var root := _root()
 	var roster_changed := false
 	if root != null and not is_server and root.has_method("configure_network_bot_count"):
-		roster_changed = bool(root.configure_network_bot_count(states.size()))
+		var authoritative_count := states.size()
+		if _last_received_bot_count >= 0:
+			authoritative_count = _last_received_bot_count
+		roster_changed = bool(root.configure_network_bot_count(authoritative_count))
 	if roster_changed:
 		_refresh_network_bot_cache()
 	if network_bot_cache.is_empty():
