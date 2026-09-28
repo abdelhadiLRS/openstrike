@@ -1664,6 +1664,9 @@ func _select_bot_attack_position(bot: Node, player_position: Vector3, slot: int)
         if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
             continue
 
+        if not _bot_has_navigation_path(bot, peek_position):
+            continue
+
         var from_player := peek_position - player_position
         from_player.y = 0.0
         if from_player.length() < 0.1:
@@ -1720,6 +1723,9 @@ func _select_bot_combat_cover(bot: Node, player_position: Vector3, preferred_dis
         if not _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
             continue
         if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
+            continue
+
+        if not _bot_has_navigation_path(bot, cover_position):
             continue
 
         var occupied := false
