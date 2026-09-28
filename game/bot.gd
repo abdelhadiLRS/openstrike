@@ -166,6 +166,9 @@ func _physics_process(delta: float) -> void:
             retreat_cover_goal = Vector3.ZERO
         if state != "FLANK":
             flank_goal_revision = -1
+        if state != "SEARCH":
+            search_goal = Vector3.ZERO
+            search_revision = -1
         last_state = state
     _update_goal()
     _move_toward_goal(delta)
