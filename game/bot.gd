@@ -519,6 +519,8 @@ func _update_goal() -> void:
 
     if state == "SUPPRESS":
         var suppress_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
+        if suppress_target == Vector3.ZERO:
+            suppress_target = target.global_position
         var suppress_distance := global_position.distance_to(suppress_target)
         if suppress_distance > OPTIMAL_RANGE + 2.0:
             current_goal = suppress_target
@@ -558,6 +560,8 @@ func _update_goal() -> void:
                 return
             combat_reposition_timer = COMBAT_REPOSITION_INTERVAL
         var tactical_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
+        if tactical_target == Vector3.ZERO:
+            tactical_target = target.global_position
         var distance := global_position.distance_to(tactical_target)
         if distance > OPTIMAL_RANGE:
             current_goal = tactical_target
