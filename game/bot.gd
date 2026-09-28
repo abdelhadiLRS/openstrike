@@ -21,6 +21,11 @@ const LOW_HEALTH_THRESHOLD := 40
 const COVER_REACHED := 1.2
 const PEEK_TIME := 1.2
 const PEEK_HOLD := 0.8
+const COMBAT_DECISION_INTERVAL := 0.7
+const PUSH_DISTANCE := 11.0
+const HOLD_DISTANCE := 20.0
+const RETREAT_HEALTH_THRESHOLD := 35
+const PUSH_HEALTH_THRESHOLD := 70
 
 var team := "RED"
 var max_health := 100
@@ -45,6 +50,8 @@ var bomb_cover_site := ""
 var bomb_cover_revision := -1
 var peek_timer := 0.0
 var peek_hold_timer := 0.0
+var combat_intent := "HOLD"
+var combat_decision_timer := 0.0
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -60,6 +67,7 @@ func _physics_process(delta: float) -> void:
     fire_cooldown = maxf(0.0, fire_cooldown - delta)
     peek_timer = maxf(0.0, peek_timer - delta)
     peek_hold_timer = maxf(0.0, peek_hold_timer - delta)
+    combat_decision_timer = maxf(0.0, combat_decision_timer - delta)
     burst_pause = maxf(0.0, burst_pause - delta)
     strafe_time = maxf(0.0, strafe_time - delta)
     if strafe_time <= 0.0:
@@ -99,27 +107,66 @@ func _update_state() -> void:
             state = "BOMB_COVER"
         return
     if objective_state == "DROPPED":
+        combat_intent = "HOLD"
         state = "DEFEND"
         return
 
-    var distance := global_position.distance_to(target.global_position)
-
-    if state == "COVER":
-        if health > LOW_HEALTH_THRESHOLD and distance <= DETECTION_RANGE:
-            state = "PEEK"
-        return
+    if combat_decision_timer <= 0.0:
+        _decide_combat_intent()
+        combat_decision_timer = COMBAT_DECISION_INTERVAL
 
     if state == "PEEK":
-        if peek_timer <= 0.0:
-            state = "COVER" if health <= LOW_HEALTH_THRESHOLD else "ATTACK"
+        if combat_intent == "RETREAT":
+            state = "COVER"
+            route.clear()
+            route_index = 0
+        elif peek_timer <= 0.0:
+            state = "ATTACK" if combat_intent == "PUSH" else "DEFEND"
+            route.clear()
+            route_index = 0
         return
 
-    if health <= LOW_HEALTH_THRESHOLD and distance <= DETECTION_RANGE:
+    if state == "COVER":
+        if combat_intent == "PUSH":
+            state = "ATTACK"
+            route.clear()
+            route_index = 0
+        return
+
+    if combat_intent == "RETREAT":
         state = "COVER"
-    elif distance <= DETECTION_RANGE:
+    elif combat_intent == "PUSH":
         state = "ATTACK"
     else:
         state = "DEFEND"
+
+func _decide_combat_intent() -> void:
+    var distance := global_position.distance_to(target.global_position)
+    var has_los := _has_line_of_sight()
+
+    if health <= RETREAT_HEALTH_THRESHOLD:
+        combat_intent = "RETREAT"
+        return
+
+    if distance > DETECTION_RANGE:
+        combat_intent = "HOLD"
+        return
+
+    if has_los and distance <= PUSH_DISTANCE:
+        combat_intent = "PUSH"
+        return
+
+    if role == "ROAMER" and has_los and distance <= HOLD_DISTANCE and health >= PUSH_HEALTH_THRESHOLD:
+        combat_intent = "PUSH"
+        return
+
+    if role != "ROAMER" and has_los and distance <= HOLD_DISTANCE and health >= PUSH_HEALTH_THRESHOLD:
+        var defend_site := main.get("bomb_site_a") if role == "DEFENDER_A" else main.get("bomb_site_b")
+        if global_position.distance_to(defend_site) <= SITE_RADIUS * 2.5 and distance <= PUSH_DISTANCE:
+            combat_intent = "PUSH"
+            return
+
+    combat_intent = "HOLD"
 
 func _update_goal() -> void:
     var objective_state := str(main.get("objective_state"))
@@ -356,6 +403,8 @@ func reset_target() -> void:
     bomb_cover_revision = -1
     peek_timer = 0.0
     peek_hold_timer = 0.0
+    combat_intent = "HOLD"
+    combat_decision_timer = 0.0
     fire_cooldown = 0.0
     burst_remaining = 0
     burst_pause = 0.0
