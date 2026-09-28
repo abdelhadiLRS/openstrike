@@ -73,6 +73,7 @@ var prediction_replay_yaw := 0.0
 var prediction_replay_pitch := 0.0
 var prediction_replay_tick := 0
 var prediction_replay_commands: Array[OpenStrikeInputCommand] = []
+var deferred_prediction_snapshot: OpenStrikeSnapshot = null
 
 var weapon_index := 0
 var ammo := 30
@@ -377,6 +378,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     round_number = snapshot.round_number
     if snapshot.round_number != previous_round_number:
         prediction.clear_pending()
+        deferred_prediction_snapshot = null
         pending_buy_weapon_id = ""
         pending_switch_weapon = false
         pending_reload = false
@@ -412,34 +414,15 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         ammo = snapshot.ammo
         reserve = snapshot.reserve
 
-    # Do not replace an in-flight rollback anchor with a newer snapshot.
-    # The current replay already represents the unacknowledged commands at its
-    # original authoritative tick; replacing it mid-replay would mix two
-    # authoritative timelines and can duplicate movement/look input.
+    # Keep the newest authoritative transform until the current rollback finishes.
+    # ACK state is still processed above, but the transform itself must not be
+    # mixed into an in-flight replay timeline.
     if pending_prediction_replay:
+        if deferred_prediction_snapshot == null or snapshot.tick > deferred_prediction_snapshot.tick:
+            deferred_prediction_snapshot = snapshot
         return
 
-    var position_correction_needed := OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position)
-    var rotation_correction_needed := OpenStrikeReconciliation.rotation_correction_needed(snapshot.yaw, player.rotation.y, snapshot.pitch, pitch)
-    if not dead and (position_correction_needed or rotation_correction_needed):
-        prediction_replay_position = snapshot.position
-        prediction_replay_velocity = snapshot.velocity
-        prediction_replay_yaw = snapshot.yaw
-        prediction_replay_pitch = snapshot.pitch
-        crouched = snapshot.crouched
-        _set_crouch(crouched)
-        prediction_replay_tick = snapshot.tick
-        prediction_replay_commands = prediction.buffer.pending_commands_snapshot()
-        pending_prediction_replay = not prediction_replay_commands.is_empty()
-        if pending_prediction_replay:
-            network_diagnostics.record_prediction_correction()
-        else:
-            if position_correction_needed:
-                player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
-                player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.25)
-            if rotation_correction_needed:
-                player.rotation.y = OpenStrikeReconciliation.corrected_angle(snapshot.yaw, player.rotation.y, 0.35)
-                pitch = OpenStrikeReconciliation.corrected_angle(snapshot.pitch, pitch, 0.35)
+    _start_prediction_replay(snapshot)
 
 
 func _replay_pending_prediction(delta: float) -> void:
@@ -483,6 +466,42 @@ func _replay_pending_prediction(delta: float) -> void:
     pending_prediction_replay = false
     prediction_replay_tick = 0
     prediction_replay_commands.clear()
+
+    if deferred_prediction_snapshot != null:
+        var latest_snapshot := deferred_prediction_snapshot
+        deferred_prediction_snapshot = null
+        if not dead:
+            _start_prediction_replay(latest_snapshot)
+
+
+func _start_prediction_replay(snapshot: OpenStrikeSnapshot) -> void:
+    if snapshot == null or dead:
+        return
+
+    var position_correction_needed := OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position)
+    var rotation_correction_needed := OpenStrikeReconciliation.rotation_correction_needed(snapshot.yaw, player.rotation.y, snapshot.pitch, pitch)
+    if not position_correction_needed and not rotation_correction_needed:
+        return
+
+    prediction_replay_position = snapshot.position
+    prediction_replay_velocity = snapshot.velocity
+    prediction_replay_yaw = snapshot.yaw
+    prediction_replay_pitch = snapshot.pitch
+    crouched = snapshot.crouched
+    _set_crouch(crouched)
+    prediction_replay_tick = snapshot.tick
+    prediction_replay_commands = prediction.buffer.pending_commands_snapshot()
+    pending_prediction_replay = not prediction_replay_commands.is_empty()
+    if pending_prediction_replay:
+        network_diagnostics.record_prediction_correction()
+        return
+
+    if position_correction_needed:
+        player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
+        player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.25)
+    if rotation_correction_needed:
+        player.rotation.y = OpenStrikeReconciliation.corrected_angle(snapshot.yaw, player.rotation.y, 0.35)
+        pitch = OpenStrikeReconciliation.corrected_angle(snapshot.pitch, pitch, 0.35)
 
 
 func _update_round_state(delta: float) -> void:
