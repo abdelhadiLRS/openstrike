@@ -169,6 +169,7 @@ func _ready() -> void:
     combat_authority = OpenStrikeCombatAuthority.new()
     add_child(combat_authority)
     combat_authority.setup(combat_events)
+    combat_events.combat_event.connect(_on_combat_event)
     network_session = OpenStrikeNetworkSession.new()
     add_child(network_session)
     network_session.snapshot_received.connect(_on_authoritative_snapshot)
@@ -1457,10 +1458,34 @@ func _update_combat_slots() -> void:
             center_bot.set("combat_slot", 2)
 
 func _on_enemy_eliminated(bot: Node) -> void:
-    enemies_alive = maxi(0, enemies_alive - 1)
-    credits = mini(MAX_CREDITS, credits + KILL_REWARD)
-    if enemies_alive == 0:
-        _finish_round(true)
+    if not is_instance_valid(bot):
+        return
+    # Bot deaths enter the same normalized combat-event stream as
+    # authoritative network eliminations. Scoring and round-end checks are
+    # handled centrally by _on_combat_event to prevent double rewards.
+    var weapon_id := str(bot.get("weapon_id"))
+    combat_events.emit_elimination("player", str(bot.get_instance_id()), weapon_id, false)
+
+func _on_combat_event(event: OpenStrikeCombatEvent) -> void:
+    if event == null or event.type != OpenStrikeCombatEvent.Type.ELIMINATION:
+        return
+
+    if event.shooter_id == "player":
+        credits = mini(MAX_CREDITS, credits + KILL_REWARD)
+    elif network_session != null and network_session.is_server:
+        var peer_id := int(event.shooter_id)
+        var shooter = network_session.network_players.get(peer_id)
+        if shooter is OpenStrikeNetworkPlayer:
+            shooter.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, shooter.credits + KILL_REWARD)
+
+    # Bot eliminations are the current RED-team round-elimination source.
+    # Network players remain respawnable during LIVE and do not terminate the round here.
+    for bot in bots:
+        if is_instance_valid(bot) and str(bot.get_instance_id()) == event.target_id:
+            enemies_alive = maxi(0, enemies_alive - 1)
+            if enemies_alive == 0 and round_state == "LIVE":
+                _finish_round(true)
+            break
 
 func _spawn_player() -> void:
     var spawn_index := (round_number - 1) % blue_spawn_points.size()
