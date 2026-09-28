@@ -92,6 +92,9 @@ var hud_layer: CanvasLayer
 var network_debug_hud: Label
 var network_debug_visible := false
 var view_weapon_root: Node3D
+var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
+var view_weapon_bob_time := 0.0
+var view_weapon_recoil := 0.0
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 var hit_marker: Label
@@ -252,6 +255,26 @@ func _unhandled_input(event: InputEvent) -> void:
                 _begin_objective_action()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not dead:
         Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _process(delta: float) -> void:
+    _update_view_weapon_motion(delta)
+
+func _update_view_weapon_motion(delta: float) -> void:
+    if not is_instance_valid(view_weapon_root) or not is_instance_valid(player):
+        return
+    var local_velocity := player.global_transform.basis.inverse() * player.velocity
+    local_velocity.y = 0.0
+    var speed_ratio := clampf(local_velocity.length() / 5.6, 0.0, 1.0)
+    view_weapon_bob_time += delta * (2.0 + speed_ratio * 7.5)
+    view_weapon_recoil = move_toward(view_weapon_recoil, 0.0, delta * 0.72)
+    var bob_amount := speed_ratio * (0.012 if not crouched else 0.006)
+    var bob_x := cos(view_weapon_bob_time * 0.5) * bob_amount * 0.65
+    var bob_y := absf(sin(view_weapon_bob_time)) * bob_amount
+    var sway_x := clampf(-local_velocity.x * 0.006, -0.035, 0.035)
+    var target_position := view_weapon_base_position + Vector3(sway_x + bob_x, bob_y, view_weapon_recoil)
+    var target_rotation := Vector3(sin(view_weapon_bob_time) * bob_amount * 0.65, 0.0, -local_velocity.x * 0.006)
+    view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
+    view_weapon_root.rotation = view_weapon_root.rotation.lerp(target_rotation, minf(delta * 9.0, 1.0))
 
 func _physics_process(delta: float) -> void:
     if network_session != null and network_session.is_server:
@@ -2859,7 +2882,7 @@ func _player() -> void:
 func _create_view_weapon() -> void:
     view_weapon_root = Node3D.new()
     view_weapon_root.name = "FirstPersonWeapon"
-    view_weapon_root.position = Vector3(0.28, -0.24, -0.56)
+    view_weapon_root.position = view_weapon_base_position
     camera.add_child(view_weapon_root)
     _refresh_view_weapon()
 
@@ -2932,6 +2955,7 @@ func _trigger_muzzle_flash() -> void:
     if muzzle_flash == null:
         return
     muzzle_flash_timer = 0.055
+    view_weapon_recoil = maxf(view_weapon_recoil, 0.075)
     muzzle_flash.visible = true
 
 func _view_cylinder(pos: Vector3, radius: float, height: float, material: StandardMaterial3D) -> void:
