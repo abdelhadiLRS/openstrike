@@ -639,10 +639,14 @@ func _move_toward_goal(delta: float) -> void:
             return
         if distance < MIN_COMBAT_RANGE:
             var away := (global_position - target.global_position).normalized()
-            velocity.x = move_toward(velocity.x, away.x * MOVE_SPEED, 12.0 * delta)
-            velocity.z = move_toward(velocity.z, away.z * MOVE_SPEED, 12.0 * delta)
-            look_at(global_position + Vector3(-away.x, 0.0, -away.z), Vector3.UP)
-            return
+            var retreat_goal := global_position + away * 5.0
+            # Close-range retreat must stay inside the navigation graph so the
+            # bot does not back through walls or other map geometry.
+            _ensure_route(retreat_goal)
+            if route.size() == 0:
+                velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+                velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+                return
         if distance > OPTIMAL_RANGE:
             # Long-range pursuit must use the navigation graph rather than
             # steering directly through map geometry.
