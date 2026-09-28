@@ -35,7 +35,10 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Reload
 - Hitscan shooting
 - Per-weapon damage, fire delay, and recoil
-- Damageable training targets
+- Three RED combat bots with health, detection, line-of-sight, shooting, and death states
+- Waypoint-based bot navigation between defensive objective sites
+- RED bots switch to planted-site defense and attack the BLUE player when detected
+- Damageable combat units
 - Procedural graybox training range
 - Minimal HUD and crosshair
 - Godot Compatibility renderer
@@ -72,4 +75,4 @@ The tactical match foundation is now organized around:
 9. LAN multiplayer
 10. dedicated server
 
-The current enemy units are stationary training targets. AI navigation and networked players are intentionally separate future layers.
+The current enemy units are original RED combat bots. Their navigation uses a lightweight waypoint graph suited to the procedural graybox, while direct line-of-sight is used for combat. Full multiplayer navigation remains a separate layer.
