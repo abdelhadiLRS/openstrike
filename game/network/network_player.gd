@@ -28,13 +28,34 @@ var weapon_states: Dictionary = {}
 var respawn_timer: float = 0.0
 var snapshot_history := OpenStrikeSnapshotHistory.new()
 
+# Remote clients receive snapshots at a lower rate than the render/physics loop.
+# Keep the authoritative target separate so remote players move smoothly instead
+# of visibly stepping from one network packet to the next.
+var snapshot_target_position := Vector3.ZERO
+var snapshot_target_yaw: float = 0.0
+var snapshot_target_pitch: float = 0.0
+var has_snapshot_target: bool = false
+var snapshot_smoothing_speed: float = 18.0
+
 var collision_shape: CollisionShape3D
 var mesh: MeshInstance3D
+
+func _physics_process(delta: float) -> void:
+	if not has_snapshot_target:
+		return
+	var blend := 1.0 - exp(-snapshot_smoothing_speed * maxf(delta, 0.0))
+	global_position = global_position.lerp(snapshot_target_position, blend)
+	var yaw_delta := wrapf(snapshot_target_yaw - rotation.y, -PI, PI)
+	rotation.y += yaw_delta * blend
+	yaw = rotation.y
+	pitch = lerpf(pitch, snapshot_target_pitch, blend)
 
 func setup(id: int, start_position: Vector3, catalog: Array = []) -> void:
 	peer_id = id
 	team = "BLUE"
 	global_position = start_position
+	snapshot_target_position = start_position
+	has_snapshot_target = false
 	yaw = rotation.y
 	_initialize_weapon_states(catalog)
 	_build_visual()
@@ -209,11 +230,19 @@ func record_snapshot(tick: int) -> void:
 func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if snapshot == null:
 		return
-	global_position = snapshot.position
+	var snap_distance := global_position.distance_to(snapshot.position)
+	if not has_snapshot_target or snap_distance > 3.0:
+		global_position = snapshot.position
+		rotation.y = snapshot.yaw
+		pitch = snapshot.pitch
+	has_snapshot_target = true
+	snapshot_target_position = snapshot.position
+	snapshot_target_yaw = snapshot.yaw
+	snapshot_target_pitch = snapshot.pitch
 	velocity = snapshot.velocity
 	yaw = snapshot.yaw
 	pitch = snapshot.pitch
-	rotation.y = yaw
+	rotation.y = snapshot.yaw
 	health = snapshot.health
 	dead = snapshot.dead
 	crouched = snapshot.crouched
