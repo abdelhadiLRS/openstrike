@@ -72,6 +72,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - 2: select PX-9 during buy phase
 - F: hold to plant/defuse the bomb at an objective site
 - ESC: release mouse
+- F3: toggle the network diagnostics overlay (NetGraph)
 
 This prototype uses original code and procedurally generated geometry. It does not use Counter-Strike proprietary code or assets.
 
@@ -98,6 +99,10 @@ Examples:
 - Server with a custom bot count: `godot --path game -- --server --port=27015 --bots=5`
 
 The flags are parsed only at startup; without them the existing offline flow is unchanged.
+
+### Network diagnostics
+
+Press `F3` during play to show an opt-in NetGraph overlay. It reports the current offline/server/client mode, sent input commands, received snapshots, acknowledged input sequence, pending predicted commands, rejected inputs, snapshot tick gaps, prediction corrections, latest snapshot tick, and the most frequent rejection reasons. The overlay is diagnostic only and does not alter gameplay state.
 
 ## Architecture direction
 
