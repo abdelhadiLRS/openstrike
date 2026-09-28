@@ -616,6 +616,7 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 		return
 	var snapshot := OpenStrikeSnapshot.from_dict(payload)
 	if not _accept_snapshot(snapshot):
+		_record_snapshot_rejection(snapshot)
 		return
 	last_server_sequence = maxi(last_server_sequence, snapshot.acknowledged_input_sequence)
 	_last_received_bot_count = snapshot.bot_count
@@ -624,6 +625,16 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 		snapshot_received.emit(snapshot)
 	else:
 		_apply_remote_snapshot(snapshot)
+
+func _record_snapshot_rejection(snapshot: OpenStrikeSnapshot) -> void:
+	var root := _root()
+	if root == null:
+		return
+	var diagnostics = root.get("network_diagnostics")
+	if diagnostics == null or not diagnostics.has_method("record_rejected_snapshot"):
+		return
+	var malformed_roster := snapshot != null and snapshot.schema_version == SNAPSHOT_SCHEMA_VERSION and not _valid_bot_roster_payload(snapshot)
+	diagnostics.record_rejected_snapshot(malformed_roster)
 
 func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 	if snapshot == null or snapshot.peer_id <= 0:
