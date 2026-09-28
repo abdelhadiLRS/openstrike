@@ -517,6 +517,21 @@ func _update_goal() -> void:
             route_index = 0
         return
 
+    if state == "REPOSITION":
+        current_goal = combat_reposition_goal
+        if current_goal == Vector3.ZERO:
+            state = "ATTACK"
+            route.clear()
+            route_index = 0
+            route_goal = Vector3.ZERO
+            return
+        if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+            route.clear()
+            route_index = 0
+            return
+        _ensure_route(current_goal)
+        return
+
     if state == "ATTACK":
         if combat_reposition_timer <= 0.0:
             var reposition_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
