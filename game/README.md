@@ -251,3 +251,12 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - **LOST** clears stale aggressive intent and returns bots to defensive behavior until a new contact or objective event changes the threat state.
 - A threat revision immediately invalidates stale combat routes and decisions so a bot does not continue an old attack plan after the squad's tactical picture changes.
 - Bomb DEFUSE and BOMB_COVER objective priorities remain above the threat posture layer.
+
+
+### Threat-scaled engagement posture
+- Combat intent now scales with the squad threat state and assigned role instead of using one fixed push threshold.
+- **CONTACT / PRESSURE** receives the highest aggression budget and can extend its engagement range while healthy.
+- **CONTACT / SUPPORT** uses a tighter, health-aware push window so support can reinforce pressure without automatically overcommitting.
+- **CONTACT / FLANK** receives a wider lateral engagement window while retaining a stronger health requirement.
+- **TRACKED** can reposition toward the tracked threat but remains conservative because stale information does not authorize blind fire.
+- **SEARCHING** and **LOST** remain non-aggressive states; the dedicated search/defense logic controls movement.
