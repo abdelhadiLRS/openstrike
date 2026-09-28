@@ -273,7 +273,7 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 			events.emit_hit(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, damage, target.global_position, true)
 		if was_alive and target.dead:
 			if events != null:
-							events.emit_elimination(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, true)
+				events.emit_elimination(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, true)
 	elif root.has_method("apply_authoritative_network_damage") and best_target == root.get("player"):
 		var was_alive := not bool(root.get("dead"))
 		if root.apply_authoritative_network_damage(damage):
@@ -281,9 +281,9 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 				events.emit_hit(str(shooter.peer_id), "host", shooter.weapon_id, damage, root.get("player").global_position, true)
 			if was_alive and bool(root.get("dead")):
 				if events != null:
-									events.emit_elimination(str(shooter.peer_id), "host", shooter.weapon_id, true)
+					events.emit_elimination(str(shooter.peer_id), "host", shooter.weapon_id, true)
 	elif best_target.has_method("take_damage") and target_team != "BLUE":
-		best_target.take_damage(damage)
+		best_target.take_damage(damage, str(shooter.peer_id))
 		if events != null:
 			events.emit_hit(str(shooter.peer_id), str(best_target.get_instance_id()), shooter.weapon_id, damage, best_target.global_position, true)
 
@@ -351,7 +351,7 @@ func process_host_fire(origin: Vector3, direction: Vector3, weapon_id_value: Str
 
     var target_team := str(best_target.get("team"))
     if best_target.has_method("take_damage") and target_team != str(root.get("player_team")):
-        best_target.take_damage(damage)
+        best_target.take_damage(damage, str(shooter.peer_id))
         if events != null:
             events.emit_hit("player", str(best_target.get_instance_id()), weapon_id_value, damage, best_target.global_position, true)
         return true
