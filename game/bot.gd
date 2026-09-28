@@ -779,9 +779,12 @@ func _move_toward_goal(delta: float) -> void:
                 return
         if distance > OPTIMAL_RANGE:
             close_retreat_route_active = false
-            # Long-range pursuit must use the navigation graph rather than
-            # steering directly through map geometry.
-            _ensure_route(target.global_position)
+            # Long-range pursuit must use the same tactical target selected
+            # by _update_goal(), including squad contact/memory positions.
+            var pursuit_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
+            if pursuit_target == Vector3.ZERO:
+                pursuit_target = target.global_position
+            _ensure_route(pursuit_target)
             if route.size() == 0:
                 velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
                 velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
