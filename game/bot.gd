@@ -765,6 +765,7 @@ func reset_target() -> void:
     route_index = 0
     route_goal = Vector3.ZERO
     route_replan_timer = 0.0
+    state = "DEFEND"
     last_state = "DEFEND"
     current_goal = Vector3.ZERO
     cover_index = -1
