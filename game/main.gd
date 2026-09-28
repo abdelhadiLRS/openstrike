@@ -792,26 +792,66 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
 func _select_bot_site_cover(site_position: Vector3, player_position: Vector3, role: String) -> Vector3:
     var best := Vector3.ZERO
     var best_score := INF
+    var candidates: Array = []
+
+    for data in bomb_cover_anchors:
+        if str(data["site"]) == ("A" if site_position == bomb_site_a else "B"):
+            candidates.append(data)
+
     for data in cover_points:
+        candidates.append({"site": "", "cover": data["cover"], "peek": data["peek"]})
+
+    var player_from_site := player_position - site_position
+    player_from_site.y = 0.0
+
+    for data in candidates:
         var cover_position: Vector3 = data["cover"]
         var peek_position: Vector3 = data["peek"]
         var site_distance := cover_position.distance_to(site_position)
-        if site_distance > 9.0:
+        if site_distance > 10.0:
             continue
+
         var player_distance := cover_position.distance_to(player_position)
         if player_distance < 5.0:
             continue
-        if _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
-            var peek_blocked := _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0))
-            if peek_blocked:
+        if not _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
+            continue
+        if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
+            continue
+
+        var occupied := false
+        for other in bots:
+            if not is_instance_valid(other) or other.dead:
                 continue
-            var role_bias := 0.0
-            if role == "ROAMER":
-                role_bias = site_distance * 0.15
-            var score := site_distance * 1.4 + absf(player_distance - 15.0) * 0.25 + role_bias
-            if score < best_score:
-                best_score = score
-                best = cover_position
+            if str(other.role) == role:
+                continue
+            if other.global_position.distance_to(cover_position) < 2.5:
+                occupied = true
+                break
+            if str(other.state) == "BOMB_COVER" and other.current_goal.distance_to(cover_position) < 2.5:
+                occupied = true
+                break
+        if occupied:
+            continue
+
+        var cover_from_site := cover_position - site_position
+        cover_from_site.y = 0.0
+        var angle_alignment := 0.0
+        if player_from_site.length() > 0.1 and cover_from_site.length() > 0.1:
+            angle_alignment = cover_from_site.normalized().dot(player_from_site.normalized())
+
+        var role_bias := 0.0
+        if role == "ROAMER":
+            role_bias = absf(angle_alignment) * 1.4
+        elif role == "DEFENDER_A" or role == "DEFENDER_B":
+            role_bias = -angle_alignment * 1.8
+
+        var anchor_bonus := -1.5 if str(data["site"]) != "" else 0.0
+        var score := site_distance * 1.25 + absf(player_distance - 14.0) * 0.25 + role_bias + anchor_bonus
+        if score < best_score:
+            best_score = score
+            best = cover_position
+
     return best
 
 func _setup_cover_points() -> void:
