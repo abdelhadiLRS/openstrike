@@ -102,7 +102,7 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 	snapshot_received.emit(snapshot)
 
 func _shutdown_peer() -> void:
-\tserver_input_buffer.clear()
+	server_input_buffer.clear()
 
 	if peer != null:
 		peer.close()
