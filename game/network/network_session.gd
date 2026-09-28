@@ -683,8 +683,16 @@ func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
 		# A snapshot is delivered as one RPC payload. A count/state mismatch is
 		# therefore malformed rather than a partial roster update; never create
 		# client-side bots from a roster whose state list is inconsistent.
-		if authoritative_count != states.size():
+		if authoritative_count != states.size() or authoritative_count > 15:
 			return
+		var seen_bot_ids := {}
+		for state_value in states:
+			if not state_value is Dictionary:
+				return
+			var state_bot_id := int(state_value.get("id", 0))
+			if state_bot_id <= 0 or state_bot_id > authoritative_count or seen_bot_ids.has(state_bot_id):
+				return
+			seen_bot_ids[state_bot_id] = true
 		roster_changed = bool(root.configure_network_bot_count(authoritative_count))
 	if roster_changed:
 		_refresh_network_bot_cache()
