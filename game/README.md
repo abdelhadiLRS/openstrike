@@ -214,3 +214,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - A promoted PRESSURE, SUPPORT, or FLANK bot clears its previous attack/reposition route before executing the new command.
 - The director temporarily suppresses firing authority on the handoff tick, preventing a bot from firing with stale role timing while its new angle is being selected.
 - This keeps role promotion synchronized with the existing contact revision and Combat Director systems.
+
+
+### Contact source handoff
+- The squad now keeps its current contact source while that bot remains alive and has line of sight.
+- If the contact source is eliminated or loses contact, the director selects a replacement from alive bots with line of sight, preferring the active PRESSURE role, then SUPPORT, then FLANK through a small role-aware distance bias.
+- A replacement source changes the contact revision and restarts the Combat Director contact timing window, preventing the squad from inheriting stale fire timing from the previous source.
+- If no replacement has line of sight, the existing tactical memory and search/re-engagement pipeline remains responsible for the squad target.
