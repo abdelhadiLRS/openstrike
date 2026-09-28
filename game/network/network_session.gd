@@ -36,6 +36,8 @@ var snapshot_accumulator := 0.0
 var observed_round_number := 0
 var observed_round_state := ""
 var network_bot_cache: Dictionary = {}
+var last_received_snapshot_tick := -1
+var last_received_snapshot_round := -1
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -46,6 +48,7 @@ func _ready() -> void:
 
 func host(port: int = DEFAULT_PORT, max_clients: int = MAX_CLIENTS) -> Error:
 	_shutdown_peer()
+	_reset_snapshot_receive_state()
 	peer = ENetMultiplayerPeer.new()
 	var error := peer.create_server(port, max_clients)
 	if error != OK:
@@ -62,6 +65,7 @@ func host(port: int = DEFAULT_PORT, max_clients: int = MAX_CLIENTS) -> Error:
 
 func connect_to_server(address: String, port: int = DEFAULT_PORT) -> Error:
 	_shutdown_peer()
+	_reset_snapshot_receive_state()
 	peer = ENetMultiplayerPeer.new()
 	var error := peer.create_client(address, port)
 	if error != OK:
@@ -85,6 +89,7 @@ func _on_connected_to_server() -> void:
 	if is_server:
 		return
 	is_online = true
+	_reset_snapshot_receive_state()
 	connected.emit()
 
 func _on_connection_failed() -> void:
@@ -492,12 +497,35 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 	if is_server:
 		return
 	var snapshot := OpenStrikeSnapshot.from_dict(payload)
+	if not _accept_snapshot(snapshot):
+		return
 	last_server_sequence = maxi(last_server_sequence, snapshot.acknowledged_input_sequence)
 	_apply_bot_snapshots(snapshot.bot_states)
 	if snapshot.peer_id == multiplayer.get_unique_id():
 		snapshot_received.emit(snapshot)
 	else:
 		_apply_remote_snapshot(snapshot)
+
+func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
+	if snapshot == null or snapshot.peer_id <= 0:
+		return false
+	if last_received_snapshot_round >= 0:
+		if snapshot.round_number < last_received_snapshot_round:
+			return false
+		if snapshot.round_number == last_received_snapshot_round and snapshot.tick < last_received_snapshot_tick:
+			return false
+	if snapshot.round_number > last_received_snapshot_round:
+		last_received_snapshot_round = snapshot.round_number
+		last_received_snapshot_tick = snapshot.tick
+	elif snapshot.tick >= last_received_snapshot_tick:
+		last_received_snapshot_tick = snapshot.tick
+	else:
+		return false
+	return true
+
+func _reset_snapshot_receive_state() -> void:
+	last_received_snapshot_tick = -1
+	last_received_snapshot_round = -1
 
 func _apply_remote_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if snapshot == null or snapshot.peer_id <= 0:
@@ -548,6 +576,7 @@ func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
 func _shutdown_peer() -> void:
 	server_input_buffer.clear()
 	network_bot_cache.clear()
+	_reset_snapshot_receive_state()
 
 	if peer != null:
 		peer.close()
