@@ -70,6 +70,9 @@ var route_goal := Vector3.ZERO
 var route_replan_timer := 0.0
 var search_goal := Vector3.ZERO
 var search_revision := -1
+var squad_contact_position := Vector3.ZERO
+var squad_contact_timer := 0.0
+var squad_contact_revision := -1
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -139,8 +142,26 @@ func _update_state() -> void:
         state = "DEFEND"
         return
 
+    var squad_contact_active := bool(main.call("_is_squad_contact_active"))
+    if squad_contact_active and not _has_line_of_sight() and combat_intent != "RETREAT":
+        state = "ATTACK" if combat_intent == "PUSH" else "REENGAGE"
+        return
+
     if bool(main.call("_is_squad_search_active")) and combat_intent == "HOLD" and not _has_line_of_sight():
         state = "SEARCH"
+        return
+
+    if state == "REENGAGE":
+        if _has_line_of_sight():
+            state = "ATTACK" if combat_intent == "PUSH" else "DEFEND"
+            route.clear()
+            route_index = 0
+            return
+        if not bool(main.call("_is_squad_contact_active")):
+            state = "SEARCH" if bool(main.call("_is_squad_search_active")) else "DEFEND"
+            route.clear()
+            route_index = 0
+            return
         return
 
     if state == "SEARCH":
@@ -279,6 +300,20 @@ func _update_goal() -> void:
         _ensure_route(current_goal)
         return
 
+    if state == "REENGAGE":
+        var contact = main.call("_get_bot_squad_contact", self)
+        var contact_revision := int(contact.get("revision", -1)) if contact is Dictionary else -1
+        if squad_contact_revision != contact_revision or current_goal == Vector3.ZERO:
+            current_goal = main.call("_get_bot_squad_engagement_target", self)
+            squad_contact_position = current_goal
+            squad_contact_revision = contact_revision
+            route.clear()
+            route_index = 0
+        else:
+            current_goal = squad_contact_position
+        _ensure_route(current_goal)
+        return
+
     if state == "SEARCH":
         var active_search_revision := int(main.get("squad_search_revision"))
         if search_revision != active_search_revision or search_goal == Vector3.ZERO:
@@ -411,6 +446,16 @@ func _move_toward_goal(delta: float) -> void:
                 var side := Vector3(-bomb_look.z, 0.0, bomb_look.x) * strafe_sign
                 velocity.x = move_toward(velocity.x, side.x * 0.8, 6.0 * delta)
                 velocity.z = move_toward(velocity.z, side.z * 0.8, 6.0 * delta)
+            return
+
+    if state == "REENGAGE":
+        var reengage_offset := current_goal - global_position
+        reengage_offset.y = 0.0
+        if reengage_offset.length() <= COVER_REACHED:
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+            var reengage_look := (current_goal - global_position).normalized()
+            look_at(global_position + Vector3(reengage_look.x, 0.0, reengage_look.z), Vector3.UP)
             return
 
     if state == "SEARCH":
@@ -572,6 +617,9 @@ func reset_target() -> void:
     combat_reposition_timer = 0.0
     search_goal = Vector3.ZERO
     search_revision = -1
+    squad_contact_position = Vector3.ZERO
+    squad_contact_timer = 0.0
+    squad_contact_revision = -1
     fire_cooldown = 0.0
     burst_remaining = 0
     burst_pause = 0.0
