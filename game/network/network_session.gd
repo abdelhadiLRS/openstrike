@@ -25,6 +25,7 @@ const ROUND_WIN_REWARD := 2200
 const ROUND_LOSS_REWARD := 1200
 const INPUT_CHANNEL := 0
 const SNAPSHOT_CHANNEL := 1
+const MAX_INPUTS_PER_PEER_TICK := 2
 
 var peer: ENetMultiplayerPeer
 var is_server := false
@@ -189,18 +190,22 @@ func _process_server_input(peer_id: int, delta: float) -> void:
 	var player := _spawn_network_player(peer_id)
 	if player == null:
 		return
-	var command := server_input_buffer.pop_next(peer_id)
-	if command == null:
-		return
 	var root := _root()
 	var round_state := str(root.get("round_state")) if root != null else "BUY"
-	player.apply_input(command, delta, round_state)
-	var root_for_objective := _root()
-	if root_for_objective != null and root_for_objective.has_method("set_network_objective_input"):
-		root_for_objective.set_network_objective_input(peer_id, command.objective)
-	player.record_snapshot(server_tick)
-	if command.fire and round_state == "LIVE":
-		_process_server_fire(player, command)
+
+	# Allow a small bounded catch-up when packets arrive in a burst. Each
+	# command represents one simulation input step, so using the same physics
+	# delta preserves the server-side movement model without unbounded work.
+	for _i in MAX_INPUTS_PER_PEER_TICK:
+		var command := server_input_buffer.pop_next(peer_id)
+		if command == null:
+			break
+		player.apply_input(command, delta, round_state)
+		if root != null and root.has_method("set_network_objective_input"):
+			root.set_network_objective_input(peer_id, command.objective)
+		player.record_snapshot(server_tick)
+		if command.fire and round_state == "LIVE":
+			_process_server_fire(player, command)
 
 func _weapon_definition(weapon_id: String) -> Dictionary:
 	var root := _root()
