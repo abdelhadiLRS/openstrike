@@ -1049,13 +1049,15 @@ func _update_network_debug_hud() -> void:
             entries.append("%s:%d" % [str(reason), int(reasons[reason])])
         entries.sort()
         reason_text = "\nReject reasons: " + ", ".join(entries.slice(0, 4))
-    network_debug_hud.text = "NETGRAPH [%s]\nTX %d  RX %d  ACK %d  PENDING %d\nREJECT %d  GAPS %d  CORR %d  TICK %d%s" % [
+    network_debug_hud.text = "NETGRAPH [%s]\nTX %d  RX %d  ACK %d  PENDING %d\nREJECT %d  RXDROP %d  ROSTER %d  GAPS %d  CORR %d  TICK %d%s" % [
         mode,
         int(diagnostics.get("sent_commands", 0)),
         int(diagnostics.get("received_snapshots", 0)),
         int(diagnostics.get("last_acknowledged_sequence", 0)),
         prediction.pending_count(),
         int(diagnostics.get("rejected_inputs", 0)),
+        int(diagnostics.get("rejected_snapshots", 0)),
+        int(diagnostics.get("malformed_bot_rosters", 0)),
         int(diagnostics.get("snapshot_tick_gaps", 0)),
         int(diagnostics.get("prediction_corrections", 0)),
         int(diagnostics.get("last_snapshot_tick", 0)),
