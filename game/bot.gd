@@ -141,6 +141,8 @@ func _physics_process(delta: float) -> void:
             route.clear()
             route_index = 0
             route_goal = Vector3.ZERO
+            route_failed_goal = Vector3.ZERO
+            route_replan_timer = 0.0
             if squad_threat_state != "CONTACT":
                 combat_intent = "HOLD"
         squad_threat_revision = next_threat_revision
@@ -155,6 +157,8 @@ func _physics_process(delta: float) -> void:
             route.clear()
             route_index = 0
             route_goal = Vector3.ZERO
+            route_failed_goal = Vector3.ZERO
+            route_replan_timer = 0.0
 
     _update_state()
     if state != last_state:
@@ -162,6 +166,8 @@ func _physics_process(delta: float) -> void:
         route.clear()
         route_index = 0
         route_goal = Vector3.ZERO
+        route_failed_goal = Vector3.ZERO
+        route_replan_timer = 0.0
         current_goal = Vector3.ZERO
         if state != "BOMB_COVER":
             bomb_cover_goal = Vector3.ZERO
