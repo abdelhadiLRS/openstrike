@@ -60,6 +60,7 @@ var combat_decision_timer := 0.0
 var recently_hit_timer := 0.0
 var combat_reposition_timer := 0.0
 var combat_slot := 0
+var combat_assignment := "SUPPORT"
 var combat_reposition_goal := Vector3.ZERO
 var route_goal := Vector3.ZERO
 var route_replan_timer := 0.0
@@ -178,7 +179,24 @@ func _decide_combat_intent() -> void:
         combat_intent = "HOLD"
         return
 
-    if has_los and distance <= PUSH_DISTANCE:
+    if combat_assignment == "PRESSURE":
+        if has_los and distance <= PUSH_DISTANCE + 2.0 and health >= RETREAT_HEALTH_THRESHOLD:
+            combat_intent = "PUSH"
+            return
+        combat_intent = "HOLD"
+        return
+
+    if combat_assignment == "FLANK":
+        if has_los and distance <= HOLD_DISTANCE and health >= PUSH_HEALTH_THRESHOLD:
+            combat_intent = "PUSH"
+            return
+        if has_los and distance <= PUSH_DISTANCE and health >= 50:
+            combat_intent = "PUSH"
+            return
+        combat_intent = "HOLD"
+        return
+
+    if has_los and distance <= PUSH_DISTANCE and health >= PUSH_HEALTH_THRESHOLD:
         combat_intent = "PUSH"
         return
 
@@ -477,6 +495,7 @@ func reset_target() -> void:
     peek_timer = 0.0
     peek_hold_timer = 0.0
     combat_intent = "HOLD"
+    combat_assignment = "SUPPORT"
     combat_decision_timer = 0.0
     recently_hit_timer = 0.0
     combat_reposition_timer = 0.0
