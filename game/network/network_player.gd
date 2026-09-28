@@ -195,6 +195,7 @@ func make_snapshot(tick: int, round_state: String, round_number: int, objective_
 	snapshot.weapon_id = weapon_id
 	snapshot.ammo = ammo
 	snapshot.reserve = reserve
+	snapshot.credits = credits
 	snapshot.health = health
 	snapshot.dead = dead
 	snapshot.round_state = round_state
