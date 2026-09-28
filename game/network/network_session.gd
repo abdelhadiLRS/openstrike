@@ -186,21 +186,23 @@ func _remove_network_player(peer_id: int) -> void:
 		player.queue_free()
 	network_players.erase(peer_id)
 
-func _process_server_input(peer_id: int, delta: float) -> void:
+func _process_server_input(peer_id: int) -> void:
 	var player := _spawn_network_player(peer_id)
 	if player == null:
 		return
 	var root := _root()
 	var round_state := str(root.get("round_state")) if root != null else "BUY"
 
-	# Allow a small bounded catch-up when packets arrive in a burst. Each
-	# command represents one simulation input step, so using the same physics
-	# delta preserves the server-side movement model without unbounded work.
+	# Allow a small bounded catch-up when packets arrive in a burst. A command
+	# represents one client physics step, so always simulate it with the fixed
+	# server step instead of the current frame delta. This keeps movement,
+	# gravity and weapon cooldowns deterministic when the server frame stalls.
+	var input_step := 1.0 / maxf(1.0, float(Engine.physics_ticks_per_second))
 	for _i in MAX_INPUTS_PER_PEER_TICK:
 		var command := server_input_buffer.pop_next(peer_id)
 		if command == null:
 			break
-		player.apply_input(command, delta, round_state)
+		player.apply_input(command, input_step, round_state)
 		if root != null and root.has_method("set_network_objective_input"):
 			root.set_network_objective_input(peer_id, command.objective)
 		player.record_snapshot(server_tick)
@@ -405,7 +407,7 @@ func _snapshot_server_players(delta: float) -> void:
 		var player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
 		if is_instance_valid(player):
 			player.record_snapshot(server_tick)
-		_process_server_input(int(peer_id), delta)
+		_process_server_input(int(peer_id))
 
 	snapshot_accumulator += delta
 	if snapshot_accumulator < snapshot_interval:
