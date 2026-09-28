@@ -698,7 +698,17 @@ func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 	return true
 
 func _valid_snapshot_payload(snapshot: OpenStrikeSnapshot) -> bool:
-	if snapshot.tick < 0 or snapshot.round_number < 1:
+	# Validate identity, sequence counters, and enum-like phase data before any
+	# snapshot can advance per-peer acceptance bookkeeping.
+	if snapshot.peer_id <= 0 or snapshot.tick < 0 or snapshot.acknowledged_input_sequence < 0:
+		return false
+	if snapshot.round_number < 1 or not ["BUY", "LIVE", "POST"].has(snapshot.round_state):
+		return false
+	if snapshot.weapon_id.length() > 64 or snapshot.round_outcome_reason.length() > 128:
+		return false
+	if snapshot.objective_state.length() > 32 or snapshot.objective_action.length() > 32 or snapshot.planted_site.length() > 32:
+		return false
+	if snapshot.carrier_peer_id < 0 or snapshot.objective_action_peer_id < -1:
 		return false
 	if not snapshot.position.is_finite() or not snapshot.velocity.is_finite():
 		return false
@@ -706,13 +716,15 @@ func _valid_snapshot_payload(snapshot: OpenStrikeSnapshot) -> bool:
 		return false
 	if not is_finite(snapshot.yaw) or not is_finite(snapshot.pitch):
 		return false
+	if absf(snapshot.pitch) > 1.46:
+		return false
 	if not is_finite(snapshot.bomb_time_left) or snapshot.bomb_time_left < 0.0:
 		return false
 	if not is_finite(snapshot.objective_action_time_left) or snapshot.objective_action_time_left < 0.0:
 		return false
 	if snapshot.health < 0 or snapshot.health > 100:
 		return false
-	if snapshot.ammo < 0 or snapshot.reserve < 0:
+	if snapshot.ammo < 0 or snapshot.ammo > 1000 or snapshot.reserve < 0 or snapshot.reserve > 10000:
 		return false
 	if snapshot.credits < 0 or snapshot.credits > OpenStrikeNetworkPlayer.MAX_CREDITS:
 		return false
