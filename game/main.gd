@@ -727,26 +727,32 @@ func _update_combat_director(delta: float) -> void:
 func _get_bot_combat_director(bot: Node) -> Dictionary:
     var assignment := str(bot.get("combat_assignment"))
     var phase := combat_director_phase
+    var command := "HOLD"
     var fire_ready := false
 
     if _is_squad_contact_active():
         var contact_age := maxf(0.0, (Time.get_ticks_msec() - combat_contact_started_at) / 1000.0)
         if assignment == "PRESSURE":
             phase = "CONTACT"
+            command = "PUSH"
             fire_ready = true
         elif assignment == "SUPPORT":
             phase = "SUPPRESS"
+            command = "SUPPRESS"
             fire_ready = contact_age >= COMBAT_SUPPORT_DELAY
         elif assignment == "FLANK":
             phase = "FLANK"
+            command = "FLANK"
             fire_ready = contact_age >= COMBAT_FLANK_DELAY
     elif _is_squad_search_active():
         phase = "SEARCH"
     elif last_known_player_timer > 0.0:
         phase = "LOST"
+        command = "HOLD"
 
     return {
         "phase": phase,
+        "command": command,
         "fire_ready": fire_ready,
         "revision": combat_director_revision,
         "contact_revision": squad_contact_revision,
