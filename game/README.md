@@ -200,3 +200,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - FLANK has its own movement state and uses the existing attack-position selector to seek a separated angle instead of following the pressure lane.
 - SUPPORT remains in `SUPPRESS` and receives its own delayed firing authority.
 - The command is refreshed from the shared contact revision, so a new contact or reassignment can immediately replace stale squad orders.
+
+
+### Dynamic combat handoff
+- Squad combat roles are now reassigned from the currently alive bots instead of assuming the original three-bot lineup survives.
+- The existing PRESSURE role is preserved when its bot is alive; when that bot is eliminated, another active bot is promoted to PRESSURE.
+- SUPPORT and FLANK roles are then redistributed among the remaining bots, with role changes marked as `HANDOFF` so stale engagement intent can be replaced.
+- The reassignment runs without changing bomb-objective priority and works with the existing contact revision/director timing system.
