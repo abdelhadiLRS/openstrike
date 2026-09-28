@@ -77,6 +77,22 @@ This prototype uses original code and procedurally generated geometry. It does n
 
 Open the `game/` directory in Godot 4 and run `main.tscn`.
 
+### Network launch flags
+
+The prototype remains offline by default. Optional user arguments can start the built-in authoritative host or connect a client without changing the project defaults:
+
+- `--server`: start as the authoritative host
+- `--port=27015`: choose the ENet port
+- `--max-clients=16`: cap connected clients
+- `--connect=127.0.0.1`: connect as a client to a host
+
+Examples:
+
+- Server: `godot --path game -- --server --port=27015 --max-clients=8`
+- Client: `godot --path game -- --connect=127.0.0.1 --port=27015`
+
+The flags are parsed only at startup; without them the existing offline flow is unchanged.
+
 ## Architecture direction
 
 The tactical match foundation is now organized around:
