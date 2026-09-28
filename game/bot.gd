@@ -66,6 +66,7 @@ var tactical_memory_position := Vector3.ZERO
 var tactical_memory_timer := 0.0
 var tactical_memory_revision := -1
 var combat_reposition_goal := Vector3.ZERO
+var retreat_cover_goal := Vector3.ZERO
 var route_goal := Vector3.ZERO
 var route_replan_timer := 0.0
 var search_goal := Vector3.ZERO
@@ -161,6 +162,8 @@ func _physics_process(delta: float) -> void:
             bomb_cover_goal = Vector3.ZERO
             bomb_cover_site = ""
             bomb_cover_revision = -1
+        if state != "COVER" or combat_intent != "RETREAT":
+            retreat_cover_goal = Vector3.ZERO
         if state != "FLANK":
             flank_goal_revision = -1
         last_state = state
@@ -528,9 +531,18 @@ func _update_goal() -> void:
 
     if state == "COVER" or state == "PEEK":
         if combat_intent == "RETREAT":
-            var retreat_cover = main.call("_select_bot_combat_cover", self, target.global_position, 12.0)
-            if retreat_cover is Vector3 and retreat_cover != Vector3.ZERO:
-                current_goal = retreat_cover
+            var keep_retreat_cover := retreat_cover_goal != Vector3.ZERO
+            keep_retreat_cover = keep_retreat_cover and global_position.distance_to(retreat_cover_goal) <= 18.0
+            keep_retreat_cover = keep_retreat_cover and retreat_cover_goal.distance_to(target.global_position) >= 5.0
+            keep_retreat_cover = keep_retreat_cover and main.call("_bot_has_navigation_path", self, retreat_cover_goal)
+            keep_retreat_cover = keep_retreat_cover and main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), retreat_cover_goal)
+            if not keep_retreat_cover:
+                var retreat_cover = main.call("_select_bot_combat_cover", self, target.global_position, 12.0)
+                retreat_cover_goal = retreat_cover if retreat_cover is Vector3 else Vector3.ZERO
+                route.clear()
+                route_index = 0
+            if retreat_cover_goal != Vector3.ZERO:
+                current_goal = retreat_cover_goal
                 cover_index = -1
                 if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
                     route.clear()
@@ -848,6 +860,7 @@ func reset_target() -> void:
     combat_decision_timer = 0.0
     recently_hit_timer = 0.0
     combat_reposition_timer = 0.0
+    retreat_cover_goal = Vector3.ZERO
     search_goal = Vector3.ZERO
     search_revision = -1
     squad_contact_position = Vector3.ZERO
