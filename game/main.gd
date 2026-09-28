@@ -125,6 +125,7 @@ var combat_director_phase := "IDLE"
 var combat_director_timer := 0.0
 var combat_director_revision := 0
 var combat_director_contact_revision := -1
+var combat_director_threat_revision := -1
 var combat_contact_started_at := 0
 var squad_threat_state := "LOST"
 var squad_threat_position := Vector3.ZERO
@@ -568,6 +569,7 @@ func _start_round() -> void:
     combat_director_timer = 0.0
     combat_director_revision += 1
     combat_director_contact_revision = -1
+    combat_director_threat_revision = -1
     combat_contact_started_at = Time.get_ticks_msec()
 
 func _finish_round(won: bool) -> void:
@@ -777,7 +779,7 @@ func _get_squad_threat() -> Dictionary:
 
 func _update_combat_director(delta: float) -> void:
     combat_director_timer = maxf(0.0, combat_director_timer - delta)
-    if combat_director_timer > 0.0 and combat_director_contact_revision == squad_contact_revision:
+    if combat_director_timer > 0.0 and combat_director_contact_revision == squad_contact_revision and combat_director_threat_revision == squad_threat_revision:
         return
 
     combat_director_timer = COMBAT_DIRECTOR_UPDATE_INTERVAL
@@ -790,15 +792,18 @@ func _update_combat_director(delta: float) -> void:
             next_phase = "SUPPRESS"
         else:
             next_phase = "CONTACT"
-    elif _is_squad_search_active():
+    elif squad_threat_state == "SEARCHING":
         next_phase = "SEARCH"
-    elif last_known_player_timer > 0.0:
+    elif squad_threat_state == "TRACKED":
+        next_phase = "TRACKED"
+    elif squad_threat_state == "LOST":
         next_phase = "LOST"
 
-    if next_phase != combat_director_phase or combat_director_contact_revision != squad_contact_revision:
+    if next_phase != combat_director_phase or combat_director_contact_revision != squad_contact_revision or combat_director_threat_revision != squad_threat_revision:
         combat_director_phase = next_phase
         combat_director_revision += 1
     combat_director_contact_revision = squad_contact_revision
+    combat_director_threat_revision = squad_threat_revision
 
 func _get_bot_combat_director(bot: Node) -> Dictionary:
     var assignment := str(bot.get("combat_assignment"))
@@ -1034,29 +1039,6 @@ func _threat_role_aggression(bot: Node) -> float:
     if squad_threat_state == "SEARCHING":
         return 0.18
     return 0.05
-
-func _select_threat_role_bot(candidates: Array[Node], role: String, previous_roles: Dictionary) -> Node:
-    var selected: Node = null
-    var best_score := INF
-    for bot in candidates:
-        if not is_instance_valid(bot) or bot.dead:
-            continue
-        var score := _get_threat_role_score(bot, role)
-
-        var previous_role := str(previous_roles.get(bot, ""))
-        if previous_role == role:
-            score -= 1.25
-
-        if squad_threat_state == "LOST":
-            if role == "PRESSURE" and previous_role == "PRESSURE":
-                score -= 0.5
-            elif role == "FLANK" and previous_role == "FLANK":
-                score -= 0.25
-
-        if score < best_score:
-            best_score = score
-            selected = bot
-    return selected
 
 func _update_combat_assignments() -> void:
     var active_bots: Array[Node] = []
