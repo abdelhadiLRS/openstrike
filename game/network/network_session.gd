@@ -258,10 +258,10 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 		var target: OpenStrikeNetworkPlayer = network_players.get(peer_value)
 		if not is_instance_valid(target) or target == shooter or target.dead:
 			continue
-		var historical := OpenStrikeLagCompensation.rewind_position(target.snapshot_history, requested_tick)
-		if historical == Vector3.ZERO:
+		var historical_snapshot := OpenStrikeLagCompensation.rewind_snapshot(target.snapshot_history, requested_tick)
+		if historical_snapshot == null:
 			continue
-		historical += Vector3(0, 0.65, 0)
+		var historical := historical_snapshot.position + Vector3(0, 0.65, 0)
 		var ray_distance := _point_to_ray_distance(historical, origin, direction)
 		if ray_distance <= 0.75 and ray_distance < best_distance:
 			best_distance = ray_distance
