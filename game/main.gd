@@ -199,6 +199,8 @@ func _unhandled_input(event: InputEvent) -> void:
         Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _physics_process(delta: float) -> void:
+    if network_session != null and network_session.is_server:
+        network_session.set_server_tick(combat_events.tick)
     _update_bomb_visual()
     player_snapshots.push(combat_events.tick, player.global_position, player.rotation.y, health)
     if dead:
