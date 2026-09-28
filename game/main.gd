@@ -46,10 +46,12 @@ const THREAT_SEARCH_TIMEOUT := 6.0
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
 
-var weapons := [
-    {"name":"AR-17", "mag":30, "reserve":90, "damage":34, "delay":0.095, "recoil":0.018, "cost":2400},
-    {"name":"PX-9", "mag":12, "reserve":48, "damage":55, "delay":0.22, "recoil":0.028, "cost":0}
+const WEAPON_ASSETS := [
+    preload("res://data/ar_17.tres"),
+    preload("res://data/px_9.tres")
 ]
+
+var weapons: Array[Dictionary] = []
 
 var weapon_index := 0
 var ammo := 30
@@ -148,6 +150,7 @@ var red_spawn_points := [
 ]
 
 func _ready() -> void:
+    _load_weapon_catalog()
     bomb_site_a = BOMB_SITE_A
     bomb_site_b = BOMB_SITE_B
     _world()
@@ -461,13 +464,25 @@ func _objective_label() -> String:
     return "BOMB: NONE"
 
 
+func _load_weapon_catalog() -> void:
+    weapons.clear()
+    for asset in WEAPON_ASSETS:
+        if asset == null or not asset.is_valid():
+            push_error("OpenStrike weapon catalog contains an invalid weapon resource.")
+            continue
+        weapons.append(asset.to_runtime_dict())
+
+    if weapons.is_empty():
+        push_error("OpenStrike weapon catalog is empty; gameplay cannot start safely.")
+        return
+
 func _current_weapon() -> Dictionary:
     return weapons[weapon_index]
 
 func _current_speed() -> float:
     if crouched:
         return 2.8
-    return 5.4 if weapon_index == 0 else 5.9
+    return float(_current_weapon()["speed"])
 
 func _fire() -> void:
     if round_state != "LIVE" or cooldown > 0.0:
