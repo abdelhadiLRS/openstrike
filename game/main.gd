@@ -203,8 +203,8 @@ func _ready() -> void:
     network_session.input_rejected_reason.connect(_on_network_input_rejected_reason)
     bomb_site_a = BOMB_SITE_A
     bomb_site_b = BOMB_SITE_B
-    _world()
     _player()
+    _world()
     _hud()
     _create_network_debug_hud()
     _start_round()
