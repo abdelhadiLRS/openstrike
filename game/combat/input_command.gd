@@ -10,6 +10,8 @@ var reload: bool = false
 var crouch: bool = false
 var jump: bool = false
 var weapon_id: String = "px_9"
+var buy_weapon_id: String = ""
+var switch_weapon: bool = false
 
 func to_dict() -> Dictionary:
 	return {
@@ -21,5 +23,7 @@ func to_dict() -> Dictionary:
 		"reload": reload,
 		"crouch": crouch,
 		"jump": jump,
-		"weapon_id": weapon_id
+		"weapon_id": weapon_id,
+		"buy_weapon_id": buy_weapon_id,
+		"switch_weapon": switch_weapon
 	}
