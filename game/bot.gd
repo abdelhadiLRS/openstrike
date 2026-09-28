@@ -479,6 +479,8 @@ func _update_goal() -> void:
             squad_contact_revision = contact_revision
             route.clear()
             route_index = 0
+            route_failed_goal = Vector3.ZERO
+            route_replan_timer = 0.0
         else:
             current_goal = squad_contact_position
         if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
@@ -496,6 +498,8 @@ func _update_goal() -> void:
             search_revision = active_search_revision
             route.clear()
             route_index = 0
+            route_failed_goal = Vector3.ZERO
+            route_replan_timer = 0.0
         current_goal = search_goal
         if current_goal == Vector3.ZERO:
             route.clear()
@@ -525,6 +529,8 @@ func _update_goal() -> void:
             flank_goal_revision = flank_revision
             route.clear()
             route_index = 0
+            route_failed_goal = Vector3.ZERO
+            route_replan_timer = 0.0
         if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
             route.clear()
             route_index = 0
