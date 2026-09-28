@@ -25,6 +25,7 @@ const BOMB_PICKUP_RADIUS := 1.6
 const BOMB_SITE_A := Vector3(-10, 0.15, -7)
 const BOMB_SITE_B := Vector3(10, 0.15, 7)
 const BOT_COUNT := 3
+const COMBAT_SLOT_UPDATE_INTERVAL := 0.75
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
@@ -83,6 +84,7 @@ var navigation_points: Array[Vector3] = []
 var navigation_graph: Array[Array] = []
 var cover_points: Array[Dictionary] = []
 var bomb_cover_anchors: Array[Dictionary] = []
+var combat_slot_update_timer := 0.0
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -488,6 +490,7 @@ func _start_round() -> void:
     bot_defuse_time_left = 0.0
     active_defuser = null
     bomb_defense_revision += 1
+    combat_slot_update_timer = 0.0
     dropped_bomb_position = Vector3.ZERO
 
 func _finish_round(won: bool) -> void:
@@ -514,9 +517,82 @@ func _reset_targets() -> void:
 func _update_bots(delta: float) -> void:
     if round_state != "LIVE":
         return
+
+    combat_slot_update_timer = maxf(0.0, combat_slot_update_timer - delta)
+    if combat_slot_update_timer <= 0.0:
+        _update_combat_slots()
+        combat_slot_update_timer = COMBAT_SLOT_UPDATE_INTERVAL
+
     for bot in bots:
         if is_instance_valid(bot) and not bot.dead:
             bot.process_mode = Node.PROCESS_MODE_INHERIT
+
+func _update_combat_slots() -> void:
+    if not is_instance_valid(player):
+        return
+
+    var active_bots: Array[CharacterBody3D] = []
+    for bot in bots:
+        if is_instance_valid(bot) and not bot.dead:
+            active_bots.append(bot)
+
+    if active_bots.is_empty():
+        return
+
+    var player_right := player.global_transform.basis.x
+    player_right.y = 0.0
+    if player_right.length() < 0.1:
+        player_right = Vector3.RIGHT
+    player_right = player_right.normalized()
+
+    var left_bot: CharacterBody3D = null
+    var right_bot: CharacterBody3D = null
+    var center_bot: CharacterBody3D = null
+    var left_value := INF
+    var right_value := -INF
+    var center_value := INF
+
+    for bot in active_bots:
+        var offset := bot.global_position - player.global_position
+        offset.y = 0.0
+        var lateral := offset.dot(player_right)
+
+        if lateral < left_value:
+            left_value = lateral
+            left_bot = bot
+        if lateral > right_value:
+            right_value = lateral
+            right_bot = bot
+
+    if active_bots.size() == 1:
+        active_bots[0].set("combat_slot", 2)
+        return
+
+    if left_bot == right_bot:
+        active_bots[0].set("combat_slot", 0)
+        if active_bots.size() > 1:
+            active_bots[1].set("combat_slot", 1)
+        for index in range(2, active_bots.size()):
+            active_bots[index].set("combat_slot", 2)
+        return
+
+    left_bot.set("combat_slot", 0)
+    right_bot.set("combat_slot", 1)
+
+    if active_bots.size() >= 3:
+        for bot in active_bots:
+            if bot == left_bot or bot == right_bot:
+                continue
+            var offset := bot.global_position - player.global_position
+            offset.y = 0.0
+            var lateral := offset.dot(player_right)
+            var center_distance := absf(lateral)
+            if center_distance < center_value:
+                center_value = center_distance
+                center_bot = bot
+
+        if center_bot != null:
+            center_bot.set("combat_slot", 2)
 
 func _on_enemy_eliminated(bot: Node) -> void:
     enemies_alive = maxi(0, enemies_alive - 1)
