@@ -568,18 +568,40 @@ func last_server_input_sequence(peer_id: int) -> int:
 		return 0
 	return server_input_buffer.last_sequence(peer_id)
 
+func _valid_input_wire_types(payload: Dictionary) -> bool:
+	# Input packets are untrusted. Reject missing or coercible values before
+	# from_dict() can turn strings/numbers into gameplay commands.
+	var integer_fields := ["sequence", "tick"]
+	for field in integer_fields:
+		if not payload.has(field) or not payload[field] is int:
+			return false
+	var vector_fields := ["move", "look_delta"]
+	for field in vector_fields:
+		if not payload.has(field) or not payload[field] is Vector2:
+			return false
+	var boolean_fields := ["fire", "reload", "crouch", "jump", "objective", "switch_weapon"]
+	for field in boolean_fields:
+		if not payload.has(field) or not payload[field] is bool:
+			return false
+	var string_fields := ["weapon_id", "buy_weapon_id"]
+	for field in string_fields:
+		if not payload.has(field) or not payload[field] is String:
+			return false
+	if payload.weapon_id.length() > 64 or payload.buy_weapon_id.length() > 64:
+		return false
+	return true
+
 @rpc("any_peer", "unreliable_ordered", INPUT_CHANNEL)
 func _submit_input(payload: Dictionary) -> void:
 	if not is_server:
 		return
 	if payload == null:
 		return
-	var move_value = payload.get("move", Vector2.ZERO)
-	var look_value = payload.get("look_delta", Vector2.ZERO)
-	if not move_value is Vector2 or not look_value is Vector2:
+	var peer_id := multiplayer.get_remote_sender_id()
+	if not _valid_input_wire_types(payload):
+		_reject_input(peer_id, OpenStrikeInputCommand.new(), "malformed_input_payload")
 		return
 	var command := OpenStrikeInputCommand.from_dict(payload)
-	var peer_id := multiplayer.get_remote_sender_id()
 	var root := _root()
 	var round_state := str(root.get("round_state")) if root != null else "POST"
 	var validation_reason := _validate_network_command(command, round_state)
