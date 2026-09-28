@@ -102,6 +102,7 @@ var credits := STARTING_CREDITS
 var primary_owned := false
 
 var objective_state := "CARRIED"
+var bomb_carrier_peer_id := 0
 var objective_site := ""
 var planted_site := ""
 var dropped_bomb_position := Vector3.ZERO
@@ -359,6 +360,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     objective_state = snapshot.objective_state
     planted_site = snapshot.planted_site
     bomb_time_left = snapshot.bomb_time_left
+    bomb_carrier_peer_id = snapshot.carrier_peer_id
     credits = clampi(snapshot.credits, 0, MAX_CREDITS)
     primary_owned = snapshot.owned_weapons.has("ar_17")
     var authoritative_index := -1
@@ -483,6 +485,7 @@ func _update_objective(delta: float) -> void:
         elif objective_state == "DROPPED":
             if network_actor.global_position.distance_to(dropped_bomb_position) <= BOMB_PICKUP_RADIUS:
                 objective_state = "CARRIED"
+                bomb_carrier_peer_id = network_objective_peer_id
                 objective_site = ""
                 dropped_bomb_position = Vector3.ZERO
                 network_objective_latched_peer_id = network_objective_peer_id
@@ -505,6 +508,7 @@ func _update_objective(delta: float) -> void:
                 objective_action_time_left = maxf(0.0, objective_action_time_left - delta)
                 if objective_action_time_left <= 0.0:
                     objective_state = "PLANTED"
+                    bomb_carrier_peer_id = 0
                     planted_site = site
                     if network_actor != null:
                         network_objective_latched_peer_id = network_objective_peer_id
@@ -850,6 +854,7 @@ func _start_round() -> void:
     round_outcome_resolved = false
     round_outcome_reason = ""
     objective_state = "CARRIED"
+    bomb_carrier_peer_id = 0
     objective_site = ""
     planted_site = ""
     bomb_time_left = 0.0
@@ -1606,6 +1611,7 @@ func _apply_damage(amount: int) -> void:
 func _kill_player() -> void:
     if objective_state == "CARRIED":
         objective_state = "DROPPED"
+        bomb_carrier_peer_id = 0
         dropped_bomb_position = player.global_position + Vector3(0, 0.15, 0)
         objective_site = ""
         objective_action = ""
@@ -1615,6 +1621,21 @@ func _kill_player() -> void:
     respawn_timer = RESPAWN_DELAY
     player.visible = false
     camera.current = false
+
+func on_network_player_eliminated(peer_id: int) -> void:
+    if peer_id <= 0 or bomb_carrier_peer_id != peer_id or objective_state != "CARRIED":
+        return
+    var carrier = network_session.network_players.get(peer_id) if network_session != null else null
+    if carrier is OpenStrikeNetworkPlayer:
+        objective_state = "DROPPED"
+        bomb_carrier_peer_id = 0
+        dropped_bomb_position = carrier.global_position + Vector3(0, 0.15, 0)
+        objective_site = ""
+        objective_action = ""
+        objective_action_time_left = 0.0
+        network_objective_peer_id = -1
+        network_objective_latched_peer_id = -1
+        _update_bomb_visual()
 
 func _respawn_player() -> void:
     dead = false
