@@ -678,8 +678,20 @@ func _valid_snapshot_wire_types(payload: Dictionary) -> bool:
 			return false
 	if not payload.has("owned_weapons") or not payload.owned_weapons is Array:
 		return false
+	if payload.owned_weapons.size() > 16:
+		return false
+	for weapon_value in payload.owned_weapons:
+		# Validate before from_dict() stringifies and deduplicates inventory IDs.
+		if not weapon_value is String:
+			return false
 	if not payload.has("bot_states") or not payload.bot_states is Array:
 		return false
+	if payload.bot_states.size() > 15:
+		return false
+	for bot_value in payload.bot_states:
+		# from_dict() filters non-dictionary entries, so reject them on the wire.
+		if not bot_value is Dictionary:
+			return false
 	return true
 
 func _record_malformed_wire_snapshot() -> void:
