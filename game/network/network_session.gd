@@ -492,6 +492,7 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 		return
 	var snapshot := OpenStrikeSnapshot.from_dict(payload)
 	last_server_sequence = maxi(last_server_sequence, snapshot.acknowledged_input_sequence)
+	_apply_bot_snapshots(snapshot.bot_states)
 	if snapshot.peer_id == multiplayer.get_unique_id():
 		snapshot_received.emit(snapshot)
 	else:
