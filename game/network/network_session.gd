@@ -27,6 +27,7 @@ const ROUND_LOSS_REWARD := 1200
 const INPUT_CHANNEL := 0
 const SNAPSHOT_CHANNEL := 1
 const MAX_INPUTS_PER_PEER_TICK := 2
+const SNAPSHOT_SCHEMA_VERSION := OpenStrikeSnapshot.SCHEMA_VERSION
 
 var peer: ENetMultiplayerPeer
 var is_server := false
@@ -626,6 +627,8 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 
 func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 	if snapshot == null or snapshot.peer_id <= 0:
+		return false
+	if snapshot.schema_version != SNAPSHOT_SCHEMA_VERSION:
 		return false
 	var peer_id := snapshot.peer_id
 	var last_round := int(last_received_snapshot_round_by_peer.get(peer_id, -1))
