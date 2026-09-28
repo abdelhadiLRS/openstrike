@@ -33,8 +33,12 @@ func submit(peer_id: int, command: OpenStrikeInputCommand, server_tick: int) -> 
 	command.look_delta.y = clampf(command.look_delta.y, -MAX_LOOK_DELTA, MAX_LOOK_DELTA)
 
 	var queue: Array = _queues.get(peer_id, [])
+	# Never discard an already accepted command silently. If a client outruns
+	# the bounded server catch-up window, reject the new command so the client
+	# receives explicit feedback and prediction can continue from the last
+	# authoritative acknowledgement.
 	if queue.size() >= MAX_PENDING:
-		queue.pop_front()
+		return false
 	queue.append(command)
 	_queues[peer_id] = queue
 	_last_sequence[peer_id] = command.sequence
