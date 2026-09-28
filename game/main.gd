@@ -26,6 +26,7 @@ const BOMB_SITE_A := Vector3(-10, 0.15, -7)
 const BOMB_SITE_B := Vector3(10, 0.15, 7)
 const BOT_COUNT := 3
 const COMBAT_SLOT_UPDATE_INTERVAL := 0.75
+const COMBAT_ASSIGNMENT_UPDATE_INTERVAL := 1.25
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
@@ -85,6 +86,7 @@ var navigation_graph: Array[Array] = []
 var cover_points: Array[Dictionary] = []
 var bomb_cover_anchors: Array[Dictionary] = []
 var combat_slot_update_timer := 0.0
+var combat_assignment_update_timer := 0.0
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -491,6 +493,7 @@ func _start_round() -> void:
     active_defuser = null
     bomb_defense_revision += 1
     combat_slot_update_timer = 0.0
+    combat_assignment_update_timer = 0.0
     dropped_bomb_position = Vector3.ZERO
 
 func _finish_round(won: bool) -> void:
@@ -523,9 +526,79 @@ func _update_bots(delta: float) -> void:
         _update_combat_slots()
         combat_slot_update_timer = COMBAT_SLOT_UPDATE_INTERVAL
 
+    combat_assignment_update_timer = maxf(0.0, combat_assignment_update_timer - delta)
+    if combat_assignment_update_timer <= 0.0:
+        _update_combat_assignments()
+        combat_assignment_update_timer = COMBAT_ASSIGNMENT_UPDATE_INTERVAL
+
     for bot in bots:
         if is_instance_valid(bot) and not bot.dead:
             bot.process_mode = Node.PROCESS_MODE_INHERIT
+
+func _update_combat_assignments() -> void:
+    if not is_instance_valid(player):
+        return
+
+    var active_bots: Array[CharacterBody3D] = []
+    for bot in bots:
+        if is_instance_valid(bot) and not bot.dead:
+            active_bots.append(bot)
+
+    if active_bots.is_empty():
+        return
+
+    var pressure_bot: CharacterBody3D = null
+    var support_bot: CharacterBody3D = null
+    var flank_bot: CharacterBody3D = null
+    var pressure_score := INF
+    var support_score := INF
+    var flank_score := INF
+
+    for bot in active_bots:
+        var distance := bot.global_position.distance_to(player.global_position)
+        var health_value := int(bot.get("health"))
+        var slot := int(bot.get("combat_slot"))
+        var candidate_score := distance + maxf(0.0, 70.0 - float(health_value)) * 0.08
+        if slot == 2:
+            candidate_score -= 1.5
+        if candidate_score < pressure_score:
+            pressure_score = candidate_score
+            pressure_bot = bot
+
+    for bot in active_bots:
+        if bot == pressure_bot:
+            continue
+        var distance := bot.global_position.distance_to(player.global_position)
+        var health_value := int(bot.get("health"))
+        var candidate_score := float(health_value) + distance * 0.35
+        if health_value < 55:
+            candidate_score -= 25.0
+        if candidate_score < support_score:
+            support_score = candidate_score
+            support_bot = bot
+
+    for bot in active_bots:
+        if bot == pressure_bot or bot == support_bot:
+            continue
+        var distance := bot.global_position.distance_to(player.global_position)
+        var slot := int(bot.get("combat_slot"))
+        var candidate_score := distance
+        if slot == 0 or slot == 1:
+            candidate_score -= 2.0
+        if candidate_score < flank_score:
+            flank_score = candidate_score
+            flank_bot = bot
+
+    if active_bots.size() == 1:
+        active_bots[0].set("combat_assignment", "PRESSURE")
+        return
+
+    if pressure_bot != null:
+        pressure_bot.set("combat_assignment", "PRESSURE")
+    if support_bot != null:
+        support_bot.set("combat_assignment", "SUPPORT")
+    if flank_bot != null:
+        flank_bot.set("combat_assignment", "FLANK")
 
 func _update_combat_slots() -> void:
     if not is_instance_valid(player):
