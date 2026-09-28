@@ -74,7 +74,7 @@ func _physics_process(delta: float) -> void:
     _update_goal()
     _move_toward_goal(delta)
 
-    if (state == "ATTACK" or state == "PEEK") and _has_line_of_sight():
+    if (state == "ATTACK" or state == "PEEK" or state == "BOMB_COVER") and _has_line_of_sight():
         _fire()
 
     if not is_on_floor():
@@ -85,7 +85,11 @@ func _physics_process(delta: float) -> void:
 func _update_state() -> void:
     var objective_state := str(main.get("objective_state"))
     if objective_state == "PLANTED":
-        state = "DEFUSE"
+        var active_defuser = main.get("active_defuser")
+        if is_instance_valid(active_defuser) and active_defuser == self:
+            state = "DEFUSE"
+        else:
+            state = "BOMB_COVER"
         return
     if objective_state == "DROPPED":
         state = "DEFEND"
@@ -113,6 +117,17 @@ func _update_state() -> void:
 func _update_goal() -> void:
     var objective_state := str(main.get("objective_state"))
 
+    if state == "BOMB_COVER" and objective_state == "PLANTED":
+        var planted_site := str(main.get("planted_site"))
+        var site_position: Vector3 = main.get("bomb_site_a") if planted_site == "A" else main.get("bomb_site_b")
+        var bomb_cover = main.call("_select_bot_bomb_cover", site_position, target.global_position, self)
+        if bomb_cover is Vector3 and bomb_cover != Vector3.ZERO:
+            current_goal = bomb_cover
+        else:
+            current_goal = site_position
+        _ensure_route(current_goal)
+        return
+
     if state == "DEFUSE" and objective_state == "PLANTED":
         var planted_site := str(main.get("planted_site"))
         current_goal = main.get("bomb_site_a") if planted_site == "A" else main.get("bomb_site_b")
@@ -128,6 +143,18 @@ func _update_goal() -> void:
         route.clear()
         route_index = 0
         return
+
+    if state == "BOMB_COVER":
+        if current_goal == Vector3.ZERO:
+            return
+        var bomb_cover_offset := current_goal - global_position
+        bomb_cover_offset.y = 0.0
+        if bomb_cover_offset.length() <= COVER_REACHED:
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+            var bomb_look := (target.global_position - global_position).normalized()
+            look_at(global_position + Vector3(bomb_look.x, 0.0, bomb_look.z), Vector3.UP)
+            return
 
     if state == "COVER" or state == "PEEK":
         _select_cover_point()
@@ -309,6 +336,7 @@ func reset_target() -> void:
     route.clear()
     route_index = 0
     last_state = "DEFEND"
+    current_goal = Vector3.ZERO
     cover_index = -1
     peek_timer = 0.0
     peek_hold_timer = 0.0
