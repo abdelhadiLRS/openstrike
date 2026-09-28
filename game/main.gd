@@ -324,6 +324,39 @@ func _update_objective(delta: float) -> void:
                     objective_action_time_left = 0.0
                     _finish_round(false)
 
+func _bot_has_navigation_path(bot: Node, goal: Vector3) -> bool:
+    if not is_instance_valid(bot) or bot.dead:
+        return false
+
+    if navigation_points.is_empty():
+        return true
+
+    if navigation_graph.size() != navigation_points.size():
+        _build_navigation_graph()
+
+    var start_index := _find_nearest_navigation_point(bot.global_position)
+    var goal_index := _find_nearest_navigation_point(goal)
+    if start_index < 0 or goal_index < 0:
+        return false
+    if start_index == goal_index:
+        return true
+
+    var open_set: Array[int] = [start_index]
+    var visited := {start_index: true}
+    while not open_set.is_empty():
+        var current: int = open_set.pop_front()
+        for neighbor_value in navigation_graph[current]:
+            var neighbor: int = int(neighbor_value)
+            if neighbor == goal_index:
+                return true
+            if visited.has(neighbor):
+                continue
+            visited[neighbor] = true
+            open_set.append(neighbor)
+
+    return false
+
+
 func _update_bot_defuse(delta: float) -> void:
     if objective_action == "DEFUSE":
         return
@@ -343,6 +376,8 @@ func _update_bot_defuse(delta: float) -> void:
     if active_defuser == null:
         var nearest_bot: Node = null
         var nearest_distance := INF
+        var reachable_bot: Node = null
+        var reachable_distance := INF
         for bot in bots:
             if not is_instance_valid(bot) or bot.dead:
                 continue
@@ -350,9 +385,13 @@ func _update_bot_defuse(delta: float) -> void:
             if distance < nearest_distance:
                 nearest_distance = distance
                 nearest_bot = bot
+            if _bot_has_navigation_path(bot, site_position) and distance < reachable_distance:
+                reachable_distance = distance
+                reachable_bot = bot
 
-        if nearest_bot != null:
-            active_defuser = nearest_bot
+        var selected_defuser := reachable_bot if reachable_bot != null else nearest_bot
+        if selected_defuser != null:
+            active_defuser = selected_defuser
             bot_defuse_time_left = DEFUSE_TIME
             bomb_defense_revision += 1
 
