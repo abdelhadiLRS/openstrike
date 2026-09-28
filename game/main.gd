@@ -419,8 +419,7 @@ func set_network_objective_input(peer_id: int, active: bool) -> void:
         if network_objective_latched_peer_id == peer_id:
             network_objective_latched_peer_id = -1
             if objective_action != "PLANT" and objective_action != "DEFUSE":
-                objective_action = ""
-                objective_action_time_left = 0.0
+                _clear_objective_action()
         return
     if round_state != "LIVE":
         network_objective_peer_id = -1
@@ -459,6 +458,7 @@ func _begin_objective_action() -> void:
         if site != "":
             objective_site = site
             objective_action = "PLANT"
+            objective_action_peer_id = 0
             objective_action_time_left = PLANT_TIME
     elif objective_state == "DROPPED":
         if player.global_position.distance_to(dropped_bomb_position) <= BOMB_PICKUP_RADIUS:
@@ -475,8 +475,7 @@ func _begin_objective_action() -> void:
 
 func _update_objective(delta: float) -> void:
     if round_state != "LIVE":
-        objective_action = ""
-        objective_action_time_left = 0.0
+        _clear_objective_action()
         network_objective_peer_id = -1
         network_objective_latched_peer_id = -1
         return
@@ -488,6 +487,7 @@ func _update_objective(delta: float) -> void:
             if network_site != "":
                 objective_site = network_site
                 objective_action = "PLANT"
+                objective_action_peer_id = network_objective_peer_id
                 objective_action_time_left = PLANT_TIME
         elif objective_state == "DROPPED":
             if network_actor.global_position.distance_to(dropped_bomb_position) <= BOMB_PICKUP_RADIUS:
@@ -501,6 +501,7 @@ func _update_objective(delta: float) -> void:
             if network_defuse_site == planted_site:
                 objective_site = network_defuse_site
                 objective_action = "DEFUSE"
+                objective_action_peer_id = network_objective_peer_id
                 objective_action_time_left = DEFUSE_TIME
 
     var site := _current_bomb_site()
@@ -509,8 +510,7 @@ func _update_objective(delta: float) -> void:
     if objective_state == "CARRIED":
         if objective_action == "PLANT":
             if site == "" or site != objective_site or not objective_input_active:
-                objective_action = ""
-                objective_action_time_left = 0.0
+                _clear_objective_action()
             else:
                 objective_action_time_left = maxf(0.0, objective_action_time_left - delta)
                 if objective_action_time_left <= 0.0:
@@ -520,8 +520,7 @@ func _update_objective(delta: float) -> void:
                     if network_actor != null:
                         network_objective_latched_peer_id = network_objective_peer_id
                     bomb_time_left = BOMB_TIME
-                    objective_action = ""
-                    objective_action_time_left = 0.0
+                    _clear_objective_action()
     elif objective_state == "DROPPED":
         if player.global_position.distance_to(dropped_bomb_position) <= BOMB_SITE_RADIUS:
             objective_site = "NEAR"
@@ -539,8 +538,7 @@ func _update_objective(delta: float) -> void:
 
         if objective_action == "DEFUSE":
             if site != planted_site or not objective_input_active:
-                objective_action = ""
-                objective_action_time_left = 0.0
+                _clear_objective_action()
             else:
                 objective_action_time_left = maxf(0.0, objective_action_time_left - delta)
                 if objective_action_time_left <= 0.0:
@@ -675,11 +673,25 @@ func _objective_carrier_label() -> String:
         return "YOU"
     return "PLAYER #%d" % bomb_carrier_peer_id
 
+func _objective_action_actor_label() -> String:
+    if objective_action == "":
+        return ""
+    if objective_action_peer_id <= 0:
+        return "HOST"
+    if network_session != null and objective_action_peer_id == multiplayer.get_unique_id():
+        return "YOU"
+    return "PLAYER #%d" % objective_action_peer_id
+
+func _clear_objective_action() -> void:
+    objective_action = ""
+    objective_action_peer_id = -1
+    objective_action_time_left = 0.0
+
 func _objective_label() -> String:
     if objective_state == "CARRIED":
         var carrier := _objective_carrier_label()
         if objective_action == "PLANT":
-            return "BOMB: PLANTING %s %0.1fs — %s" % [objective_site, objective_action_time_left, carrier]
+            return "BOMB: PLANTING %s %0.1fs — %s" % [objective_site, objective_action_time_left, _objective_action_actor_label()]
         if objective_site != "":
             return "BOMB: CARRIED BY %s — SITE %s — HOLD F" % [carrier, objective_site]
         return "BOMB: CARRIED BY %s — MOVE TO A/B" % carrier
@@ -690,7 +702,7 @@ func _objective_label() -> String:
         return "BOMB: DROPPED — RECOVER AT %0.1f, %0.1f" % [dropped_bomb_position.x, dropped_bomb_position.z]
     if objective_state == "PLANTED":
         if objective_action == "DEFUSE":
-            return "BOMB: PLANTED %s — DEFUSING %0.1fs" % [planted_site, objective_action_time_left]
+            return "BOMB: PLANTED %s — DEFUSING %0.1fs — %s" % [planted_site, objective_action_time_left, _objective_action_actor_label()]
         return "BOMB: PLANTED %s — %0.1fs" % [planted_site, bomb_time_left]
     if objective_state == "DEFUSED":
         return "BOMB: DEFUSED"
@@ -877,8 +889,7 @@ func _start_round() -> void:
     objective_site = ""
     planted_site = ""
     bomb_time_left = 0.0
-    objective_action = ""
-    objective_action_time_left = 0.0
+    _clear_objective_action()
     bot_defuse_time_left = 0.0
     active_defuser = null
     bomb_defense_revision += 1
