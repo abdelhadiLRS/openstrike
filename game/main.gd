@@ -346,8 +346,9 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     var was_dead := dead
     var previous_round_number := round_number
     network_diagnostics.record_snapshot(snapshot.tick, snapshot.acknowledged_input_sequence)
-    prediction.acknowledge(snapshot.acknowledged_input_sequence)
-    last_processed_input_sequence = maxi(last_processed_input_sequence, snapshot.acknowledged_input_sequence)
+    var acknowledged_sequence := mini(snapshot.acknowledged_input_sequence, input_sequence)
+    prediction.acknowledge(acknowledged_sequence)
+    last_processed_input_sequence = maxi(last_processed_input_sequence, acknowledged_sequence)
     health = snapshot.health
     dead = snapshot.dead
     if dead and not was_dead:
@@ -358,6 +359,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         round_state = snapshot.round_state
     round_number = snapshot.round_number
     if snapshot.round_number != previous_round_number:
+        prediction.clear_pending()
         pending_buy_weapon_id = ""
         pending_switch_weapon = false
         pending_reload = false
