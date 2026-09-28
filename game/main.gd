@@ -2030,8 +2030,19 @@ func _create_visual_environment() -> void:
     environment.background_color = Color(0.055, 0.075, 0.105)
     environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     environment.ambient_light_color = Color(0.48, 0.58, 0.72)
-    environment.ambient_light_energy = 0.65
+    environment.ambient_light_energy = 0.72
     environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+    # A light atmospheric haze softens distant wall edges while keeping the
+    # compact arena readable; restrained grading separates cool concrete
+    # from the cyan/amber objective accents.
+    environment.fog_enabled = true
+    environment.fog_light_color = Color(0.16, 0.22, 0.30)
+    environment.fog_density = 0.004
+    environment.fog_sky_affect = 0.08
+    environment.adjustment_enabled = true
+    environment.adjustment_brightness = 1.0
+    environment.adjustment_contrast = 1.04
+    environment.adjustment_saturation = 1.08
     environment_node.environment = environment
     add_child(environment_node)
 
@@ -2043,6 +2054,27 @@ func _create_visual_environment() -> void:
     sun.shadow_enabled = true
     sun.directional_shadow_max_distance = 45.0
     add_child(sun)
+
+    # Emissive perimeter strips add a restrained industrial silhouette without
+    # spawning extra dynamic lights or affecting collision/navigation.
+    var perimeter_strip := StandardMaterial3D.new()
+    perimeter_strip.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    perimeter_strip.albedo_color = Color(0.05, 0.34, 0.48)
+    perimeter_strip.emission_enabled = true
+    perimeter_strip.emission = Color(0.025, 0.30, 0.48)
+    perimeter_strip.emission_energy_multiplier = 1.35
+    var perimeter_warning := StandardMaterial3D.new()
+    perimeter_warning.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    perimeter_warning.albedo_color = Color(0.56, 0.29, 0.08)
+    perimeter_warning.emission_enabled = true
+    perimeter_warning.emission = Color(0.60, 0.22, 0.035)
+    perimeter_warning.emission_energy_multiplier = 1.1
+    for x in range(-14, 15, 7):
+        _visual_box(Vector3(float(x), 3.55, -17.40), Vector3(3.0, 0.045, 0.055), perimeter_strip)
+        _visual_box(Vector3(float(x), 3.55, 17.40), Vector3(3.0, 0.045, 0.055), perimeter_strip)
+    for z in [-14.0, 0.0, 14.0]:
+        _visual_box(Vector3(-17.40, 3.55, z), Vector3(0.055, 0.045, 3.0), perimeter_warning)
+        _visual_box(Vector3(17.40, 3.55, z), Vector3(0.055, 0.045, 3.0), perimeter_warning)
 
 func _create_map_dressing() -> void:
     # Low-cost, non-colliding markings improve map readability without
