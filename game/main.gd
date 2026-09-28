@@ -487,7 +487,12 @@ func _start_prediction_replay(snapshot: OpenStrikeSnapshot) -> void:
 
     var position_correction_needed := OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position)
     var rotation_correction_needed := OpenStrikeReconciliation.rotation_correction_needed(snapshot.yaw, player.rotation.y, snapshot.pitch, pitch)
-    if not position_correction_needed and not rotation_correction_needed:
+    # Velocity can diverge even when the player's position is still inside the
+    # positional tolerance (for example after a server-side collision or jump
+    # correction). Keep it as an independent reconciliation signal so the next
+    # prediction step starts from the same authoritative momentum.
+    var velocity_correction_needed := player.velocity.distance_to(snapshot.velocity) > 0.75
+    if not position_correction_needed and not rotation_correction_needed and not velocity_correction_needed:
         return
 
     prediction_replay_position = snapshot.position
@@ -505,7 +510,8 @@ func _start_prediction_replay(snapshot: OpenStrikeSnapshot) -> void:
 
     if position_correction_needed:
         player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
-        player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.25)
+    if velocity_correction_needed:
+        player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.5)
     if rotation_correction_needed:
         player.rotation.y = OpenStrikeReconciliation.corrected_angle(snapshot.yaw, player.rotation.y, 0.35)
         pitch = OpenStrikeReconciliation.corrected_angle(snapshot.pitch, pitch, 0.35)
