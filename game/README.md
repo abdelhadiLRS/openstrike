@@ -153,3 +153,11 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - FLANK retains independent wider-angle pressure so the squad does not collapse into a single chase line.
 - Assignment selection has light role persistence to reduce unnecessary role swapping when several bots have similar scores.
 - Bomb DEFUSE and BOMB_COVER states still take precedence over the normal squad engagement layer.
+
+
+### Squad tactical memory
+- The RED squad now keeps a short-lived shared memory of the player's last confirmed position when at least one surviving bot has line of sight.
+- The memory expires after a short timeout instead of becoming permanent information.
+- Attack repositioning can use the remembered position when the player has moved behind cover, allowing the squad to pressure the last known area rather than instantly treating the target as continuously visible.
+- The memory is shared across bots and carries a revision number so later tactical systems can react to meaningful updates.
+- The system remains bounded by a maximum tactical distance and does not create persistent map-wide player tracking.
