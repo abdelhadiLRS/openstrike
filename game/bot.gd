@@ -386,8 +386,18 @@ func _update_goal() -> void:
     if state == "REENGAGE":
         var contact = main.call("_get_bot_squad_contact", self)
         var contact_revision := int(contact.get("revision", -1)) if contact is Dictionary else -1
-        if squad_contact_revision != contact_revision or current_goal == Vector3.ZERO:
-            current_goal = main.call("_get_bot_squad_engagement_target", self)
+        var target_position := Vector3.ZERO
+        if contact is Dictionary:
+            target_position = contact.get("position", Vector3.ZERO)
+        if target_position == Vector3.ZERO and squad_threat_state == "TRACKED":
+            var threat = main.call("_get_squad_threat")
+            if threat is Dictionary:
+                target_position = threat.get("position", Vector3.ZERO)
+                contact_revision = int(threat.get("revision", contact_revision))
+        if target_position == Vector3.ZERO:
+            target_position = main.call("_get_bot_squad_engagement_target", self)
+        if squad_contact_revision != contact_revision or current_goal == Vector3.ZERO or current_goal.distance_to(target_position) >= ROUTE_GOAL_CHANGE_DISTANCE:
+            current_goal = target_position
             squad_contact_position = current_goal
             squad_contact_revision = contact_revision
             route.clear()
