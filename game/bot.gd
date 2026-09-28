@@ -554,6 +554,11 @@ func _update_goal() -> void:
         route.clear()
         route_index = 0
 
+    if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+        route.clear()
+        route_index = 0
+        return
+
     _ensure_route(current_goal)
 func _select_cover_point() -> void:
     var points: Array = main.get("cover_points")
