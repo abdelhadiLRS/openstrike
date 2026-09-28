@@ -16,6 +16,13 @@ const ROUND_LOSS_REWARD := 1200
 const KILL_REWARD := 300
 const MAX_CREDITS := 16000
 const RESPAWN_DELAY := 2.0
+const PLANT_TIME := 2.5
+const DEFUSE_TIME := 4.0
+const BOMB_TIME := 30.0
+const BOMB_SITE_RADIUS := 2.8
+
+const BOMB_SITE_A := Vector3(-10, 0.15, -7)
+const BOMB_SITE_B := Vector3(10, 0.15, 7)
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
@@ -55,6 +62,13 @@ var round_won := false
 var credits := STARTING_CREDITS
 var primary_owned := false
 
+var objective_state := "CARRIED"
+var objective_site := ""
+var planted_site := ""
+var bomb_time_left := 0.0
+var objective_action := ""
+var objective_action_time_left := 0.0
+
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
     Vector3(0, 1.2, 14),
@@ -89,6 +103,8 @@ func _unhandled_input(event: InputEvent) -> void:
             _switch_weapon()
         elif event.keycode == KEY_R and not dead:
             _reload()
+        elif event.keycode == KEY_F and not dead:
+            _begin_objective_action()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not dead:
         Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -109,6 +125,7 @@ func _physics_process(delta: float) -> void:
         _update_hud()
         return
 
+    _update_objective(delta)
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
 
@@ -154,6 +171,94 @@ func _update_round_state(delta: float) -> void:
         if round_state_time_left <= 0.0:
             round_number += 1
             _start_round()
+
+func _current_bomb_site() -> String:
+    if player.global_position.distance_to(BOMB_SITE_A) <= BOMB_SITE_RADIUS:
+        return "A"
+    if player.global_position.distance_to(BOMB_SITE_B) <= BOMB_SITE_RADIUS:
+        return "B"
+    return ""
+
+
+func _begin_objective_action() -> void:
+    if round_state != "LIVE" or objective_action != "":
+        return
+
+    if objective_state == "CARRIED":
+        var site := _current_bomb_site()
+        if site != "":
+            objective_site = site
+            objective_action = "PLANT"
+            objective_action_time_left = PLANT_TIME
+    elif objective_state == "PLANTED":
+        var site := _current_bomb_site()
+        if site == planted_site:
+            objective_site = site
+            objective_action = "DEFUSE"
+            objective_action_time_left = DEFUSE_TIME
+
+
+func _update_objective(delta: float) -> void:
+    if round_state != "LIVE":
+        objective_action = ""
+        objective_action_time_left = 0.0
+        return
+
+    var site := _current_bomb_site()
+
+    if objective_state == "CARRIED":
+        objective_site = site
+        if objective_action == "PLANT":
+            if site == "" or site != objective_site or not Input.is_key_pressed(KEY_F):
+                objective_action = ""
+                objective_action_time_left = 0.0
+            else:
+                objective_action_time_left = maxf(0.0, objective_action_time_left - delta)
+                if objective_action_time_left <= 0.0:
+                    objective_state = "PLANTED"
+                    planted_site = site
+                    bomb_time_left = BOMB_TIME
+                    objective_action = ""
+                    objective_action_time_left = 0.0
+    elif objective_state == "PLANTED":
+        objective_site = planted_site
+        bomb_time_left = maxf(0.0, bomb_time_left - delta)
+
+        if bomb_time_left <= 0.0:
+            objective_state = "EXPLODED"
+            _finish_round(true)
+            return
+
+        if objective_action == "DEFUSE":
+            if site != planted_site or not Input.is_key_pressed(KEY_F):
+                objective_action = ""
+                objective_action_time_left = 0.0
+            else:
+                objective_action_time_left = maxf(0.0, objective_action_time_left - delta)
+                if objective_action_time_left <= 0.0:
+                    objective_state = "DEFUSED"
+                    objective_action = ""
+                    objective_action_time_left = 0.0
+                    _finish_round(false)
+
+
+func _objective_label() -> String:
+    if objective_state == "CARRIED":
+        if objective_action == "PLANT":
+            return "BOMB: PLANTING %s %0.1fs" % [objective_site, objective_action_time_left]
+        if objective_site != "":
+            return "BOMB: CARRIED — SITE %s — HOLD F" % objective_site
+        return "BOMB: CARRIED — MOVE TO A/B"
+    if objective_state == "PLANTED":
+        if objective_action == "DEFUSE":
+            return "BOMB: PLANTED %s — DEFUSING %0.1fs" % [planted_site, objective_action_time_left]
+        return "BOMB: PLANTED %s — %0.1fs" % [planted_site, bomb_time_left]
+    if objective_state == "DEFUSED":
+        return "BOMB: DEFUSED"
+    if objective_state == "EXPLODED":
+        return "BOMB: EXPLODED"
+    return "BOMB: NONE"
+
 
 func _current_weapon() -> Dictionary:
     return weapons[weapon_index]
@@ -264,9 +369,9 @@ func _update_hud() -> void:
             weapons[0]["name"], weapons[0]["cost"], weapons[1]["name"], weapons[1]["cost"]
         ]
 
-    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   ESC mouse" % [
+    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse" % [
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
-        credits, buy_line, weapon["name"], state, ammo, reserve, health, enemies_alive
+        credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive
     ]
 
 func _start_round() -> void:
@@ -284,6 +389,12 @@ func _start_round() -> void:
     dead = false
     respawn_timer = 0.0
     round_won = false
+    objective_state = "CARRIED"
+    objective_site = ""
+    planted_site = ""
+    bomb_time_left = 0.0
+    objective_action = ""
+    objective_action_time_left = 0.0
 
 func _finish_round(won: bool) -> void:
     if round_state != "LIVE":
@@ -345,6 +456,30 @@ func _world() -> void:
         _box(p, Vector3(3,2,2), Color(0.28,0.30,0.33))
     for p in red_spawn_points:
         _target(p)
+    _objective_site(BOMB_SITE_A, "A")
+    _objective_site(BOMB_SITE_B, "B")
+
+func _objective_site(pos: Vector3, label: String) -> void:
+    var marker := MeshInstance3D.new()
+    marker.position = pos
+    var cylinder := CylinderMesh.new()
+    cylinder.top_radius = BOMB_SITE_RADIUS
+    cylinder.bottom_radius = BOMB_SITE_RADIUS
+    cylinder.height = 0.08
+    marker.mesh = cylinder
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = Color(0.15, 0.55, 0.90, 0.45)
+    mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    marker.material_override = mat
+    add_child(marker)
+
+    var site_label := Label3D.new()
+    site_label.text = "SITE " + label
+    site_label.position = pos + Vector3(0, 0.35, 0)
+    site_label.font_size = 48
+    site_label.outline_size = 8
+    add_child(site_label)
+
 
 func _box(pos: Vector3, size: Vector3, color: Color) -> void:
     var body := StaticBody3D.new()
