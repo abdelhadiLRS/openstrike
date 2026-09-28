@@ -608,15 +608,8 @@ func _update_tactical_memory(delta: float) -> void:
         squad_contact_source = null
         return
 
-    var contact_source: Node = null
-    var contact_position := Vector3.ZERO
-    for bot in bots:
-        if not is_instance_valid(bot) or bot.dead:
-            continue
-        if bool(bot.call("_has_line_of_sight")):
-            contact_source = bot
-            contact_position = player.global_position
-            break
+    var contact_source: Node = _select_contact_source()
+    var contact_position := player.global_position if contact_source != null else Vector3.ZERO
 
     if contact_source != null and squad_contact_update_timer <= 0.0:
         var source_changed := squad_contact_source != contact_source
@@ -692,6 +685,35 @@ func _update_tactical_memory(delta: float) -> void:
     squad_search_active = false
     squad_search_timer = 0.0
     squad_search_update_timer = 0.0
+
+func _select_contact_source() -> Node:
+    if is_instance_valid(squad_contact_source) and not squad_contact_source.dead and bool(squad_contact_source.call("_has_line_of_sight")):
+        return squad_contact_source
+
+    var best_bot: Node = null
+    var best_score := INF
+    for bot in bots:
+        if not is_instance_valid(bot) or bot.dead:
+            continue
+        if not bool(bot.call("_has_line_of_sight")):
+            continue
+
+        var distance := bot.global_position.distance_to(player.global_position)
+        var assignment := str(bot.get("combat_assignment"))
+        var role_bonus := 0.0
+        if assignment == "PRESSURE":
+            role_bonus = -3.0
+        elif assignment == "SUPPORT":
+            role_bonus = -1.0
+        elif assignment == "FLANK":
+            role_bonus = 0.5
+
+        var score := distance + role_bonus
+        if score < best_score:
+            best_score = score
+            best_bot = bot
+
+    return best_bot
 
 func _is_squad_contact_active() -> bool:
     return squad_contact_position != Vector3.ZERO and squad_contact_timer > 0.0
