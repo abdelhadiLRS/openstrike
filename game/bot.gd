@@ -62,6 +62,9 @@ var combat_reposition_timer := 0.0
 var combat_slot := 0
 var combat_assignment := "SUPPORT"
 var combat_engagement := "READY"
+var tactical_memory_position := Vector3.ZERO
+var tactical_memory_timer := 0.0
+var tactical_memory_revision := -1
 var combat_reposition_goal := Vector3.ZERO
 var route_goal := Vector3.ZERO
 var route_replan_timer := 0.0
@@ -84,6 +87,7 @@ func _physics_process(delta: float) -> void:
     recently_hit_timer = maxf(0.0, recently_hit_timer - delta)
     combat_reposition_timer = maxf(0.0, combat_reposition_timer - delta)
     route_replan_timer = maxf(0.0, route_replan_timer - delta)
+    tactical_memory_timer = maxf(0.0, tactical_memory_timer - delta)
     burst_pause = maxf(0.0, burst_pause - delta)
     strafe_time = maxf(0.0, strafe_time - delta)
     if strafe_time <= 0.0:
@@ -92,6 +96,12 @@ func _physics_process(delta: float) -> void:
     target = main.get("player")
     if not is_instance_valid(target):
         return
+
+    var memory = main.call("_get_bot_tactical_memory", self)
+    if memory is Dictionary:
+        tactical_memory_position = memory.get("position", Vector3.ZERO)
+        tactical_memory_timer = float(memory.get("time_left", 0.0))
+        tactical_memory_revision = int(memory.get("revision", -1))
 
     _update_state()
     if state != last_state:
@@ -511,6 +521,9 @@ func reset_target() -> void:
     combat_intent = "HOLD"
     combat_assignment = "SUPPORT"
     combat_engagement = "READY"
+    tactical_memory_position = Vector3.ZERO
+    tactical_memory_timer = 0.0
+    tactical_memory_revision = -1
     combat_decision_timer = 0.0
     recently_hit_timer = 0.0
     combat_reposition_timer = 0.0
