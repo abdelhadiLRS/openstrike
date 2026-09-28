@@ -122,6 +122,7 @@ func _unhandled_input(event: InputEvent) -> void:
         Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _physics_process(delta: float) -> void:
+    _update_bomb_visual()
     if dead:
         respawn_timer = maxf(0.0, respawn_timer - delta)
         if respawn_timer <= 0.0:
@@ -140,7 +141,6 @@ func _physics_process(delta: float) -> void:
 
     _update_bots(delta)
     _update_objective(delta)
-    _update_bomb_visual()
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
 
@@ -536,6 +536,7 @@ func _kill_player() -> void:
         objective_site = ""
         objective_action = ""
         objective_action_time_left = 0.0
+        _update_bomb_visual()
     dead = true
     respawn_timer = RESPAWN_DELAY
     player.visible = false
