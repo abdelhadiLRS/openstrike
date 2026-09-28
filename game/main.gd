@@ -1505,7 +1505,7 @@ func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
                 if cursor == start_index:
                     break
                 if not came_from.has(cursor):
-                    return [points[start_index], goal]
+                    return []
                 cursor = int(came_from[cursor])
 
             var route: Array = []
@@ -1532,7 +1532,7 @@ func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
             if not open_set.has(neighbor):
                 open_set.append(neighbor)
 
-    return [points[start_index], goal]
+    return []
 
 func _has_obstacle_between(from: Vector3, to: Vector3) -> bool:
     var start := from + Vector3(0, 0.9, 0)
