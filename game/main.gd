@@ -276,23 +276,27 @@ func _update_bot_defuse(delta: float) -> void:
         bot_defuse_time_left = 0.0
 
     if active_defuser == null:
+        var nearest_bot: Node = null
+        var nearest_distance := INF
         for bot in bots:
             if not is_instance_valid(bot) or bot.dead:
                 continue
-            if bot.global_position.distance_to(site_position) <= BOMB_SITE_RADIUS:
-                active_defuser = bot
-                bot_defuse_time_left = DEFUSE_TIME
-                break
+            var distance := bot.global_position.distance_to(site_position)
+            if distance < nearest_distance:
+                nearest_distance = distance
+                nearest_bot = bot
+
+        if nearest_bot != null:
+            active_defuser = nearest_bot
+            bot_defuse_time_left = DEFUSE_TIME
 
     if active_defuser != null:
-        if active_defuser.global_position.distance_to(site_position) > BOMB_SITE_RADIUS:
-            active_defuser = null
-            bot_defuse_time_left = 0.0
-            return
-        bot_defuse_time_left = maxf(0.0, bot_defuse_time_left - delta)
-        if bot_defuse_time_left <= 0.0:
-            objective_state = "DEFUSED"
-            _finish_round(false)
+        var defuser_distance := active_defuser.global_position.distance_to(site_position)
+        if defuser_distance <= BOMB_SITE_RADIUS:
+            bot_defuse_time_left = maxf(0.0, bot_defuse_time_left - delta)
+            if bot_defuse_time_left <= 0.0:
+                objective_state = "DEFUSED"
+                _finish_round(false)
 
 
 func _update_bomb_visual() -> void:
