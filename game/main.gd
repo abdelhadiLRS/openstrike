@@ -359,6 +359,13 @@ func _bot_has_navigation_path(bot: Node, goal: Vector3) -> bool:
 
 func _update_bot_defuse(delta: float) -> void:
     if objective_action == "DEFUSE":
+        # The player has taken over the defuse action. Release any bot
+        # defuser so it does not remain in DEFUSE state or retain stale
+        # progress when the player cancels the action.
+        if active_defuser != null or bot_defuse_time_left > 0.0:
+            active_defuser = null
+            bot_defuse_time_left = 0.0
+            bomb_defense_revision += 1
         return
 
     var site_position := bomb_site_a if planted_site == "A" else bomb_site_b
