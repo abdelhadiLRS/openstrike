@@ -535,7 +535,15 @@ func _select_cover_point() -> void:
     if cover_index >= 0 and cover_index < points.size():
         var current: Dictionary = points[cover_index]
         var current_cover: Vector3 = current["cover"]
-        if global_position.distance_to(current_cover) <= COVER_REACHED * 2.5:
+        var current_peek: Vector3 = current["peek"]
+        var current_player_distance := current_cover.distance_to(target.global_position)
+        var current_cover_valid := global_position.distance_to(current_cover) <= COVER_REACHED * 2.5
+        current_cover_valid = current_cover_valid and current_player_distance >= 5.0
+        current_cover_valid = current_cover_valid and main.call("_bot_has_navigation_path", self, current_cover)
+        current_cover_valid = current_cover_valid and main.call("_bot_has_navigation_path", self, current_peek)
+        current_cover_valid = current_cover_valid and main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), current_cover)
+        current_cover_valid = current_cover_valid and not main.call("_has_obstacle_between", current_peek, target.global_position + Vector3(0, 1.0, 0))
+        if current_cover_valid:
             return
 
     var best := -1
