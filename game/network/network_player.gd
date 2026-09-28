@@ -230,7 +230,7 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	crouched = false
 	_update_collider()
 
-func make_snapshot(tick: int, round_state: String, round_number: int, objective_state: String, planted_site: String, bomb_time_left: float, carrier_peer_id_value: int = 0, dropped_bomb_position_value: Vector3 = Vector3.ZERO, round_won_value: bool = false, round_outcome_reason_value: String = "") -> OpenStrikeSnapshot:
+func make_snapshot(tick: int, round_state: String, round_number: int, objective_state: String, planted_site: String, bomb_time_left: float, carrier_peer_id_value: int = 0, dropped_bomb_position_value: Vector3 = Vector3.ZERO, round_won_value: bool = false, round_outcome_reason_value: String = "", objective_action_value: String = "", objective_action_peer_id_value: int = -1, objective_action_time_left_value: float = 0.0) -> OpenStrikeSnapshot:
 	_sync_active_weapon()
 	var snapshot := OpenStrikeSnapshot.new()
 	snapshot.tick = tick
@@ -260,6 +260,9 @@ func make_snapshot(tick: int, round_state: String, round_number: int, objective_
 	snapshot.bomb_time_left = bomb_time_left
 	snapshot.carrier_peer_id = carrier_peer_id_value
 	snapshot.dropped_bomb_position = dropped_bomb_position_value
+	snapshot.objective_action = objective_action_value
+	snapshot.objective_action_peer_id = objective_action_peer_id_value
+	snapshot.objective_action_time_left = objective_action_time_left_value
 	return snapshot
 
 func _build_visual() -> void:
