@@ -11,22 +11,25 @@ var _queues: Dictionary = {}
 var _last_sequence: Dictionary = {}
 var _last_tick: Dictionary = {}
 
-func submit(peer_id: int, command: OpenStrikeInputCommand, server_tick: int) -> bool:
-	if peer_id <= 0 or command == null:
-		return false
+## Returns an empty string when accepted; otherwise returns a stable rejection reason.
+func submit(peer_id: int, command: OpenStrikeInputCommand, server_tick: int) -> String:
+	if peer_id <= 0:
+		return "invalid_peer"
+	if command == null:
+		return "invalid_command"
 	# Reject non-finite client values before they reach CharacterBody3D
 	# movement, camera rotation, or weapon/objective simulation.
 	if not command.move.is_finite() or not command.look_delta.is_finite():
-		return false
+		return "non_finite_input"
 	if command.sequence <= int(_last_sequence.get(peer_id, 0)):
-		return false
+		return "duplicate_sequence"
 	if command.tick > server_tick + MAX_TICK_LEAD:
-		return false
+		return "tick_too_far_ahead"
 	if command.tick < server_tick - MAX_REWIND_TICKS:
-		return false
+		return "tick_too_old"
 	var previous_tick := int(_last_tick.get(peer_id, -1))
 	if previous_tick >= 0 and command.tick < previous_tick:
-		return false
+		return "tick_regression"
 
 	command.move = command.move.limit_length(MAX_MOVE)
 	command.look_delta.x = clampf(command.look_delta.x, -MAX_LOOK_DELTA, MAX_LOOK_DELTA)
@@ -38,12 +41,12 @@ func submit(peer_id: int, command: OpenStrikeInputCommand, server_tick: int) -> 
 	# receives explicit feedback and prediction can continue from the last
 	# authoritative acknowledgement.
 	if queue.size() >= MAX_PENDING:
-		return false
+		return "input_queue_full"
 	queue.append(command)
 	_queues[peer_id] = queue
 	_last_sequence[peer_id] = command.sequence
 	_last_tick[peer_id] = command.tick
-	return true
+	return ""
 
 func pop_next(peer_id: int) -> OpenStrikeInputCommand:
 	var queue: Array = _queues.get(peer_id, [])
