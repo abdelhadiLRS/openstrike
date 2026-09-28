@@ -680,6 +680,11 @@ func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
 		var authoritative_count := states.size()
 		if _last_received_bot_count >= 0:
 			authoritative_count = _last_received_bot_count
+		# A snapshot is delivered as one RPC payload. A count/state mismatch is
+		# therefore malformed rather than a partial roster update; never create
+		# client-side bots from a roster whose state list is inconsistent.
+		if authoritative_count != states.size():
+			return
 		roster_changed = bool(root.configure_network_bot_count(authoritative_count))
 	if roster_changed:
 		_refresh_network_bot_cache()
