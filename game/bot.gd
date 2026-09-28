@@ -745,10 +745,14 @@ func _move_toward_goal(delta: float) -> void:
                 return
 
     if state == "COVER" or state == "PEEK":
-        if cover_index < 0:
-            return
-        var cover_data: Dictionary = main.get("cover_points")[cover_index]
-        var destination: Vector3 = cover_data["cover"] if state == "COVER" else cover_data["peek"]
+        var destination: Vector3
+        if combat_intent == "RETREAT" and retreat_cover_goal != Vector3.ZERO:
+            destination = retreat_cover_goal
+        else:
+            if cover_index < 0:
+                return
+            var cover_data: Dictionary = main.get("cover_points")[cover_index]
+            destination = cover_data["cover"] if state == "COVER" else cover_data["peek"]
         var cover_offset := destination - global_position
         cover_offset.y = 0.0
         if cover_offset.length() <= COVER_REACHED:
