@@ -262,7 +262,7 @@ func _physics_process(delta: float) -> void:
                 Vector2.ZERO,
                 pending_look_delta,
                 false,
-                pending_reload,
+                false,
                 false,
                 false,
                 str(_current_weapon()["id"])
