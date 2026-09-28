@@ -23,6 +23,7 @@ var state := "DEFEND"
 var route := []
 var route_index := 0
 var current_goal := Vector3.ZERO
+var last_state := "DEFEND"
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -41,6 +42,10 @@ func _physics_process(delta: float) -> void:
         return
 
     _update_state()
+    if state != last_state:
+        route.clear()
+        route_index = 0
+        last_state = state
     _update_goal()
     _move_toward_goal(delta)
 
@@ -179,6 +184,7 @@ func reset_target() -> void:
         collision_shape.disabled = false
     route.clear()
     route_index = 0
+    last_state = "DEFEND"
     fire_cooldown = 0.0
 
 func _die() -> void:
