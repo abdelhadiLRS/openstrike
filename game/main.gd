@@ -71,6 +71,7 @@ var planted_site := ""
 var bomb_time_left := 0.0
 var objective_action := ""
 var objective_action_time_left := 0.0
+var bot_defuse_time_left := 0.0
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
 
@@ -230,6 +231,7 @@ func _update_objective(delta: float) -> void:
     elif objective_state == "PLANTED":
         objective_site = planted_site
         bomb_time_left = maxf(0.0, bomb_time_left - delta)
+        _update_bot_defuse(delta)
 
         if bomb_time_left <= 0.0:
             objective_state = "EXPLODED"
@@ -247,6 +249,33 @@ func _update_objective(delta: float) -> void:
                     objective_action = ""
                     objective_action_time_left = 0.0
                     _finish_round(false)
+
+func _update_bot_defuse(delta: float) -> void:
+    if objective_action == "DEFUSE":
+        return
+    if bot_defuse_time_left <= 0.0:
+        for bot in bots:
+            if not is_instance_valid(bot) or bot.dead:
+                continue
+            var site_position := bomb_site_a if planted_site == "A" else bomb_site_b
+            if bot.global_position.distance_to(site_position) <= BOMB_SITE_RADIUS:
+                bot_defuse_time_left = DEFUSE_TIME
+                break
+
+    if bot_defuse_time_left > 0.0:
+        var defender_near_site := false
+        var site_position := bomb_site_a if planted_site == "A" else bomb_site_b
+        for bot in bots:
+            if is_instance_valid(bot) and not bot.dead and bot.global_position.distance_to(site_position) <= BOMB_SITE_RADIUS:
+                defender_near_site = true
+                break
+        if defender_near_site:
+            bot_defuse_time_left = maxf(0.0, bot_defuse_time_left - delta)
+            if bot_defuse_time_left <= 0.0:
+                objective_state = "DEFUSED"
+                _finish_round(false)
+        else:
+            bot_defuse_time_left = 0.0
 
 
 func _objective_label() -> String:
@@ -402,6 +431,7 @@ func _start_round() -> void:
     bomb_time_left = 0.0
     objective_action = ""
     objective_action_time_left = 0.0
+    bot_defuse_time_left = 0.0
 
 func _finish_round(won: bool) -> void:
     if round_state != "LIVE":
