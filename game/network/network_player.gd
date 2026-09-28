@@ -37,11 +37,22 @@ var snapshot_target_pitch: float = 0.0
 var has_snapshot_target: bool = false
 var snapshot_smoothing_speed: float = 18.0
 
+# Keep a tiny authoritative history for render-time interpolation. Rendering
+# slightly behind the newest server tick prevents packet jitter from becoming
+# visible acceleration/deceleration while keeping the gameplay state current.
+const SNAPSHOT_BUFFER_MAX := 6
+const SNAPSHOT_INTERPOLATION_TICKS := 6
+var snapshot_buffer: Array[OpenStrikeSnapshot] = []
+var snapshot_render_tick: float = 0.0
+
 var collision_shape: CollisionShape3D
 var mesh: MeshInstance3D
 
 func _physics_process(delta: float) -> void:
 	if not has_snapshot_target:
+		return
+	if snapshot_buffer.size() >= 2:
+		_update_buffered_transform(delta)
 		return
 	var blend := 1.0 - exp(-snapshot_smoothing_speed * maxf(delta, 0.0))
 	global_position = global_position.lerp(snapshot_target_position, blend)
@@ -50,11 +61,58 @@ func _physics_process(delta: float) -> void:
 	yaw = rotation.y
 	pitch = lerpf(pitch, snapshot_target_pitch, blend)
 
+func _update_buffered_transform(delta: float) -> void:
+	var latest := snapshot_buffer[snapshot_buffer.size() - 1]
+	if latest == null:
+		return
+	var desired_tick := float(latest.tick - SNAPSHOT_INTERPOLATION_TICKS)
+	snapshot_render_tick = move_toward(snapshot_render_tick, desired_tick, maxf(delta, 0.0) * 60.0)
+	if snapshot_render_tick > desired_tick:
+		snapshot_render_tick = desired_tick
+
+	var from_snapshot: OpenStrikeSnapshot = null
+	var to_snapshot: OpenStrikeSnapshot = null
+	for index in range(snapshot_buffer.size() - 1):
+		var a := snapshot_buffer[index]
+		var b := snapshot_buffer[index + 1]
+		if a == null or b == null:
+			continue
+		if float(a.tick) <= snapshot_render_tick and snapshot_render_tick <= float(b.tick):
+			from_snapshot = a
+			to_snapshot = b
+			break
+
+	if from_snapshot == null or to_snapshot == null:
+		# If the newest packet has not advanced far enough to fill the delayed
+		# render point, keep the latest buffered target rather than extrapolating
+		# aggressively. This is safer for collision-sensitive FPS visuals.
+		var blend := 1.0 - exp(-snapshot_smoothing_speed * maxf(delta, 0.0))
+		global_position = global_position.lerp(snapshot_target_position, blend)
+		var yaw_delta := wrapf(snapshot_target_yaw - rotation.y, -PI, PI)
+		rotation.y += yaw_delta * blend
+		yaw = rotation.y
+		pitch = lerpf(pitch, snapshot_target_pitch, blend)
+		return
+
+	var tick_span := maxf(1.0, float(to_snapshot.tick - from_snapshot.tick))
+	var alpha := clampf((snapshot_render_tick - float(from_snapshot.tick)) / tick_span, 0.0, 1.0)
+	var target_position := from_snapshot.position.lerp(to_snapshot.position, alpha)
+	var target_yaw := from_snapshot.yaw + wrapf(to_snapshot.yaw - from_snapshot.yaw, -PI, PI) * alpha
+	var target_pitch := lerpf(from_snapshot.pitch, to_snapshot.pitch, alpha)
+	var blend := 1.0 - exp(-snapshot_smoothing_speed * maxf(delta, 0.0))
+	global_position = global_position.lerp(target_position, blend)
+	var yaw_delta := wrapf(target_yaw - rotation.y, -PI, PI)
+	rotation.y += yaw_delta * blend
+	yaw = rotation.y
+	pitch = lerpf(pitch, target_pitch, blend)
+
 func setup(id: int, start_position: Vector3, catalog: Array = []) -> void:
 	peer_id = id
 	team = "BLUE"
 	global_position = start_position
 	snapshot_target_position = start_position
+	snapshot_buffer.clear()
+	snapshot_render_tick = 0.0
 	has_snapshot_target = false
 	yaw = rotation.y
 	_initialize_weapon_states(catalog)
@@ -96,6 +154,8 @@ func _sync_active_weapon() -> void:
 func begin_round(start_position: Vector3) -> void:
 	global_position = start_position
 	snapshot_target_position = start_position
+	snapshot_buffer.clear()
+	snapshot_render_tick = 0.0
 	has_snapshot_target = false
 	velocity = Vector3.ZERO
 	health = 100
@@ -115,6 +175,8 @@ func begin_round(start_position: Vector3) -> void:
 func begin_respawn(start_position: Vector3) -> void:
 	global_position = start_position
 	snapshot_target_position = start_position
+	snapshot_buffer.clear()
+	snapshot_render_tick = 0.0
 	has_snapshot_target = false
 	velocity = Vector3.ZERO
 	health = 100
@@ -234,12 +296,24 @@ func record_snapshot(tick: int) -> void:
 func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if snapshot == null:
 		return
+	if not snapshot_buffer.is_empty():
+		var latest := snapshot_buffer[snapshot_buffer.size() - 1]
+		if latest != null and snapshot.tick <= latest.tick:
+			return
+
 	var snap_distance := global_position.distance_to(snapshot.position)
 	var hard_snap := not has_snapshot_target or snap_distance > 3.0 or snapshot.dead
 	if hard_snap:
 		global_position = snapshot.position
 		rotation.y = snapshot.yaw
 		pitch = snapshot.pitch
+		snapshot_buffer.clear()
+		snapshot_render_tick = float(snapshot.tick)
+
+	snapshot_buffer.append(snapshot)
+	if snapshot_buffer.size() > SNAPSHOT_BUFFER_MAX:
+		snapshot_buffer.pop_front()
+
 	snapshot_target_position = snapshot.position
 	snapshot_target_yaw = snapshot.yaw
 	snapshot_target_pitch = snapshot.pitch
