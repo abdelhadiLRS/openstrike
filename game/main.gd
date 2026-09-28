@@ -344,6 +344,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     if snapshot == null:
         return
     var was_dead := dead
+    var previous_round_number := round_number
     network_diagnostics.record_snapshot(snapshot.tick, snapshot.acknowledged_input_sequence)
     prediction.acknowledge(snapshot.acknowledged_input_sequence)
     last_processed_input_sequence = maxi(last_processed_input_sequence, snapshot.acknowledged_input_sequence)
@@ -356,6 +357,20 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     if snapshot.round_state != "":
         round_state = snapshot.round_state
     round_number = snapshot.round_number
+    if snapshot.round_number != previous_round_number:
+        pending_buy_weapon_id = ""
+        pending_switch_weapon = false
+        pending_reload = false
+        pending_objective = false
+        pending_look_delta = Vector2.ZERO
+        cooldown = 0.0
+        recoil_kick = 0.0
+        _clear_objective_action()
+        network_objective_peer_id = -1
+        network_objective_latched_peer_id = -1
+        objective_site = ""
+        bot_defuse_time_left = 0.0
+        active_defuser = null
     round_won = snapshot.round_won
     round_outcome_reason = snapshot.round_outcome_reason
     objective_state = snapshot.objective_state
@@ -947,6 +962,9 @@ func _finish_round(won: bool) -> void:
         return
     round_state = "POST"
     round_state_time_left = POST_ROUND_TIME
+    _clear_objective_action()
+    network_objective_peer_id = -1
+    network_objective_latched_peer_id = -1
     round_won = won
     if won:
         team_score += 1
