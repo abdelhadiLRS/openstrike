@@ -23,6 +23,7 @@ const BOMB_SITE_RADIUS := 2.8
 
 const BOMB_SITE_A := Vector3(-10, 0.15, -7)
 const BOMB_SITE_B := Vector3(10, 0.15, 7)
+const BOT_COUNT := 3
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
@@ -47,6 +48,8 @@ var hud: Label
 
 var player_team := TEAM_BLUE
 var enemy_team := TEAM_RED
+var bomb_site_a := BOMB_SITE_A
+var bomb_site_b := BOMB_SITE_B
 var health := MAX_HEALTH
 var dead := false
 var respawn_timer := 0.0
@@ -68,6 +71,8 @@ var planted_site := ""
 var bomb_time_left := 0.0
 var objective_action := ""
 var objective_action_time_left := 0.0
+var bots: Array[CharacterBody3D] = []
+var navigation_points: Array[Vector3] = []
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -82,6 +87,8 @@ var red_spawn_points := [
 ]
 
 func _ready() -> void:
+    bomb_site_a = BOMB_SITE_A
+    bomb_site_b = BOMB_SITE_B
     _world()
     _player()
     _hud()
@@ -125,6 +132,7 @@ func _physics_process(delta: float) -> void:
         _update_hud()
         return
 
+    _update_bots(delta)
     _update_objective(delta)
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
@@ -410,11 +418,24 @@ func _finish_round(won: bool) -> void:
 
 func _reset_targets() -> void:
     var count := 0
-    for child in get_children():
-        if child.has_method("reset_target"):
-            child.reset_target()
+    for bot in bots:
+        if is_instance_valid(bot):
+            bot.reset_target()
             count += 1
     enemies_alive = count
+
+func _update_bots(delta: float) -> void:
+    if round_state != "LIVE":
+        return
+    for bot in bots:
+        if is_instance_valid(bot) and not bot.dead:
+            bot.process_mode = Node.PROCESS_MODE_INHERIT
+
+func _on_enemy_eliminated(bot: Node) -> void:
+    enemies_alive = maxi(0, enemies_alive - 1)
+    credits = mini(MAX_CREDITS, credits + KILL_REWARD)
+    if enemies_alive == 0:
+        _finish_round(true)
 
 func _spawn_player() -> void:
     var spawn_index := (round_number - 1) % blue_spawn_points.size()
@@ -453,8 +474,8 @@ func _world() -> void:
     _box(Vector3(18,2,0), Vector3(1,4,36), Color(0.10,0.12,0.15))
     for p in [Vector3(-7,1,-5), Vector3(6,1,-2), Vector3(-3,1,7), Vector3(10,1,9)]:
         _box(p, Vector3(3,2,2), Color(0.28,0.30,0.33))
-    for p in red_spawn_points:
-        _target(p)
+    _setup_navigation_points()
+    _spawn_bots()
     _objective_site(BOMB_SITE_A, "A")
     _objective_site(BOMB_SITE_B, "B")
 
@@ -498,29 +519,54 @@ func _box(pos: Vector3, size: Vector3, color: Color) -> void:
     body.add_child(shape)
     add_child(body)
 
-func _target(pos: Vector3) -> void:
-    var body := StaticBody3D.new()
-    body.set_script(load("res://target.gd"))
-    body.position = pos
-    body.set("team", enemy_team)
-    var mesh := MeshInstance3D.new()
-    var capsule := CapsuleMesh.new()
-    capsule.height = 2.0
-    capsule.radius = 0.42
-    mesh.mesh = capsule
-    var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.75,0.20,0.16)
-    mesh.material_override = mat
-    var shape := CollisionShape3D.new()
-    var capsule_shape := CapsuleShape3D.new()
-    capsule_shape.height = 2.0
-    capsule_shape.radius = 0.42
-    shape.shape = capsule_shape
-    body.add_child(mesh)
-    body.add_child(shape)
-    add_child(body)
+func _setup_navigation_points() -> void:
+    navigation_points = [
+        Vector3(-13, 1.0, -13),
+        Vector3(-13, 1.0, 0),
+        Vector3(-13, 1.0, 13),
+        Vector3(-4, 1.0, -13),
+        Vector3(-4, 1.0, 0),
+        Vector3(-4, 1.0, 13),
+        Vector3(5, 1.0, -13),
+        Vector3(5, 1.0, 0),
+        Vector3(5, 1.0, 13),
+        Vector3(13, 1.0, -13),
+        Vector3(13, 1.0, 0),
+        Vector3(13, 1.0, 13)
+    ]
+
+func _spawn_bots() -> void:
+    bots.clear()
+    for i in BOT_COUNT:
+        var bot := CharacterBody3D.new()
+        bot.set_script(load("res://bot.gd"))
+        bot.position = red_spawn_points[i % red_spawn_points.size()]
+        bot.set("team", enemy_team)
+
+        var mesh := MeshInstance3D.new()
+        var capsule := CapsuleMesh.new()
+        capsule.height = 2.0
+        capsule.radius = 0.42
+        mesh.mesh = capsule
+        var mat := StandardMaterial3D.new()
+        mat.albedo_color = Color(0.75, 0.20, 0.16)
+        mesh.material_override = mat
+
+        var shape := CollisionShape3D.new()
+        var capsule_shape := CapsuleShape3D.new()
+        capsule_shape.height = 2.0
+        capsule_shape.radius = 0.42
+        shape.shape = capsule_shape
+
+        bot.add_child(mesh)
+        bot.add_child(shape)
+        bot.add_to_group("bots")
+        add_child(bot)
+        bot.eliminated.connect(_on_enemy_eliminated)
+        bots.append(bot)
 
 func _player() -> void:
+
     player = CharacterBody3D.new()
     player.position = blue_spawn_points[1]
     player_shape = CollisionShape3D.new()
