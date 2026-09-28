@@ -1571,8 +1571,6 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
             continue
         if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
             continue
-        if not _bot_has_navigation_path(bot, cover_position):
-            continue
 
         var occupied := false
         var spacing_penalty := 0.0
@@ -1779,6 +1777,8 @@ func _select_bot_site_cover(bot: Node, site_position: Vector3, player_position: 
         if not _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
             continue
         if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
+            continue
+        if not _bot_has_navigation_path(bot, cover_position):
             continue
 
         var occupied := false
