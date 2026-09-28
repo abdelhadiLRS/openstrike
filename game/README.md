@@ -61,6 +61,8 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Industrial perimeter wall panels, hazard accents on cover, and concentric objective-site floor rings (visual-only; no collision or navigation changes)
 - RED combatants use a layered low-poly silhouette with vest, head, helmet, and a readable team-color band
 - First-person AR-17/PX-9 geometric viewmodels that follow weapon selection and authoritative network weapon state
+- First-person weapon silhouettes now include low-poly barrel tubes, muzzle collars, top rails, and contrasting iron sights; all viewmodel parts are visual-only and cast no shadows
+- Team-colored spawn-side floor bands, modular concrete seams, and objective approach chevrons improve spatial orientation without changing collision or bot navigation
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
 - Minimal crosshair and hit feedback
 - Godot Compatibility renderer
