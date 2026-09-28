@@ -2463,13 +2463,13 @@ func _spawn_bots() -> void:
     for i in bot_count:
         bots.append(_create_bot(i))
 
-func configure_network_bot_count(target_count: int) -> void:
+func configure_network_bot_count(target_count: int) -> bool:
     if network_session == null or not network_session.is_online or network_session.is_server:
-        return
+        return false
     var target := clampi(target_count, 0, MAX_BOT_COUNT)
     if bots.size() == target:
         bot_count = target
-        return
+        return false
     bot_count = target
     while bots.size() > target:
         var bot := bots.pop_back()
@@ -2483,6 +2483,7 @@ func configure_network_bot_count(target_count: int) -> void:
             continue
         bot.set("network_bot_id", i + 1)
         bot.set("combat_slot", i)
+    return true
 
 func _player() -> void:
 
