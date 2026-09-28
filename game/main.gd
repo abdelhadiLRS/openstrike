@@ -65,6 +65,7 @@ var pending_look_delta := Vector2.ZERO
 var pending_buy_weapon_id := ""
 var pending_switch_weapon := false
 var pending_reload := false
+var pending_objective := false
 
 var weapon_index := 0
 var ammo := 30
@@ -111,6 +112,7 @@ var objective_action := ""
 var objective_action_time_left := 0.0
 var bot_defuse_time_left := 0.0
 var active_defuser: Node = null
+var network_objective_peer_id := -1
 var bomb_defense_revision := 0
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
@@ -212,7 +214,11 @@ func _unhandled_input(event: InputEvent) -> void:
             else:
                 _reload()
         elif event.keycode == KEY_F and not dead:
-            _begin_objective_action()
+            var network_client := network_session != null and network_session.is_online and not network_session.is_server
+            if network_client:
+                pending_objective = true
+            else:
+                _begin_objective_action()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not dead:
         Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -272,7 +278,8 @@ func _physics_process(delta: float) -> void:
     _update_squad_threat(delta)
     _update_combat_director(delta)
     _update_bots(delta)
-    _update_objective(delta)
+    if network_session == null or not network_session.is_online or network_session.is_server:
+        _update_objective(delta)
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
 
@@ -288,7 +295,8 @@ func _physics_process(delta: float) -> void:
         Input.is_action_just_pressed("reload") or pending_reload,
         Input.is_action_pressed("crouch"),
         Input.is_action_just_pressed("jump"),
-        str(_current_weapon()["id"])
+        str(_current_weapon()["id"]),
+        Input.is_key_pressed(KEY_F) or pending_objective
     )
     command.buy_weapon_id = pending_buy_weapon_id
     command.switch_weapon = pending_switch_weapon
@@ -300,6 +308,7 @@ func _physics_process(delta: float) -> void:
     pending_buy_weapon_id = ""
     pending_switch_weapon = false
     pending_reload = false
+    pending_objective = false
     prediction.record_predicted(command, player.global_position, player.velocity, player.rotation.y, pitch)
     input_sequence = command.sequence
     network_diagnostics.record_command()
@@ -391,6 +400,39 @@ func _current_bomb_site() -> String:
         return "B"
     return ""
 
+
+func set_network_objective_input(peer_id: int, active: bool) -> void:
+    if network_session == null or not network_session.is_server:
+        return
+    if not active:
+        if network_objective_peer_id == peer_id:
+            network_objective_peer_id = -1
+            if objective_action != "PLANT" and objective_action != "DEFUSE":
+                objective_action = ""
+                objective_action_time_left = 0.0
+        return
+    if round_state != "LIVE":
+        network_objective_peer_id = -1
+        return
+    if network_objective_peer_id == -1 or network_objective_peer_id == peer_id:
+        network_objective_peer_id = peer_id
+    elif objective_action == "":
+        network_objective_peer_id = peer_id
+
+func _network_objective_actor() -> Node:
+    if network_objective_peer_id <= 0 or network_session == null:
+        return null
+    var actor = network_session.network_players.get(network_objective_peer_id)
+    if actor is OpenStrikeNetworkPlayer and is_instance_valid(actor) and not actor.dead:
+        return actor
+    network_objective_peer_id = -1
+    return null
+
+func _objective_actor_position() -> Vector3:
+    var actor := _network_objective_actor()
+    if actor != null:
+        return actor.global_position
+    return player.global_position
 
 func _begin_objective_action() -> void:
     if round_state != "LIVE" or objective_action != "":
