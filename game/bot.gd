@@ -478,8 +478,8 @@ func _update_goal() -> void:
 
     if state == "ATTACK":
         if combat_reposition_timer <= 0.0:
-            var tactical_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
-            var attack_position = main.call("_select_bot_attack_position", self, tactical_target, combat_slot)
+            var reposition_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
+            var attack_position = main.call("_select_bot_attack_position", self, reposition_target, combat_slot)
             if attack_position is Vector3 and attack_position != Vector3.ZERO and global_position.distance_to(attack_position) >= COMBAT_REPOSITION_MIN_DISTANCE:
                 combat_reposition_goal = attack_position
                 combat_reposition_timer = COMBAT_REPOSITION_INTERVAL
