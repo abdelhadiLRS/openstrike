@@ -370,6 +370,8 @@ func _update_bot_defuse(delta: float) -> void:
 
     var site_position := bomb_site_a if planted_site == "A" else bomb_site_b
     if not is_instance_valid(active_defuser) or active_defuser.dead:
+        if active_defuser != null or bot_defuse_time_left > 0.0:
+            bomb_defense_revision += 1
         active_defuser = null
         bot_defuse_time_left = 0.0
 
