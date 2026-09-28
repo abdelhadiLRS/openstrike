@@ -14,6 +14,12 @@ var crouched: bool = false
 var yaw: float = 0.0
 var pitch: float = 0.0
 var last_processed_sequence: int = 0
+var weapon_id: String = "px_9"
+var ammo: int = 12
+var reserve: int = 48
+var fire_cooldown: float = 0.0
+var primary_owned: bool = false
+var snapshot_history := OpenStrikeSnapshotHistory.new()
 
 var collision_shape: CollisionShape3D
 var mesh: MeshInstance3D
@@ -50,6 +56,8 @@ func apply_input(command: OpenStrikeInputCommand, delta: float) -> void:
 		return
 
 	last_processed_sequence = maxi(last_processed_sequence, command.sequence)
+	weapon_id = command.weapon_id if command.weapon_id != "" else weapon_id
+	fire_cooldown = maxf(0.0, fire_cooldown - delta)
 	yaw += command.look_delta.x * -0.0022
 	rotation.y = yaw
 
@@ -90,6 +98,9 @@ func make_snapshot(tick: int, round_state: String, round_number: int, objective_
 	snapshot.velocity = velocity
 	snapshot.yaw = yaw
 	snapshot.pitch = pitch
+	snapshot.weapon_id = weapon_id
+	snapshot.ammo = ammo
+	snapshot.reserve = reserve
 	snapshot.health = health
 	snapshot.dead = dead
 	snapshot.round_state = round_state
