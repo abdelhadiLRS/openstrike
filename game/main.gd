@@ -25,6 +25,7 @@ const BOMB_PICKUP_RADIUS := 1.6
 const BOMB_SITE_A := Vector3(-10, 0.15, -7)
 const BOMB_SITE_B := Vector3(10, 0.15, 7)
 const BOT_COUNT := 3
+const MAX_BOT_COUNT := 15
 const COMBAT_SLOT_UPDATE_INTERVAL := 0.75
 const COMBAT_ASSIGNMENT_UPDATE_INTERVAL := 1.25
 const TACTICAL_MEMORY_TIMEOUT := 4.5
@@ -128,6 +129,7 @@ var active_defuser: Node = null
 var network_objective_peer_id := -1
 var network_objective_latched_peer_id := -1
 var bomb_defense_revision := 0
+var bot_count := BOT_COUNT
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
 var navigation_graph: Array[Array] = []
@@ -182,6 +184,7 @@ var red_spawn_points := [
 ]
 
 func _ready() -> void:
+    _configure_bot_count_from_command_line()
     _load_weapon_catalog()
     combat_events = OpenStrikeCombatEvents.new()
     add_child(combat_events)
@@ -2411,9 +2414,22 @@ func _setup_cover_points() -> void:
         {"site": "B", "cover": Vector3(8.0, 1.0, 8.0), "peek": Vector3(9.8, 1.0, 9.2)}
     ]
 
+func _configure_bot_count_from_command_line() -> void:
+    bot_count = BOT_COUNT
+    for arg_value in OS.get_cmdline_user_args():
+        var arg := str(arg_value).strip_edges()
+        if not arg.begins_with("--bots="):
+            continue
+        var raw_count := arg.trim_prefix("--bots=").strip_edges()
+        if raw_count.is_empty() or not raw_count.is_valid_int():
+            push_error("OpenStrike: --bots must be an integer in the range 0..%d." % MAX_BOT_COUNT)
+            return
+        bot_count = clampi(int(raw_count), 0, MAX_BOT_COUNT)
+        return
+
 func _spawn_bots() -> void:
     bots.clear()
-    for i in BOT_COUNT:
+    for i in bot_count:
         var bot := CharacterBody3D.new()
         bot.set_script(load("res://bot.gd"))
         bot.position = red_spawn_points[i % red_spawn_points.size()]
@@ -2454,48 +2470,3 @@ func _player() -> void:
     player_capsule.radius = 0.35
     player_shape.shape = player_capsule
     player.add_child(player_shape)
-
-    camera = Camera3D.new()
-    camera.position.y = STAND_CAMERA_Y
-    camera.current = true
-    player.add_child(camera)
-    add_child(player)
-
-func _hud() -> void:
-    var layer := CanvasLayer.new()
-    add_child(layer)
-
-    damage_flash = ColorRect.new()
-    damage_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    damage_flash.color = Color(0.65, 0.02, 0.02, 0.0)
-    damage_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    layer.add_child(damage_flash)
-
-    hud = Label.new()
-    hud.position = Vector2(24,24)
-    hud.add_theme_font_size_override("font_size",20)
-    layer.add_child(hud)
-
-    var crosshair := Label.new()
-    crosshair.text = "+"
-    crosshair.set_anchors_preset(Control.PRESET_CENTER)
-    crosshair.position = Vector2(-8,-17)
-    crosshair.add_theme_font_size_override("font_size",28)
-    layer.add_child(crosshair)
-
-    hit_marker = Label.new()
-    hit_marker.text = "×"
-    hit_marker.set_anchors_preset(Control.PRESET_CENTER)
-    hit_marker.position = Vector2(-10,-18)
-    hit_marker.add_theme_font_size_override("font_size",30)
-    hit_marker.modulate = Color(1.0, 1.0, 1.0, 0.0)
-    layer.add_child(hit_marker)
-
-func _show_hit_feedback() -> void:
-    hit_feedback_timer = 0.12
-
-func _update_combat_feedback() -> void:
-    if hit_marker != null:
-        hit_marker.modulate.a = clampf(hit_feedback_timer / 0.12, 0.0, 1.0)
-    if damage_flash != null:
-        damage_flash.color.a = clampf(damage_feedback_timer / 0.18, 0.0, 1.0) * 0.24
