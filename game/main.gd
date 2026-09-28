@@ -2576,7 +2576,7 @@ func _create_bot(index: int) -> CharacterBody3D:
     var vest_mesh := BoxMesh.new()
     vest_mesh.size = Vector3(0.58, 0.48, 0.34)
     vest.mesh = vest_mesh
-    vest.position = Vector3(0.0, 0.92, -0.015)
+    vest.position = Vector3(0.0, 0.10, -0.015)
     var vest_material := StandardMaterial3D.new()
     vest_material.albedo_color = Color(0.34, 0.12, 0.09)
     vest_material.roughness = 0.92
@@ -2588,7 +2588,7 @@ func _create_bot(index: int) -> CharacterBody3D:
     head_mesh.radius = 0.22
     head_mesh.height = 0.44
     head.mesh = head_mesh
-    head.position = Vector3(0.0, 1.43, 0.0)
+    head.position = Vector3(0.0, 0.64, 0.0)
     var head_material := StandardMaterial3D.new()
     head_material.albedo_color = Color(0.48, 0.34, 0.25)
     head_material.roughness = 0.95
@@ -2600,7 +2600,7 @@ func _create_bot(index: int) -> CharacterBody3D:
     helmet_mesh.radius = 0.245
     helmet_mesh.height = 0.30
     helmet.mesh = helmet_mesh
-    helmet.position = Vector3(0.0, 1.62, 0.0)
+    helmet.position = Vector3(0.0, 0.88, 0.0)
     var helmet_material := StandardMaterial3D.new()
     helmet_material.albedo_color = Color(0.12, 0.16, 0.19)
     helmet_material.metallic = 0.12
@@ -2612,7 +2612,7 @@ func _create_bot(index: int) -> CharacterBody3D:
     var band_mesh := BoxMesh.new()
     band_mesh.size = Vector3(0.62, 0.075, 0.36)
     team_band.mesh = band_mesh
-    team_band.position = Vector3(0.0, 1.18, -0.20)
+    team_band.position = Vector3(0.0, 0.30, -0.20)
     var band_material := StandardMaterial3D.new()
     band_material.albedo_color = Color(0.95, 0.28, 0.12)
     band_material.emission_enabled = true
