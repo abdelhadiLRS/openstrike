@@ -910,8 +910,7 @@ func _move_toward_goal(delta: float) -> void:
         # actual position. Replan from here instead of pushing through geometry.
         route.clear()
         route_index = 0
-        route_goal = current_goal
-        route_failed_goal = current_goal
+        route_failed_goal = route_goal
         route_replan_timer = ROUTE_REPLAN_INTERVAL
         velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
         velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
