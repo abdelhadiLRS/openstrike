@@ -222,7 +222,9 @@ func _validate_network_command(command: OpenStrikeInputCommand, round_state: Str
 		if command.buy_weapon_id != "":
 			return false
 	else:
-		if command.fire or command.reload or command.objective or command.buy_weapon_id != "":
+		# Weapon switching is a gameplay action too; do not allow stale queued
+		# UI input to mutate authoritative state after the round has ended.
+		if command.fire or command.reload or command.objective or command.buy_weapon_id != "" or command.switch_weapon:
 			return false
 	if command.buy_weapon_id != "" and _weapon_definition(command.buy_weapon_id).is_empty():
 		return false
