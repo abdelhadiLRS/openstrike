@@ -2093,6 +2093,39 @@ func _create_map_dressing() -> void:
             _visual_box(site_pos + Vector3(side * 3.8, 0.02, 0.0), Vector3(0.75, 0.035, 0.12), stripe_material)
             _visual_box(site_pos + Vector3(0.0, 0.02, side * 3.8), Vector3(0.12, 0.035, 0.75), stripe_material)
 
+    # Team-side floor identifiers and subtle modular floor seams.
+    # These marks are visual-only and deliberately avoid collision changes.
+    var blue_material := StandardMaterial3D.new()
+    blue_material.albedo_color = Color(0.08, 0.42, 0.78)
+    blue_material.roughness = 0.86
+    var red_material := StandardMaterial3D.new()
+    red_material.albedo_color = Color(0.72, 0.16, 0.12)
+    red_material.roughness = 0.86
+    var seam_material := StandardMaterial3D.new()
+    seam_material.albedo_color = Color(0.12, 0.15, 0.18)
+    seam_material.roughness = 0.94
+
+    # Spawn-side bands make team orientation easier to read on approach.
+    for x in [-8.0, -4.0, 0.0, 4.0, 8.0]:
+        _visual_box(Vector3(x, 0.018, 14.2), Vector3(1.6, 0.025, 0.12), blue_material)
+        _visual_box(Vector3(x, 0.018, -14.2), Vector3(1.6, 0.025, 0.12), red_material)
+
+    # Modular seams break up the large concrete floor while staying subtle.
+    for z in range(-12, 13, 6):
+        _visual_box(Vector3(-9.0, 0.009, float(z)), Vector3(0.035, 0.018, 24.0), seam_material)
+        _visual_box(Vector3(9.0, 0.009, float(z)), Vector3(0.035, 0.018, 24.0), seam_material)
+
+    # Short approach chevrons orient players toward each objective site.
+    for site_pos in [BOMB_SITE_A, BOMB_SITE_B]:
+        var approach_z := 1.0 if site_pos.z < 0.0 else -1.0
+        for step in range(3):
+            var distance := 5.0 + float(step) * 1.5
+            _visual_box(
+                site_pos + Vector3(0.0, 0.016, approach_z * distance),
+                Vector3(1.1 - float(step) * 0.16, 0.025, 0.10),
+                warning_material
+            )
+
 func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> void:
     var mesh_instance := MeshInstance3D.new()
     var mesh := BoxMesh.new()
