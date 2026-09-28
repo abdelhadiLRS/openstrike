@@ -705,6 +705,13 @@ func _has_line_of_sight() -> bool:
     return hit.is_empty() or hit.collider == target
 
 func _fire() -> void:
+    if not is_instance_valid(target):
+        return
+    var distance_to_target := global_position.distance_to(target.global_position)
+    if distance_to_target > FIRE_RANGE:
+        burst_remaining = 0
+        burst_pause = 0.0
+        return
     if fire_cooldown > 0.0 or burst_pause > 0.0:
         return
     if burst_remaining <= 0:
