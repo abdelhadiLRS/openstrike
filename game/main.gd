@@ -361,6 +361,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     planted_site = snapshot.planted_site
     bomb_time_left = snapshot.bomb_time_left
     bomb_carrier_peer_id = snapshot.carrier_peer_id
+    dropped_bomb_position = snapshot.dropped_bomb_position
     credits = clampi(snapshot.credits, 0, MAX_CREDITS)
     primary_owned = snapshot.owned_weapons.has("ar_17")
     var authoritative_index := -1
