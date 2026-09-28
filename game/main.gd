@@ -442,7 +442,8 @@ func _replay_pending_prediction(delta: float) -> void:
         if command == null:
             continue
         var tick_delta := maxi(1, command.tick - prediction_replay_tick)
-        var replay_delta := delta * minf(float(tick_delta), 4.0)
+        var physics_step := 1.0 / maxf(1.0, float(Engine.physics_ticks_per_second))
+        var replay_delta := physics_step * minf(float(tick_delta), 4.0)
         prediction_replay_tick = command.tick
         player.rotate_y(-command.look_delta.x * SENS)
         pitch = clamp(pitch - command.look_delta.y * SENS, -1.45, 1.45)
