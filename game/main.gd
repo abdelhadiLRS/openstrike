@@ -1451,8 +1451,6 @@ func _simplify_navigation_route(route: Array) -> Array:
         for candidate in range(anchor + 1, route.size()):
             if _navigation_visible(route[anchor], route[candidate]):
                 farthest = candidate
-            else:
-                break
         simplified.append(route[farthest])
         anchor = farthest
     return simplified
