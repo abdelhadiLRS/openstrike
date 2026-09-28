@@ -35,6 +35,7 @@ var snapshot_interval := 0.05
 var snapshot_accumulator := 0.0
 var observed_round_number := 0
 var observed_round_state := ""
+var network_bot_cache: Dictionary = {}
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -507,12 +508,30 @@ func _apply_remote_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	player.apply_snapshot(snapshot)
 	_apply_bot_snapshots(snapshot.bot_states)
 
-func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
+func _refresh_network_bot_cache() -> void:
 	var root := _root()
 	if root == null:
+		network_bot_cache.clear()
 		return
 	var bots_value = root.get("bots")
 	if not bots_value is Array:
+		network_bot_cache.clear()
+		return
+	var rebuilt := {}
+	for bot in bots_value:
+		if not is_instance_valid(bot):
+			continue
+		var bot_id := int(bot.get("network_bot_id"))
+		if bot_id <= 0:
+			bot_id = int(bot.get("combat_slot")) + 1
+		if bot_id > 0:
+			rebuilt[bot_id] = bot
+	network_bot_cache = rebuilt
+
+func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
+	if network_bot_cache.is_empty():
+		_refresh_network_bot_cache()
+	if states.is_empty():
 		return
 	for state_value in states:
 		if not state_value is Dictionary:
@@ -520,18 +539,15 @@ func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
 		var bot_id := int(state_value.get("id", 0))
 		if bot_id <= 0:
 			continue
-		for bot in bots_value:
-			if not is_instance_valid(bot):
-				continue
-			var local_id := int(bot.get("network_bot_id"))
-			if local_id <= 0:
-				local_id = int(bot.get("combat_slot")) + 1
-			if local_id == bot_id and bot.has_method("apply_network_snapshot"):
-				bot.apply_network_snapshot(state_value)
-				break
-
+		var bot = network_bot_cache.get(bot_id)
+		if not is_instance_valid(bot):
+			_refresh_network_bot_cache()
+			bot = network_bot_cache.get(bot_id)
+		if is_instance_valid(bot) and bot.has_method("apply_network_snapshot"):
+			bot.apply_network_snapshot(state_value)
 func _shutdown_peer() -> void:
 	server_input_buffer.clear()
+	network_bot_cache.clear()
 
 	if peer != null:
 		peer.close()
