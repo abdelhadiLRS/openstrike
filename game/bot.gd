@@ -556,7 +556,6 @@ func _select_cover_point() -> void:
             continue
         if not main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), cover_position):
             continue
-        var peek_position: Vector3 = data["peek"]
         if main.call("_has_obstacle_between", peek_position, target.global_position + Vector3(0, 1.0, 0)):
             continue
         var score := distance + absf(player_distance - OPTIMAL_RANGE) * 0.25
