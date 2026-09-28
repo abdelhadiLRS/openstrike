@@ -6,6 +6,8 @@ var received_snapshots: int = 0
 var rejected_inputs: int = 0
 var snapshot_tick_gaps: int = 0
 var prediction_corrections: int = 0
+var rejected_snapshots: int = 0
+var malformed_bot_rosters: int = 0
 var last_acknowledged_sequence: int = 0
 var last_snapshot_tick: int = 0
 var last_snapshot_tick_by_peer: Dictionary = {}
@@ -46,6 +48,11 @@ func record_rejection_reason(reason: String) -> void:
 func record_prediction_correction() -> void:
 	prediction_corrections += 1
 
+func record_rejected_snapshot(malformed_roster: bool = false) -> void:
+	rejected_snapshots += 1
+	if malformed_roster:
+		malformed_bot_rosters += 1
+
 func snapshot() -> Dictionary:
 	return {
 		"sent_commands": sent_commands,
@@ -53,6 +60,8 @@ func snapshot() -> Dictionary:
 		"rejected_inputs": rejected_inputs,
 		"snapshot_tick_gaps": snapshot_tick_gaps,
 		"prediction_corrections": prediction_corrections,
+		"rejected_snapshots": rejected_snapshots,
+		"malformed_bot_rosters": malformed_bot_rosters,
 		"last_acknowledged_sequence": last_acknowledged_sequence,
 		"last_snapshot_tick": last_snapshot_tick,
 		"rejection_reasons": rejection_reasons.duplicate()
