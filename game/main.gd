@@ -866,10 +866,19 @@ func _objective_label() -> String:
 
 func _load_weapon_catalog() -> void:
     weapons.clear()
+    var seen_ids := {}
     for asset in WEAPON_ASSETS:
         if asset == null or not asset.is_valid():
             push_error("OpenStrike weapon catalog contains an invalid weapon resource.")
             continue
+        if not asset.is_valid():
+            push_error("OpenStrike weapon catalog contains an invalid weapon definition.")
+            continue
+        var weapon_id := String(asset.weapon_id)
+        if weapon_id.is_empty() or seen_ids.has(weapon_id):
+            push_error("OpenStrike weapon catalog contains a duplicate or empty weapon id: %s" % weapon_id)
+            continue
+        seen_ids[weapon_id] = true
         weapons.append(asset.to_runtime_dict())
 
     if weapons.is_empty():
