@@ -438,6 +438,10 @@ func _update_goal() -> void:
             route_index = 0
         else:
             current_goal = squad_contact_position
+        if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+            route.clear()
+            route_index = 0
+            return
         _ensure_route(current_goal)
         return
 
@@ -450,6 +454,10 @@ func _update_goal() -> void:
             route.clear()
             route_index = 0
         current_goal = search_goal
+        if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+            route.clear()
+            route_index = 0
+            return
         _ensure_route(current_goal)
         return
 
@@ -458,10 +466,13 @@ func _update_goal() -> void:
         var flank_position = main.call("_select_bot_attack_position", self, flank_target, combat_slot)
         if flank_position is Vector3 and flank_position != Vector3.ZERO:
             current_goal = flank_position
-            _ensure_route(current_goal)
         else:
             current_goal = flank_target
-            _ensure_route(current_goal)
+        if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+            route.clear()
+            route_index = 0
+            return
+        _ensure_route(current_goal)
         return
 
     if state == "SUPPRESS":
