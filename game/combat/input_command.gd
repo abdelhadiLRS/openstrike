@@ -20,5 +20,6 @@ func to_dict() -> Dictionary:
 		"fire": fire,
 		"reload": reload,
 		"crouch": crouch,
-		"jump": jump
+		"jump": jump,
+		"weapon_id": weapon_id
 	}
