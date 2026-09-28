@@ -12,6 +12,7 @@ var yaw: float = 0.0
 var pitch: float = 0.0
 var health: int = 100
 var dead: bool = false
+var crouched: bool = false
 var round_state: String = "BUY"
 var round_number: int = 1
 var round_won: bool = false
@@ -42,6 +43,7 @@ func to_dict() -> Dictionary:
 		"pitch": pitch,
 		"health": health,
 		"dead": dead,
+		"crouched": crouched,
 		"round_state": round_state,
 		"round_number": round_number,
 		"round_won": round_won,
@@ -73,6 +75,7 @@ static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	snapshot.pitch = float(data.get("pitch", 0.0))
 	snapshot.health = int(data.get("health", 100))
 	snapshot.dead = bool(data.get("dead", false))
+	snapshot.crouched = bool(data.get("crouched", false))
 	snapshot.round_state = str(data.get("round_state", "BUY"))
 	snapshot.round_number = int(data.get("round_number", 1))
 	snapshot.round_won = bool(data.get("round_won", false))
