@@ -48,7 +48,7 @@ const TEAM_RED := "RED"
 
 var weapons := [
     {"name":"AR-17", "mag":30, "reserve":90, "damage":34, "delay":0.095, "recoil":0.018, "cost":2400},
-    {"name":"PX-9", "mag":12, "reserve":48, "damage":55, "delay":0.22, "recoil":0.028, "cost":700}
+    {"name":"PX-9", "mag":12, "reserve":48, "damage":55, "delay":0.22, "recoil":0.028, "cost":0}
 ]
 
 var weapon_index := 0
