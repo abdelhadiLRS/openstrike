@@ -365,7 +365,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         return
     var was_dead := dead
     var previous_round_number := round_number
-    network_diagnostics.record_snapshot(snapshot.peer_id, snapshot.tick, snapshot.acknowledged_input_sequence)
+    network_diagnostics.record_snapshot(snapshot.peer_id, snapshot.tick, snapshot.round_number, snapshot.acknowledged_input_sequence)
     var acknowledged_sequence := mini(snapshot.acknowledged_input_sequence, input_sequence)
     prediction.acknowledge(acknowledged_sequence)
     last_processed_input_sequence = maxi(last_processed_input_sequence, acknowledged_sequence)
@@ -1833,6 +1833,7 @@ func on_network_player_eliminated(peer_id: int) -> void:
 func on_network_player_disconnected(peer_id: int) -> void:
     if peer_id <= 0:
         return
+    network_diagnostics.record_peer_disconnected(peer_id)
     if _drop_network_bomb_for_peer(peer_id):
         return
     _clear_network_objective_owner(peer_id)
