@@ -89,13 +89,21 @@ func _update_state() -> void:
         return
 
     var distance := global_position.distance_to(target.global_position)
-    if distance <= DETECTION_RANGE:
-        if health <= LOW_HEALTH_THRESHOLD:
-            state = "COVER"
-        elif state == "COVER" or state == "PEEK":
+
+    if state == "COVER":
+        if health > LOW_HEALTH_THRESHOLD and distance <= DETECTION_RANGE:
             state = "PEEK"
-        else:
-            state = "ATTACK"
+        return
+
+    if state == "PEEK":
+        if peek_timer <= 0.0:
+            state = "COVER" if health <= LOW_HEALTH_THRESHOLD else "ATTACK"
+        return
+
+    if health <= LOW_HEALTH_THRESHOLD and distance <= DETECTION_RANGE:
+        state = "COVER"
+    elif distance <= DETECTION_RANGE:
+        state = "ATTACK"
     else:
         state = "DEFEND"
 
@@ -154,6 +162,11 @@ func _select_cover_point() -> void:
         var player_distance := cover_position.distance_to(target.global_position)
         if player_distance < 5.0:
             continue
+        if not main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), cover_position):
+            continue
+        var peek_position: Vector3 = data["peek"]
+        if main.call("_has_obstacle_between", peek_position, target.global_position + Vector3(0, 1.0, 0)):
+            continue
         var score := distance + absf(player_distance - OPTIMAL_RANGE) * 0.25
         if score < best_score:
             best_score = score
@@ -164,33 +177,8 @@ func _ensure_route(goal: Vector3) -> void:
     if route.size() > 0 and route_index < route.size():
         return
 
-    var points: Array = main.get("navigation_points")
-    route.clear()
+    route = main.call("_find_navigation_route", global_position, goal)
     route_index = 0
-
-    var nearest := -1
-    var nearest_distance := INF
-    for i in points.size():
-        var distance := points[i].distance_to(global_position)
-        if distance < nearest_distance:
-            nearest_distance = distance
-            nearest = i
-
-    if nearest >= 0:
-        route.append(points[nearest])
-
-    var goal_nearest := -1
-    var goal_distance := INF
-    for i in points.size():
-        var distance := points[i].distance_to(goal)
-        if distance < goal_distance:
-            goal_distance = distance
-            goal_nearest = i
-
-    if goal_nearest >= 0 and goal_nearest != nearest:
-        route.append(points[goal_nearest])
-
-    route.append(goal)
 
 func _move_toward_goal(delta: float) -> void:
     if state == "ATTACK":
@@ -228,15 +216,13 @@ func _move_toward_goal(delta: float) -> void:
             var look_direction := (target.global_position - global_position).normalized()
             look_at(global_position + Vector3(look_direction.x, 0.0, look_direction.z), Vector3.UP)
             if state == "COVER":
-                if peek_timer <= 0.0:
-                    peek_timer = PEEK_TIME
-                    state = "PEEK"
-                    route.clear()
-                    route_index = 0
-            elif peek_hold_timer <= 0.0:
+                peek_timer = PEEK_TIME
                 peek_hold_timer = PEEK_HOLD
-            else:
-                state = "ATTACK"
+                state = "PEEK"
+                route.clear()
+                route_index = 0
+            elif peek_timer <= 0.0:
+                state = "COVER" if health <= LOW_HEALTH_THRESHOLD else "ATTACK"
                 route.clear()
                 route_index = 0
             return
