@@ -14,6 +14,10 @@ var _last_tick: Dictionary = {}
 func submit(peer_id: int, command: OpenStrikeInputCommand, server_tick: int) -> bool:
 	if peer_id <= 0 or command == null:
 		return false
+	# Reject non-finite client values before they reach CharacterBody3D
+	# movement, camera rotation, or weapon/objective simulation.
+	if not command.move.is_finite() or not command.look_delta.is_finite():
+		return false
 	if command.sequence <= int(_last_sequence.get(peer_id, 0)):
 		return false
 	if command.tick > server_tick + MAX_TICK_LEAD:
