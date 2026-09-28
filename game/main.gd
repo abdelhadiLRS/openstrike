@@ -571,7 +571,11 @@ func _navigation_visible(from: Vector3, to: Vector3) -> bool:
     var start := from + Vector3(0, 0.15, 0)
     var end := to + Vector3(0, 0.15, 0)
     var query := PhysicsRayQueryParameters3D.create(start, end)
-    query.exclude = [player]
+    var excluded: Array[Node3D] = [player]
+    for bot in bots:
+        if is_instance_valid(bot):
+            excluded.append(bot)
+    query.exclude = excluded
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
     return hit.is_empty()
 
@@ -640,7 +644,11 @@ func _has_obstacle_between(from: Vector3, to: Vector3) -> bool:
     var start := from + Vector3(0, 0.9, 0)
     var end := to + Vector3(0, 0.9, 0)
     var query := PhysicsRayQueryParameters3D.create(start, end)
-    query.exclude = [player]
+    var excluded: Array[Node3D] = [player]
+    for bot in bots:
+        if is_instance_valid(bot):
+            excluded.append(bot)
+    query.exclude = excluded
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
     return not hit.is_empty()
 
