@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="OpenStrikeWeaponDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/weapon_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+weapon_id = &"px_9"
+display_name = "PX-9"
+magazine_size = 12
+reserve_ammo = 48
+damage = 55
+fire_interval = 0.22
+recoil = 0.028
+cost = 0
+movement_speed = 5.9
