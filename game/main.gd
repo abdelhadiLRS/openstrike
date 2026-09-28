@@ -255,7 +255,6 @@ func _physics_process(delta: float) -> void:
     if network_client and round_state == "LIVE" and pending_prediction_replay:
         _replay_pending_prediction(delta)
     if round_state != "LIVE":
-        var network_client := network_session != null and network_session.is_online and not network_session.is_server
         if network_client and (pending_buy_weapon_id != "" or pending_switch_weapon or pending_reload):
             var buy_command := prediction.build_command(
                 combat_events.tick,
