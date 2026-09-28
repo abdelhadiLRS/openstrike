@@ -1747,6 +1747,13 @@ func _select_bot_combat_cover(bot: Node, player_position: Vector3, preferred_dis
             if (str(other.state) == "COVER" or str(other.state) == "PEEK") and other.current_goal.distance_to(cover_position) < 2.5:
                 occupied = true
                 break
+            if str(other.state) == "PEEK":
+                var other_cover_index := int(other.get("cover_index"))
+                if other_cover_index >= 0 and other_cover_index < cover_points.size():
+                    var other_cover: Vector3 = cover_points[other_cover_index]["cover"]
+                    if other_cover.distance_to(cover_position) < 2.5:
+                        occupied = true
+                        break
             if str(other.state) == "REPOSITION" and other.combat_reposition_goal != Vector3.ZERO:
                 if other.combat_reposition_goal.distance_to(cover_position) < 2.5:
                     occupied = true
