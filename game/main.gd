@@ -80,6 +80,7 @@ var active_defuser: Node = null
 var bomb_defense_revision := 0
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
+var navigation_graph: Array[Array] = []
 var cover_points: Array[Dictionary] = []
 var bomb_cover_anchors: Array[Dictionary] = []
 
@@ -655,6 +656,7 @@ func _setup_navigation_points() -> void:
         Vector3(13, 1.0, 0),
         Vector3(13, 1.0, 13)
     ]
+    _build_navigation_graph()
 
 func _navigation_visible(from: Vector3, to: Vector3) -> bool:
     var start := from + Vector3(0, 0.15, 0)
@@ -668,66 +670,104 @@ func _navigation_visible(from: Vector3, to: Vector3) -> bool:
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
     return hit.is_empty()
 
+func _build_navigation_graph() -> void:
+    navigation_graph.clear()
+    for i in navigation_points.size():
+        var neighbors: Array[int] = []
+        for j in navigation_points.size():
+            if i == j:
+                continue
+            if _navigation_visible(navigation_points[i], navigation_points[j]):
+                neighbors.append(j)
+        navigation_graph.append(neighbors)
+
+
+func _find_nearest_navigation_point(position: Vector3) -> int:
+    var best_index := -1
+    var best_distance := INF
+    for i in navigation_points.size():
+        var distance := navigation_points[i].distance_to(position)
+        if distance < best_distance and _navigation_visible(position, navigation_points[i]):
+            best_distance = distance
+            best_index = i
+    return best_index
+
+
 func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
     var points: Array = navigation_points
     if points.is_empty():
         return [goal]
 
-    var start_index := -1
-    var goal_index := -1
-    var start_distance := INF
-    var goal_distance := INF
+    if navigation_graph.size() != points.size():
+        _build_navigation_graph()
 
-    for i in points.size():
-        var start_dist := points[i].distance_to(start)
-        if start_dist < start_distance and _navigation_visible(start, points[i]):
-            start_distance = start_dist
-            start_index = i
-
-        var goal_dist := points[i].distance_to(goal)
-        if goal_dist < goal_distance and _navigation_visible(points[i], goal):
-            goal_distance = goal_dist
-            goal_index = i
+    var start_index := _find_nearest_navigation_point(start)
+    var goal_index := _find_nearest_navigation_point(goal)
 
     if start_index < 0 or goal_index < 0:
         return [goal]
 
-    var queue: Array[int] = [start_index]
-    var visited := {}
-    var previous := {}
-    visited[start_index] = true
+    if start_index == goal_index:
+        return [goal]
 
-    while not queue.is_empty():
-        var current: int = queue.pop_front()
+    var open_set: Array[int] = [start_index]
+    var closed_set := {}
+    var came_from := {}
+    var g_score := {}
+    var f_score := {}
+
+    for i in points.size():
+        g_score[i] = INF
+        f_score[i] = INF
+    g_score[start_index] = 0.0
+    f_score[start_index] = points[start_index].distance_to(points[goal_index])
+
+    while not open_set.is_empty():
+        var best_open_index := 0
+        var current: int = open_set[0]
+        for i in open_set.size():
+            var candidate: int = open_set[i]
+            if float(f_score.get(candidate, INF)) < float(f_score.get(current, INF)):
+                best_open_index = i
+                current = candidate
+        open_set.remove_at(best_open_index)
+
         if current == goal_index:
-            break
+            var indices: Array[int] = []
+            var cursor := goal_index
+            while true:
+                indices.push_front(cursor)
+                if cursor == start_index:
+                    break
+                if not came_from.has(cursor):
+                    return [points[start_index], goal]
+                cursor = int(came_from[cursor])
 
-        for neighbor in points.size():
-            if neighbor == current or visited.has(neighbor):
+            var route: Array = []
+            for index in indices:
+                route.append(points[index])
+            if route.is_empty() or route[route.size() - 1].distance_to(goal) > WAYPOINT_REACHED:
+                route.append(goal)
+            return route
+
+        closed_set[current] = true
+        var neighbors: Array = navigation_graph[current]
+        for neighbor_value in neighbors:
+            var neighbor: int = int(neighbor_value)
+            if closed_set.has(neighbor):
                 continue
-            if not _navigation_visible(points[current], points[neighbor]):
+
+            var tentative_g := float(g_score[current]) + points[current].distance_to(points[neighbor])
+            if tentative_g >= float(g_score.get(neighbor, INF)):
                 continue
-            visited[neighbor] = true
-            previous[neighbor] = current
-            queue.append(neighbor)
 
-    if not visited.has(goal_index):
-        return [points[start_index], goal]
+            came_from[neighbor] = current
+            g_score[neighbor] = tentative_g
+            f_score[neighbor] = tentative_g + points[neighbor].distance_to(points[goal_index])
+            if not open_set.has(neighbor):
+                open_set.append(neighbor)
 
-    var indices: Array[int] = []
-    var cursor := goal_index
-    while true:
-        indices.push_front(cursor)
-        if cursor == start_index:
-            break
-        cursor = int(previous[cursor])
-
-    var route: Array = []
-    for index in indices:
-        route.append(points[index])
-    if route.is_empty() or route[route.size() - 1].distance_to(goal) > WAYPOINT_REACHED:
-        route.append(goal)
-    return route
+    return [points[start_index], goal]
 
 func _has_obstacle_between(from: Vector3, to: Vector3) -> bool:
     var start := from + Vector3(0, 0.9, 0)
