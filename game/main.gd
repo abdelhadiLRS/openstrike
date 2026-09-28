@@ -77,6 +77,7 @@ var objective_action := ""
 var objective_action_time_left := 0.0
 var bot_defuse_time_left := 0.0
 var active_defuser: Node = null
+var bomb_defense_revision := 0
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
 var cover_points: Array[Dictionary] = []
@@ -278,6 +279,7 @@ func _update_bot_defuse(delta: float) -> void:
         bot_defuse_time_left = 0.0
 
     if active_defuser == null:
+        var previous_defuser: Node = active_defuser
         var nearest_bot: Node = null
         var nearest_distance := INF
         for bot in bots:
@@ -291,6 +293,8 @@ func _update_bot_defuse(delta: float) -> void:
         if nearest_bot != null:
             active_defuser = nearest_bot
             bot_defuse_time_left = DEFUSE_TIME
+            if active_defuser != previous_defuser:
+                bomb_defense_revision += 1
 
     if active_defuser != null:
         var defuser_distance := active_defuser.global_position.distance_to(site_position)
@@ -482,6 +486,7 @@ func _start_round() -> void:
     objective_action_time_left = 0.0
     bot_defuse_time_left = 0.0
     active_defuser = null
+    bomb_defense_revision += 1
     dropped_bomb_position = Vector3.ZERO
 
 func _finish_round(won: bool) -> void:
