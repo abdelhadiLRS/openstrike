@@ -133,11 +133,13 @@ func _on_connected_to_server() -> void:
 	connected.emit()
 
 func _on_connection_failed() -> void:
+	_clear_session_state()
 	is_online = false
 	is_server = false
 	connection_failed.emit()
 
 func _on_server_disconnected() -> void:
+	_clear_session_state()
 	is_online = false
 	is_server = false
 	disconnected.emit()
@@ -858,11 +860,24 @@ func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
 			bot = network_bot_cache.get(bot_id)
 		if is_instance_valid(bot) and bot.has_method("apply_network_snapshot"):
 			bot.apply_network_snapshot(state_value)
-func _shutdown_peer() -> void:
+func _clear_session_state() -> void:
+	# Drop transient state from the previous connection so a failed/replaced
+	# session cannot leak stale players, acknowledgements, or bot references.
 	server_input_buffer.clear()
+	for peer_value in network_players.keys():
+		_remove_network_player(int(peer_value))
+	network_players.clear()
 	network_bot_cache.clear()
 	_reset_snapshot_receive_state()
+	local_input_sequence = 0
+	last_server_sequence = 0
+	server_tick = 0
+	snapshot_accumulator = 0.0
+	observed_round_number = 0
+	observed_round_state = ""
 
+func _shutdown_peer() -> void:
+	_clear_session_state()
 	if peer != null:
 		peer.close()
 	peer = null
