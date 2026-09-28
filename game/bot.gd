@@ -642,7 +642,8 @@ func _select_cover_point() -> void:
         var current_cover_valid := global_position.distance_to(current_cover) <= 18.0
         current_cover_valid = current_cover_valid and current_player_distance >= 5.0
         current_cover_valid = current_cover_valid and main.call("_bot_has_navigation_path", self, current_cover)
-        current_cover_valid = current_cover_valid and main.call("_bot_has_navigation_path", self, current_peek)
+        if state == "PEEK":
+            current_cover_valid = current_cover_valid and main.call("_bot_has_navigation_path", self, current_peek)
         current_cover_valid = current_cover_valid and main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), current_cover)
         current_cover_valid = current_cover_valid and not main.call("_has_obstacle_between", current_peek, target.global_position + Vector3(0, 1.0, 0))
         if current_cover_valid:
@@ -659,7 +660,7 @@ func _select_cover_point() -> void:
         var peek_position: Vector3 = data["peek"]
         if not main.call("_bot_has_navigation_path", self, cover_position):
             continue
-        if not main.call("_bot_has_navigation_path", self, peek_position):
+        if state == "PEEK" and not main.call("_bot_has_navigation_path", self, peek_position):
             continue
         var player_distance := cover_position.distance_to(target.global_position)
         if player_distance < 5.0:
