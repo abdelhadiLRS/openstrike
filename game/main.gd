@@ -319,7 +319,10 @@ func _physics_process(delta: float) -> void:
         network_session.send_input(command)
 
     var direction := (player.transform.basis * Vector3(command.move.x, 0, command.move.y)).normalized()
-    var move_speed := _current_speed()
+    # Match the network server's movement constants while predicting online.
+    # Offline movement continues to use each weapon's configured speed.
+    var network_client := network_session != null and network_session.is_online and not network_session.is_server
+    var move_speed := (3.4 if command.crouch else 5.6) if network_client else _current_speed()
     player.velocity.x = move_toward(player.velocity.x, direction.x * move_speed, 25.0 * delta)
     player.velocity.z = move_toward(player.velocity.z, direction.z * move_speed, 25.0 * delta)
 
