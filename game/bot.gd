@@ -28,6 +28,7 @@ const RETREAT_HEALTH_THRESHOLD := 35
 const PUSH_HEALTH_THRESHOLD := 70
 const RECENT_HIT_REACTION_TIME := 1.2
 const COMBAT_REPOSITION_INTERVAL := 3.5
+const COMBAT_REPOSITION_MIN_DISTANCE := 3.0
 
 var team := "RED"
 var max_health := 100
@@ -56,6 +57,8 @@ var combat_intent := "HOLD"
 var combat_decision_timer := 0.0
 var recently_hit_timer := 0.0
 var combat_reposition_timer := 0.0
+var combat_slot := 0
+var combat_reposition_goal := Vector3.ZERO
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -95,7 +98,7 @@ func _physics_process(delta: float) -> void:
     _update_goal()
     _move_toward_goal(delta)
 
-    if (state == "ATTACK" or state == "PEEK" or state == "BOMB_COVER") and _has_line_of_sight():
+    if (state == "ATTACK" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION") and _has_line_of_sight():
         _fire()
 
     if not is_on_floor():
@@ -115,6 +118,14 @@ func _update_state() -> void:
     if objective_state == "DROPPED":
         combat_intent = "HOLD"
         state = "DEFEND"
+        return
+
+    if state == "REPOSITION":
+        if combat_intent == "RETREAT":
+            state = "COVER"
+            combat_reposition_goal = Vector3.ZERO
+            route.clear()
+            route_index = 0
         return
 
     if combat_decision_timer <= 0.0:
@@ -203,6 +214,17 @@ func _update_goal() -> void:
         return
 
     if state == "ATTACK":
+        if combat_reposition_timer <= 0.0:
+            var attack_position = main.call("_select_bot_attack_position", self, target.global_position, combat_slot)
+            if attack_position is Vector3 and attack_position != Vector3.ZERO and global_position.distance_to(attack_position) >= COMBAT_REPOSITION_MIN_DISTANCE:
+                combat_reposition_goal = attack_position
+                combat_reposition_timer = COMBAT_REPOSITION_INTERVAL
+                state = "REPOSITION"
+                route.clear()
+                route_index = 0
+                _ensure_route(combat_reposition_goal)
+                return
+            combat_reposition_timer = COMBAT_REPOSITION_INTERVAL
         var distance := global_position.distance_to(target.global_position)
         if distance > OPTIMAL_RANGE:
             current_goal = target.global_position
@@ -279,6 +301,20 @@ func _ensure_route(goal: Vector3) -> void:
     route_index = 0
 
 func _move_toward_goal(delta: float) -> void:
+    if state == "REPOSITION":
+        var reposition_offset := combat_reposition_goal - global_position
+        reposition_offset.y = 0.0
+        if reposition_offset.length() <= COVER_REACHED:
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+            var reposition_look := (target.global_position - global_position).normalized()
+            look_at(global_position + Vector3(reposition_look.x, 0.0, reposition_look.z), Vector3.UP)
+            state = "ATTACK"
+            combat_reposition_goal = Vector3.ZERO
+            route.clear()
+            route_index = 0
+            return
+
     if state == "BOMB_COVER" and str(main.get("objective_state")) == "PLANTED":
         var bomb_cover_offset := current_goal - global_position
         bomb_cover_offset.y = 0.0
@@ -403,6 +439,7 @@ func take_damage(amount: int) -> void:
     health = maxi(0, health - amount)
     recently_hit_timer = RECENT_HIT_REACTION_TIME
     combat_reposition_timer = 0.0
+    combat_reposition_goal = Vector3.ZERO
     route.clear()
     route_index = 0
     if health == 0:
