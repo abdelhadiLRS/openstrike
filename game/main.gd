@@ -92,6 +92,8 @@ var hud_layer: CanvasLayer
 var network_debug_hud: Label
 var network_debug_visible := false
 var view_weapon_root: Node3D
+var muzzle_flash: MeshInstance3D
+var muzzle_flash_timer := 0.0
 var hit_marker: Label
 var damage_flash: ColorRect
 var hit_feedback_timer := 0.0
@@ -311,6 +313,9 @@ func _physics_process(delta: float) -> void:
     if network_session == null or not network_session.is_online or network_session.is_server:
         _update_objective(delta)
     cooldown = maxf(0.0, cooldown - delta)
+    muzzle_flash_timer = maxf(0.0, muzzle_flash_timer - delta)
+    if muzzle_flash != null and muzzle_flash_timer <= 0.0:
+        muzzle_flash.visible = false
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
     hit_feedback_timer = maxf(0.0, hit_feedback_timer - delta)
     damage_feedback_timer = maxf(0.0, damage_feedback_timer - delta)
@@ -924,6 +929,7 @@ func _fire() -> void:
     input_sequence = combat_authority.next_input_sequence()
     cooldown = float(weapon["delay"])
     ammo -= 1
+    _trigger_muzzle_flash()
     last_processed_input_sequence = input_sequence
     recoil_kick += float(weapon["recoil"])
     combat_events.advance_tick()
@@ -2900,6 +2906,33 @@ func _refresh_view_weapon() -> void:
         _view_box(Vector3(0.0, 0.15, -0.23), Vector3(0.035, 0.055, 0.035), accent_material)
         _view_cylinder(Vector3(0.0, 0.0, -0.32), 0.024, 0.20, body_material)
         _view_cylinder(Vector3(0.0, 0.0, -0.425), 0.03, 0.03, grip_material)
+
+    # A brief emissive flash at the muzzle adds shot feedback without lights,
+    # particles, physics, or per-frame allocations.
+    muzzle_flash = MeshInstance3D.new()
+    muzzle_flash.name = "MuzzleFlash"
+    var flash_mesh := SphereMesh.new()
+    flash_mesh.radius = 0.085
+    flash_mesh.height = 0.17
+    muzzle_flash.mesh = flash_mesh
+    muzzle_flash.position = Vector3(0.0, 0.015, -0.84 if is_rifle else -0.50)
+    muzzle_flash.scale = Vector3(0.72, 1.25, 1.7)
+    var flash_material := StandardMaterial3D.new()
+    flash_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    flash_material.albedo_color = Color(1.0, 0.66, 0.16)
+    flash_material.emission_enabled = true
+    flash_material.emission = Color(1.0, 0.32, 0.045)
+    flash_material.emission_energy_multiplier = 3.0
+    muzzle_flash.material_override = flash_material
+    muzzle_flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    muzzle_flash.visible = false
+    view_weapon_root.add_child(muzzle_flash)
+
+func _trigger_muzzle_flash() -> void:
+    if muzzle_flash == null:
+        return
+    muzzle_flash_timer = 0.055
+    muzzle_flash.visible = true
 
 func _view_cylinder(pos: Vector3, radius: float, height: float, material: StandardMaterial3D) -> void:
     var mesh_instance := MeshInstance3D.new()
