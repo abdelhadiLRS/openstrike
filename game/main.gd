@@ -53,6 +53,8 @@ const WEAPON_ASSETS := [
 
 var weapons: Array[Dictionary] = []
 
+var combat_events: OpenStrikeCombatEvents
+
 var weapon_index := 0
 var ammo := 30
 var reserve := 90
@@ -151,6 +153,8 @@ var red_spawn_points := [
 
 func _ready() -> void:
     _load_weapon_catalog()
+    combat_events = OpenStrikeCombatEvents.new()
+    add_child(combat_events)
     bomb_site_a = BOMB_SITE_A
     bomb_site_b = BOMB_SITE_B
     _world()
@@ -495,6 +499,8 @@ func _fire() -> void:
     cooldown = float(weapon["delay"])
     ammo -= 1
     recoil_kick += float(weapon["recoil"])
+    combat_events.advance_tick()
+    combat_events.emit_shot("player", str(weapon["id"]), ammo, reserve)
 
     var origin := camera.global_position
     var direction := -camera.global_transform.basis.z
@@ -508,6 +514,8 @@ func _fire() -> void:
             # Bot eliminations are scored by the bot's `eliminated` signal.
             # Keep this path limited to applying damage to avoid double rewards.
             hit.collider.take_damage(int(weapon["damage"]))
+            var target_id := str(hit.collider.get_instance_id())
+            combat_events.emit_hit("player", target_id, str(weapon["id"]), int(weapon["damage"]), hit.position, false)
 
 func _reload() -> void:
     if ammo >= int(_current_weapon()["mag"]) or reserve <= 0:
@@ -516,6 +524,8 @@ func _reload() -> void:
     var amount := mini(magazine_size - ammo, reserve)
     ammo += amount
     reserve -= amount
+    combat_events.advance_tick()
+    combat_events.emit_reload("player", str(_current_weapon()["id"]), ammo, reserve)
 
 func _switch_weapon() -> void:
     if not primary_owned:
