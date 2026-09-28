@@ -277,12 +277,11 @@ func _physics_process(delta: float) -> void:
         _update_hud()
         return
 
-    var authoritative_simulation := network_session == null or not network_session.is_online or network_session.is_server
-    if authoritative_simulation:
-        _update_tactical_memory(delta)
-        _update_squad_threat(delta)
-        _update_combat_director(delta)
-        _update_bots(delta)
+    _update_tactical_memory(delta)
+    _update_squad_threat(delta)
+    _update_combat_director(delta)
+    _update_bots(delta)
+    if network_session == null or not network_session.is_online or network_session.is_server:
         _update_objective(delta)
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
