@@ -368,6 +368,21 @@ func process_host_fire(origin: Vector3, direction: Vector3, weapon_id_value: Str
     return true
 
 
+func _build_bot_snapshots(root: Node) -> Array[Dictionary]:
+	var states: Array[Dictionary] = []
+	if root == null:
+		return states
+	var bots_value = root.get("bots")
+	if not bots_value is Array:
+		return states
+	for bot in bots_value:
+		if not is_instance_valid(bot) or not bot.is_in_group("bots"):
+			continue
+		var bot_id := int(bot.get("network_bot_id"))
+		if bot_id <= 0:
+			bot_id = int(bot.get("combat_slot")) + 1
+		states.append({"id": bot_id, "position": bot.global_position, "velocity": bot.velocity, "yaw": bot.rotation.y, "health": int(bot.get("health")), "dead": bool(bot.get("dead")), "state": str(bot.get("state")), "assignment": str(bot.get("combat_assignment"))})
+	return states
 func _snapshot_server_players(delta: float) -> void:
 	var root := _root()
 	var current_round_state := str(root.get("round_state")) if root != null else "BUY"
@@ -406,6 +421,7 @@ func _snapshot_server_players(delta: float) -> void:
 			int(root.get("network_objective_peer_id")),
 			float(root.get("objective_action_time_left"))
 		)
+		snapshot.bot_states = _build_bot_snapshots(root)
 		broadcast_snapshot(snapshot)
 
 func set_server_tick(tick: int) -> void:
@@ -488,6 +504,30 @@ func _apply_remote_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if player == null:
 		return
 	player.apply_snapshot(snapshot)
+	_apply_bot_snapshots(snapshot.bot_states)
+
+func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
+	var root := _root()
+	if root == null:
+		return
+	var bots_value = root.get("bots")
+	if not bots_value is Array:
+		return
+	for state_value in states:
+		if not state_value is Dictionary:
+			continue
+		var bot_id := int(state_value.get("id", 0))
+		if bot_id <= 0:
+			continue
+		for bot in bots_value:
+			if not is_instance_valid(bot):
+				continue
+			var local_id := int(bot.get("network_bot_id"))
+			if local_id <= 0:
+				local_id = int(bot.get("combat_slot")) + 1
+			if local_id == bot_id and bot.has_method("apply_network_snapshot"):
+				bot.apply_network_snapshot(state_value)
+				break
 
 func _shutdown_peer() -> void:
 	server_input_buffer.clear()
