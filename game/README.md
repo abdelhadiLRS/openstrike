@@ -241,3 +241,13 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - **LOST** keeps role continuity but removes stale positional aggression through the Combat Director's HOLD command.
 - Role persistence is still used as a small tie-breaker, so bots do not swap roles unnecessarily when the tactical scores are close.
 - Threat revisions now trigger an immediate role reassessment instead of waiting for the normal assignment interval.
+
+
+### Threat-aware combat posture
+- Bots now treat the squad threat state as an explicit combat-authority layer, not only as a movement hint.
+- **CONTACT** is the only threat state that grants normal firing authority; direct line of sight is still required before a shot is taken.
+- **TRACKED** allows bounded re-engagement movement but does not authorize firing from stale shared position data.
+- **SEARCHING** forces a HOLD combat intent while the dedicated search state controls movement, preventing stale target assumptions from turning into blind attacks.
+- **LOST** clears stale aggressive intent and returns bots to defensive behavior until a new contact or objective event changes the threat state.
+- A threat revision immediately invalidates stale combat routes and decisions so a bot does not continue an old attack plan after the squad's tactical picture changes.
+- Bomb DEFUSE and BOMB_COVER objective priorities remain above the threat posture layer.
