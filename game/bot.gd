@@ -69,6 +69,7 @@ var combat_reposition_goal := Vector3.ZERO
 var retreat_cover_goal := Vector3.ZERO
 var route_goal := Vector3.ZERO
 var route_replan_timer := 0.0
+var close_retreat_route_active := false
 var search_goal := Vector3.ZERO
 var search_revision := -1
 var squad_contact_position := Vector3.ZERO
@@ -156,6 +157,7 @@ func _physics_process(delta: float) -> void:
 
     _update_state()
     if state != last_state:
+        close_retreat_route_active = false
         route.clear()
         route_index = 0
         route_goal = Vector3.ZERO
@@ -744,6 +746,7 @@ func _move_toward_goal(delta: float) -> void:
     if state == "ATTACK":
         var distance := global_position.distance_to(target.global_position)
         if distance <= OPTIMAL_RANGE and distance >= MIN_COMBAT_RANGE:
+            close_retreat_route_active = false
             var to_target := (target.global_position - global_position).normalized()
             var strafe := Vector3(-to_target.z, 0.0, to_target.x) * strafe_sign
             velocity.x = move_toward(velocity.x, strafe.x * 1.5, 10.0 * delta)
@@ -753,14 +756,22 @@ func _move_toward_goal(delta: float) -> void:
         if distance < MIN_COMBAT_RANGE:
             var away := (global_position - target.global_position).normalized()
             var retreat_goal := global_position + away * 5.0
-            # Close-range retreat must stay inside the navigation graph so the
-            # bot does not back through walls or other map geometry.
+            # Close-range retreat must take over the route immediately. Without
+            # this handoff, a still-valid long-range attack route can be reused
+            # for a few frames when its goal is near the retreat goal.
+            if not close_retreat_route_active:
+                route.clear()
+                route_index = 0
+                route_goal = Vector3.ZERO
+                route_replan_timer = 0.0
+                close_retreat_route_active = true
             _ensure_route(retreat_goal)
             if route.size() == 0:
                 velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
                 velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
                 return
         if distance > OPTIMAL_RANGE:
+            close_retreat_route_active = false
             # Long-range pursuit must use the navigation graph rather than
             # steering directly through map geometry.
             _ensure_route(target.global_position)
@@ -892,6 +903,7 @@ func reset_target() -> void:
     route_index = 0
     route_goal = Vector3.ZERO
     route_replan_timer = 0.0
+    close_retreat_route_active = false
     state = "DEFEND"
     last_state = "DEFEND"
     current_goal = Vector3.ZERO
