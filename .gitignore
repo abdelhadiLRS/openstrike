@@ -1,0 +1,27 @@
+﻿# Godot
+.godot/
+.import/
+.export/
+export/
+*.tmp
+
+# IDE / OS
+.vscode/
+.idea/
+*.user
+*.userprefs
+.DS_Store
+Thumbs.db
+
+# Local legacy material
+legacy-source-backup/
+.git-counterstrike-backup/
+
+# Build output
+build/
+dist/
+bin/
+obj/
+
+# Logs
+*.log
