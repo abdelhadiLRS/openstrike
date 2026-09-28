@@ -25,7 +25,7 @@ This document adapts *systems ideas* observed in [VANTIX](https://github.com/van
 | Runtime console / ConVars | Add a permission-gated developer console with typed variables, defaults, ranges, and server/client scopes | P1 |
 | NetGraph / performance overlay | Show tick rate, RTT, packet loss, server/client frame time, active bots, and memory in a debug-only overlay | P1 |
 | Smoke, penetration, per-limb damage | Add as separate gameplay systems only after authoritative hitscan, collision/material rules, and tests are stable | P2 |
-| Dedicated server and launch flags | Add headless server, listen-server, connect-address, port, and bot-count options with clear startup validation | P1 |
+| Dedicated server and launch flags | Add headless server, listen-server, connect-address, port, and bot-count options with clear startup validation | P1 (launch flags implemented) |
 
 ## Delivery sequence
 
