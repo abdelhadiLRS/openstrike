@@ -1987,6 +1987,7 @@ func _world() -> void:
     _setup_navigation_points()
     _setup_cover_points()
     _create_map_dressing()
+    _create_site_beacons()
     _spawn_bots()
     _objective_site(BOMB_SITE_A, "A")
     _objective_site(BOMB_SITE_B, "B")
@@ -2125,6 +2126,41 @@ func _create_map_dressing() -> void:
                 Vector3(1.1 - float(step) * 0.16, 0.025, 0.10),
                 warning_material
             )
+
+func _create_site_beacons() -> void:
+    # Small emissive pylons make both bomb sites readable from a distance.
+    # They are visual-only: no collision, navigation, or gameplay changes.
+    var site_specs := [
+        {"position": BOMB_SITE_A, "color": Color(0.08, 0.72, 0.96)},
+        {"position": BOMB_SITE_B, "color": Color(1.0, 0.48, 0.12)}
+    ]
+    for spec in site_specs:
+        var site_position: Vector3 = spec["position"]
+        var site_color: Color = spec["color"]
+        var beacon_material := StandardMaterial3D.new()
+        beacon_material.albedo_color = site_color.darkened(0.58)
+        beacon_material.metallic = 0.35
+        beacon_material.roughness = 0.38
+        beacon_material.emission_enabled = true
+        beacon_material.emission = site_color
+        beacon_material.emission_energy_multiplier = 1.25
+
+        var trim_material := StandardMaterial3D.new()
+        trim_material.albedo_color = site_color
+        trim_material.emission_enabled = true
+        trim_material.emission = site_color
+        trim_material.emission_energy_multiplier = 1.8
+        trim_material.roughness = 0.3
+
+        for offset in [
+            Vector3(-2.55, 0.0, -2.55), Vector3(2.55, 0.0, -2.55),
+            Vector3(-2.55, 0.0, 2.55), Vector3(2.55, 0.0, 2.55)
+        ]:
+            _visual_box(site_position + offset + Vector3(0.0, 0.43, 0.0), Vector3(0.16, 0.86, 0.16), beacon_material)
+            _visual_box(site_position + offset + Vector3(0.0, 0.91, 0.0), Vector3(0.28, 0.10, 0.28), trim_material)
+
+        # A compact center marker adds a distinct visual anchor without a light source.
+        _visual_box(site_position + Vector3(0.0, 0.07, 0.0), Vector3(0.44, 0.08, 0.44), trim_material)
 
 func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> void:
     var mesh_instance := MeshInstance3D.new()
