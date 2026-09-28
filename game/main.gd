@@ -88,6 +88,7 @@ var cooldown := 0.0
 var recoil_kick := 0.0
 var crouched := false
 var hud: Label
+var hud_layer: CanvasLayer
 var network_debug_hud: Label
 var network_debug_visible := false
 var hit_marker: Label
@@ -1003,14 +1004,57 @@ func _set_crouch(value: bool) -> void:
     player_capsule.height = CROUCH_HEIGHT if crouched else STAND_HEIGHT
     camera.position.y = CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y
 
+func _hud() -> void:
+    # A lightweight HUD card keeps match information readable over bright
+    # surfaces while leaving most of the view unobstructed.
+    hud_layer = CanvasLayer.new()
+    hud_layer.name = "OpenStrikeHUD"
+    hud_layer.layer = 10
+
+    var panel := PanelContainer.new()
+    panel.name = "MatchInfoPanel"
+    panel.position = Vector2(18.0, 18.0)
+    panel.custom_minimum_size = Vector2(570.0, 196.0)
+    panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+    var panel_style := StyleBoxFlat.new()
+    panel_style.bg_color = Color(0.025, 0.045, 0.065, 0.86)
+    panel_style.border_color = Color(0.12, 0.72, 0.82, 0.95)
+    panel_style.border_width_left = 4
+    panel_style.corner_radius_top_left = 8
+    panel_style.corner_radius_top_right = 8
+    panel_style.corner_radius_bottom_left = 8
+    panel_style.corner_radius_bottom_right = 8
+    panel_style.content_margin_left = 14.0
+    panel_style.content_margin_top = 10.0
+    panel_style.content_margin_right = 14.0
+    panel_style.content_margin_bottom = 10.0
+    panel.add_theme_stylebox_override("panel", panel_style)
+
+    hud = Label.new()
+    hud.name = "MatchInfo"
+    hud.custom_minimum_size = Vector2(540.0, 176.0)
+    hud.add_theme_font_size_override("font_size", 16)
+    hud.add_theme_color_override("font_color", Color(0.90, 0.95, 0.98))
+    hud.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+    hud.add_theme_constant_override("shadow_offset_x", 1)
+    hud.add_theme_constant_override("shadow_offset_y", 1)
+    hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    panel.add_child(hud)
+    hud_layer.add_child(panel)
+    add_child(hud_layer)
+
 func _create_network_debug_hud() -> void:
     network_debug_hud = Label.new()
-    network_debug_hud.position = Vector2(18, 18)
+    network_debug_hud.position = Vector2(18, 226)
     network_debug_hud.size = Vector2(520, 120)
     network_debug_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
     network_debug_hud.add_theme_font_size_override("font_size", 14)
     network_debug_hud.visible = network_debug_visible
-    add_child(network_debug_hud)
+    if hud_layer != null:
+        hud_layer.add_child(network_debug_hud)
+    else:
+        add_child(network_debug_hud)
 
 func _update_hud() -> void:
     var weapon := _current_weapon()
