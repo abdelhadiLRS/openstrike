@@ -113,6 +113,7 @@ var objective_action_time_left := 0.0
 var bot_defuse_time_left := 0.0
 var active_defuser: Node = null
 var network_objective_peer_id := -1
+var network_objective_latched_peer_id := -1
 var bomb_defense_revision := 0
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
@@ -408,12 +409,17 @@ func set_network_objective_input(peer_id: int, active: bool) -> void:
     if not active:
         if network_objective_peer_id == peer_id:
             network_objective_peer_id = -1
+        if network_objective_latched_peer_id == peer_id:
+            network_objective_latched_peer_id = -1
             if objective_action != "PLANT" and objective_action != "DEFUSE":
                 objective_action = ""
                 objective_action_time_left = 0.0
         return
     if round_state != "LIVE":
         network_objective_peer_id = -1
+        network_objective_latched_peer_id = -1
+        return
+    if network_objective_latched_peer_id == peer_id:
         return
     if network_objective_peer_id == -1 or network_objective_peer_id == peer_id:
         network_objective_peer_id = peer_id
@@ -463,6 +469,7 @@ func _update_objective(delta: float) -> void:
         objective_action = ""
         objective_action_time_left = 0.0
         network_objective_peer_id = -1
+        network_objective_latched_peer_id = -1
         return
 
     var network_actor := _network_objective_actor()
@@ -478,6 +485,7 @@ func _update_objective(delta: float) -> void:
                 objective_state = "CARRIED"
                 objective_site = ""
                 dropped_bomb_position = Vector3.ZERO
+                network_objective_latched_peer_id = network_objective_peer_id
         elif objective_state == "PLANTED":
             var network_defuse_site := _current_bomb_site()
             if network_defuse_site == planted_site:
@@ -498,6 +506,8 @@ func _update_objective(delta: float) -> void:
                 if objective_action_time_left <= 0.0:
                     objective_state = "PLANTED"
                     planted_site = site
+                    if network_actor != null:
+                        network_objective_latched_peer_id = network_objective_peer_id
                     bomb_time_left = BOMB_TIME
                     objective_action = ""
                     objective_action_time_left = 0.0
@@ -526,6 +536,8 @@ func _update_objective(delta: float) -> void:
                     objective_state = "DEFUSED"
                     objective_action = ""
                     objective_action_time_left = 0.0
+                    if network_actor != null:
+                        network_objective_latched_peer_id = network_objective_peer_id
                     _request_round_outcome(false, "PLAYER_DEFUSED")
 
 func _bot_has_navigation_path(bot: Node, goal: Vector3) -> bool:
