@@ -434,6 +434,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         weapon_index = authoritative_index
         ammo = snapshot.ammo
         reserve = snapshot.reserve
+        _refresh_view_weapon()
 
     # Keep the newest authoritative transform until the current rollback finishes.
     # ACK state is still processed above, but the transform itself must not be
@@ -1038,6 +1039,7 @@ func _hud() -> void:
     hud = Label.new()
     hud.name = "MatchInfo"
     hud.custom_minimum_size = Vector2(540.0, 176.0)
+    hud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     hud.add_theme_font_size_override("font_size", 16)
     hud.add_theme_color_override("font_color", Color(0.90, 0.95, 0.98))
     hud.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
