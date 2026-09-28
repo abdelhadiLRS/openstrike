@@ -14,3 +14,10 @@ static func corrected_position(
 	correction_alpha: float = 0.35
 ) -> Vector3:
 	return predicted_position.lerp(authoritative_position, clampf(correction_alpha, 0.0, 1.0))
+
+static func corrected_velocity(
+	authoritative_velocity: Vector3,
+	predicted_velocity: Vector3,
+	correction_alpha: float = 0.25
+) -> Vector3:
+	return predicted_velocity.lerp(authoritative_velocity, clampf(correction_alpha, 0.0, 1.0))
