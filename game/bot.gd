@@ -568,6 +568,14 @@ func _update_goal() -> void:
         var tactical_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
         if tactical_target == Vector3.ZERO:
             tactical_target = target.global_position
+        var has_tactical_los := _has_line_of_sight()
+        if not has_tactical_los:
+            # PUSH can legitimately enter ATTACK while the target is behind
+            # cover. Keep the bot on the tactical navigation target instead of
+            # strafing directly through the blocking geometry.
+            current_goal = tactical_target
+            _ensure_route(current_goal)
+            return
         var distance := global_position.distance_to(tactical_target)
         if distance > OPTIMAL_RANGE:
             current_goal = tactical_target
@@ -776,7 +784,8 @@ func _move_toward_goal(delta: float) -> void:
 
     if state == "ATTACK":
         var distance := global_position.distance_to(target.global_position)
-        if distance <= OPTIMAL_RANGE and distance >= MIN_COMBAT_RANGE:
+        var attack_has_los := _has_line_of_sight()
+        if attack_has_los and distance <= OPTIMAL_RANGE and distance >= MIN_COMBAT_RANGE:
             if close_retreat_route_active:
                 route.clear()
                 route_index = 0
@@ -789,7 +798,7 @@ func _move_toward_goal(delta: float) -> void:
             velocity.z = move_toward(velocity.z, strafe.z * 1.5, 10.0 * delta)
             look_at(global_position + Vector3(to_target.x, 0.0, to_target.z), Vector3.UP)
             return
-        if distance < MIN_COMBAT_RANGE:
+        if attack_has_los and distance < MIN_COMBAT_RANGE:
             var away := (global_position - target.global_position).normalized()
             var retreat_goal := global_position + away * 5.0
             # Close-range retreat must take over the route immediately. Without
