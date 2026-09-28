@@ -111,3 +111,8 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - The procedural waypoint network is now compiled into a static visibility graph after the graybox geometry is created.
 - Bot route selection uses A* with Euclidean distance as the heuristic instead of breadth-first search, so longer detours are compared by travel cost.
 - Start and goal anchors still require direct visibility, while the cached graph handles repeated static-obstacle routing more efficiently.
+
+
+### Navigation route smoothing
+- A* routes are now post-processed with line-of-sight checks to remove unnecessary intermediate waypoints.
+- Bots therefore keep the obstacle-safe route while taking straighter segments whenever the graybox geometry allows it.
