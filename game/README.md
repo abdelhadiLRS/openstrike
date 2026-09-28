@@ -99,3 +99,9 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Retreating bots select validated combat cover instead of blindly reusing a generic cover slot.
 - Combat cover selection checks line of sight, usable peek geometry, travel distance, and occupancy by other bots so multiple enemies are less likely to stack on one position.
 - A retreating bot remains behind cover rather than immediately entering the peek cycle, reducing exposed re-peeks while under pressure.
+
+### Coordinated combat repositioning
+- Bots now use stable combat slots so defenders and the roamer seek different attack angles instead of converging on the same peek position.
+- Attackers periodically request a new validated peek position after a short reposition interval, with occupancy and line-of-sight checks.
+- Repositioning is a dedicated movement state, so the bot can travel to the new angle without immediately cancelling the maneuver through the normal combat-intent loop.
+- The shared selector favors useful lateral separation around the player while preserving cover-to-peek geometry.
