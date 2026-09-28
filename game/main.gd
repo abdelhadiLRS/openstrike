@@ -527,7 +527,7 @@ func _update_objective(delta: float) -> void:
             return
 
         if objective_action == "DEFUSE":
-            if site != planted_site or not Input.is_key_pressed(KEY_F):
+            if site != planted_site or not objective_input_active:
                 objective_action = ""
                 objective_action_time_left = 0.0
             else:
