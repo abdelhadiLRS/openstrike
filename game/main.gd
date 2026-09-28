@@ -66,6 +66,12 @@ var pending_buy_weapon_id := ""
 var pending_switch_weapon := false
 var pending_reload := false
 var pending_objective := false
+var pending_prediction_replay := false
+var prediction_replay_position := Vector3.ZERO
+var prediction_replay_velocity := Vector3.ZERO
+var prediction_replay_yaw := 0.0
+var prediction_replay_pitch := 0.0
+var prediction_replay_commands: Array[OpenStrikeInputCommand] = []
 
 var weapon_index := 0
 var ammo := 30
@@ -243,6 +249,8 @@ func _physics_process(delta: float) -> void:
 
     if not network_client:
         _update_round_state(delta)
+    if network_client and round_state == "LIVE" and pending_prediction_replay:
+        _replay_pending_prediction(delta)
     if round_state != "LIVE":
         var network_client := network_session != null and network_session.is_online and not network_session.is_server
         if network_client and (pending_buy_weapon_id != "" or pending_switch_weapon or pending_reload):
@@ -399,9 +407,55 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         reserve = snapshot.reserve
 
     if not dead and OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position):
-        player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
-        player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.25)
-        network_diagnostics.record_prediction_correction()
+        prediction_replay_position = snapshot.position
+        prediction_replay_velocity = snapshot.velocity
+        prediction_replay_yaw = snapshot.yaw
+        prediction_replay_pitch = snapshot.pitch
+        prediction_replay_commands = prediction.buffer.pending_commands_snapshot()
+        pending_prediction_replay = not prediction_replay_commands.is_empty()
+        if pending_prediction_replay:
+            network_diagnostics.record_prediction_correction()
+        else:
+            player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
+            player.velocity = OpenStrikeReconciliation.corrected_velocity(snapshot.velocity, player.velocity, 0.25)
+
+
+func _replay_pending_prediction(delta: float) -> void:
+    if player == null or prediction_replay_commands.is_empty():
+        pending_prediction_replay = false
+        prediction_replay_commands.clear()
+        return
+
+    # Roll back to the authoritative state, then replay only movement/look
+    # inputs. Fire, reload, buy, weapon-switch and objective side effects are
+    # deliberately excluded so reconciliation cannot duplicate gameplay.
+    player.global_position = prediction_replay_position
+    player.velocity = prediction_replay_velocity
+    player.rotation.y = prediction_replay_yaw
+    pitch = prediction_replay_pitch
+
+    for command in prediction_replay_commands:
+        if command == null:
+            continue
+        player.rotate_y(-command.look_delta.x * SENS)
+        pitch = clamp(pitch - command.look_delta.y * SENS, -1.45, 1.45)
+
+        var direction := (player.transform.basis * Vector3(command.move.x, 0.0, command.move.y)).normalized()
+        var move_speed := 3.4 if command.crouch else 5.6
+        player.velocity.x = move_toward(player.velocity.x, direction.x * move_speed, 25.0 * delta)
+        player.velocity.z = move_toward(player.velocity.z, direction.z * move_speed, 25.0 * delta)
+
+        if not player.is_on_floor():
+            player.velocity.y -= GRAVITY * delta
+        elif command.jump and not command.crouch:
+            player.velocity.y = 5.0
+
+        if command.crouch != crouched:
+            _set_crouch(command.crouch)
+        player.move_and_slide()
+
+    pending_prediction_replay = false
+    prediction_replay_commands.clear()
 
 
 func _update_round_state(delta: float) -> void:
