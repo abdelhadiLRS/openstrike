@@ -626,6 +626,7 @@ func _update_tactical_memory(delta: float) -> void:
         if source_changed or position_changed:
             squad_contact_revision += 1
             combat_engagement_revision += 1
+            combat_contact_started_at = Time.get_ticks_msec()
         last_known_player_position = contact_position
         last_known_player_timer = TACTICAL_MEMORY_TIMEOUT
         tactical_memory_position = contact_position
