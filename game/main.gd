@@ -58,6 +58,10 @@ var combat_authority: OpenStrikeCombatAuthority
 var player_snapshots := OpenStrikeSnapshotHistory.new()
 var input_sequence := 0
 var last_processed_input_sequence := 0
+var prediction := OpenStrikePredictionController.new()
+var network_diagnostics := OpenStrikeNetworkDiagnostics.new()
+var network_session: OpenStrikeNetworkSession
+var pending_look_delta := Vector2.ZERO
 
 var weapon_index := 0
 var ammo := 30
@@ -162,6 +166,9 @@ func _ready() -> void:
     combat_authority = OpenStrikeCombatAuthority.new()
     add_child(combat_authority)
     combat_authority.setup(combat_events)
+    network_session = OpenStrikeNetworkSession.new()
+    add_child(network_session)
+    network_session.snapshot_received.connect(_on_authoritative_snapshot)
     bomb_site_a = BOMB_SITE_A
     bomb_site_b = BOMB_SITE_B
     _world()
@@ -174,6 +181,7 @@ func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not dead:
         player.rotate_y(-event.relative.x * SENS)
         pitch = clamp(pitch - event.relative.y * SENS, -1.45, 1.45)
+        pending_look_delta += event.relative
     elif event is InputEventKey and event.pressed and not event.echo:
         if event.keycode == KEY_ESCAPE:
             Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -221,26 +229,62 @@ func _physics_process(delta: float) -> void:
         player.velocity.y -= GRAVITY * delta
 
     var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-    var direction := (player.transform.basis * Vector3(input.x, 0, input.y)).normalized()
+    var command := prediction.build_command(
+        combat_events.tick,
+        input,
+        pending_look_delta,
+        Input.is_action_pressed("fire"),
+        Input.is_action_just_pressed("reload"),
+        Input.is_action_pressed("crouch"),
+        Input.is_action_just_pressed("jump")
+    )
+    pending_look_delta = Vector2.ZERO
+    prediction.record_predicted(command, player.global_position, player.velocity, player.rotation.y, pitch)
+    input_sequence = command.sequence
+    network_diagnostics.record_command()
+    if network_session != null and network_session.is_online and not network_session.is_server:
+        network_session.send_input(command)
+
+    var direction := (player.transform.basis * Vector3(command.move.x, 0, command.move.y)).normalized()
     var move_speed := _current_speed()
     player.velocity.x = move_toward(player.velocity.x, direction.x * move_speed, 25.0 * delta)
     player.velocity.z = move_toward(player.velocity.z, direction.z * move_speed, 25.0 * delta)
 
-    if Input.is_action_just_pressed("jump") and player.is_on_floor() and not crouched:
+    if command.jump and player.is_on_floor() and not crouched:
         player.velocity.y = 5.0
 
-    var want_crouch := Input.is_action_pressed("crouch")
+    var want_crouch := command.crouch
     if want_crouch != crouched:
         _set_crouch(want_crouch)
 
-    if Input.is_action_pressed("fire"):
+    if command.fire:
         _fire()
-    if Input.is_action_just_pressed("reload"):
+    if command.reload:
         _reload()
 
     player.move_and_slide()
     camera.rotation.x = pitch + recoil_kick
     _update_hud()
+
+func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
+    if snapshot == null:
+        return
+    network_diagnostics.record_snapshot(snapshot.tick, snapshot.acknowledged_input_sequence)
+    prediction.acknowledge(snapshot.acknowledged_input_sequence)
+    last_processed_input_sequence = maxi(last_processed_input_sequence, snapshot.acknowledged_input_sequence)
+    health = snapshot.health
+    dead = snapshot.dead
+    if snapshot.round_state != "":
+        round_state = snapshot.round_state
+    round_number = snapshot.round_number
+    objective_state = snapshot.objective_state
+    planted_site = snapshot.planted_site
+    bomb_time_left = snapshot.bomb_time_left
+
+    if not dead and OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position):
+        player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
+        network_diagnostics.record_prediction_correction()
+
 
 func _update_round_state(delta: float) -> void:
     round_state_time_left = maxf(0.0, round_state_time_left - delta)
