@@ -9,6 +9,8 @@ var prediction_corrections: int = 0
 var last_acknowledged_sequence: int = 0
 var last_snapshot_tick: int = 0
 var last_snapshot_tick_by_peer: Dictionary = {}
+var rejection_reasons: Dictionary = {}
+var last_snapshot_tick_by_peer: Dictionary = {}
 
 func record_command() -> void:
 	sent_commands += 1
@@ -26,6 +28,11 @@ func record_snapshot(peer_id: int, tick: int, acknowledged_sequence: int) -> voi
 func record_rejected_input() -> void:
 	rejected_inputs += 1
 
+func record_rejection_reason(reason: String) -> void:
+	if reason.is_empty():
+		return
+	rejection_reasons[reason] = int(rejection_reasons.get(reason, 0)) + 1
+
 func record_prediction_correction() -> void:
 	prediction_corrections += 1
 
@@ -37,5 +44,6 @@ func snapshot() -> Dictionary:
 		"snapshot_tick_gaps": snapshot_tick_gaps,
 		"prediction_corrections": prediction_corrections,
 		"last_acknowledged_sequence": last_acknowledged_sequence,
-		"last_snapshot_tick": last_snapshot_tick
+		"last_snapshot_tick": last_snapshot_tick,
+		"rejection_reasons": rejection_reasons.duplicate()
 	}
