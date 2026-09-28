@@ -62,6 +62,9 @@ var prediction := OpenStrikePredictionController.new()
 var network_diagnostics := OpenStrikeNetworkDiagnostics.new()
 var network_session: OpenStrikeNetworkSession
 var pending_look_delta := Vector2.ZERO
+var pending_buy_weapon_id := ""
+var pending_switch_weapon := false
+var pending_reload := false
 
 var weapon_index := 0
 var ammo := 30
@@ -186,13 +189,25 @@ func _unhandled_input(event: InputEvent) -> void:
         if event.keycode == KEY_ESCAPE:
             Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
         elif event.keycode == KEY_1 and not dead:
-            _buy_weapon(0)
+            if network_session != null and network_session.is_online and not network_session.is_server:
+                pending_buy_weapon_id = str(weapons[0]["id"])
+            else:
+                _buy_weapon(0)
         elif event.keycode == KEY_2 and not dead:
-            _buy_weapon(1)
+            if network_session != null and network_session.is_online and not network_session.is_server:
+                pending_buy_weapon_id = str(weapons[1]["id"])
+            else:
+                _buy_weapon(1)
         elif event.keycode == KEY_E and not dead:
-            _switch_weapon()
+            if network_session != null and network_session.is_online and not network_session.is_server:
+                pending_switch_weapon = true
+            else:
+                _switch_weapon()
         elif event.keycode == KEY_R and not dead:
-            _reload()
+            if network_session != null and network_session.is_online and not network_session.is_server:
+                pending_reload = true
+            else:
+                _reload()
         elif event.keycode == KEY_F and not dead:
             _begin_objective_action()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not dead:
@@ -236,12 +251,17 @@ func _physics_process(delta: float) -> void:
         input,
         pending_look_delta,
         Input.is_action_pressed("fire"),
-        Input.is_action_just_pressed("reload"),
+        Input.is_action_just_pressed("reload") or pending_reload,
         Input.is_action_pressed("crouch"),
         Input.is_action_just_pressed("jump"),
         str(_current_weapon()["id"])
     )
+    command.buy_weapon_id = pending_buy_weapon_id
+    command.switch_weapon = pending_switch_weapon
     pending_look_delta = Vector2.ZERO
+    pending_buy_weapon_id = ""
+    pending_switch_weapon = false
+    pending_reload = false
     prediction.record_predicted(command, player.global_position, player.velocity, player.rotation.y, pitch)
     input_sequence = command.sequence
     network_diagnostics.record_command()
@@ -260,9 +280,10 @@ func _physics_process(delta: float) -> void:
     if want_crouch != crouched:
         _set_crouch(want_crouch)
 
-    if command.fire:
+    var network_client := network_session != null and network_session.is_online and not network_session.is_server
+    if command.fire and not network_client:
         _fire()
-    if command.reload:
+    if command.reload and not network_client:
         _reload()
 
     player.move_and_slide()
@@ -283,6 +304,17 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     objective_state = snapshot.objective_state
     planted_site = snapshot.planted_site
     bomb_time_left = snapshot.bomb_time_left
+    credits = clampi(snapshot.credits, 0, MAX_CREDITS)
+    var authoritative_index := -1
+    for i in weapons.size():
+        if str(weapons[i].get("id", "")) == snapshot.weapon_id:
+            authoritative_index = i
+            break
+    if authoritative_index >= 0:
+        weapon_index = authoritative_index
+        ammo = snapshot.ammo
+        reserve = snapshot.reserve
+        primary_owned = snapshot.weapon_id == "ar_17" or primary_owned
 
     if not dead and OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position):
         player.global_position = OpenStrikeReconciliation.corrected_position(snapshot.position, player.global_position, 0.45)
