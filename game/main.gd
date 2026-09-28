@@ -693,6 +693,24 @@ func _find_nearest_navigation_point(position: Vector3) -> int:
     return best_index
 
 
+func _simplify_navigation_route(route: Array) -> Array:
+    if route.size() <= 2:
+        return route
+
+    var simplified: Array = [route[0]]
+    var anchor := 0
+    while anchor < route.size() - 1:
+        var farthest := anchor + 1
+        for candidate in range(anchor + 1, route.size()):
+            if _navigation_visible(route[anchor], route[candidate]):
+                farthest = candidate
+            else:
+                break
+        simplified.append(route[farthest])
+        anchor = farthest
+    return simplified
+
+
 func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
     var points: Array = navigation_points
     if points.is_empty():
@@ -748,7 +766,7 @@ func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
                 route.append(points[index])
             if route.is_empty() or route[route.size() - 1].distance_to(goal) > WAYPOINT_REACHED:
                 route.append(goal)
-            return route
+            return _simplify_navigation_route(route)
 
         closed_set[current] = true
         var neighbors: Array = navigation_graph[current]
