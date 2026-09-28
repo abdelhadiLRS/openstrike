@@ -412,6 +412,13 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         ammo = snapshot.ammo
         reserve = snapshot.reserve
 
+    # Do not replace an in-flight rollback anchor with a newer snapshot.
+    # The current replay already represents the unacknowledged commands at its
+    # original authoritative tick; replacing it mid-replay would mix two
+    # authoritative timelines and can duplicate movement/look input.
+    if pending_prediction_replay:
+        return
+
     var position_correction_needed := OpenStrikeReconciliation.correction_needed(snapshot.position, player.global_position)
     var rotation_correction_needed := OpenStrikeReconciliation.rotation_correction_needed(snapshot.yaw, player.rotation.y, snapshot.pitch, pitch)
     if not dead and (position_correction_needed or rotation_correction_needed):
