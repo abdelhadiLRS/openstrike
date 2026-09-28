@@ -800,3 +800,17 @@ func reset_target() -> void:
     combat_director_fire_ready = false
     applied_threat_revision = -1
     fire_cooldown = 0.0
+    burst_remaining = 0
+    burst_pause = 0.0
+    strafe_time = STRAFE_INTERVAL
+    strafe_sign = 1.0
+
+func _die() -> void:
+    dead = true
+    visible = false
+    if collision_shape:
+        collision_shape.disabled = true
+    collision_layer = 0
+    collision_mask = 0
+    velocity = Vector3.ZERO
+    eliminated.emit(self)
