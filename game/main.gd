@@ -1567,6 +1567,8 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
         var player_distance := cover_position.distance_to(player_position)
         if player_distance < 6.0:
             continue
+        if not _bot_has_navigation_path(bot, cover_position):
+            continue
         if not _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
             continue
         if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
