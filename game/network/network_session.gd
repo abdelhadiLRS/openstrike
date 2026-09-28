@@ -289,7 +289,7 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 
 
 func process_host_fire(origin: Vector3, direction: Vector3, weapon_id_value: String, damage: int) -> bool:
-    if not is_server or not is_online or damage <= 0:
+    if not is_server or not is_online:
         return false
     var root := _root()
     if root == null or str(root.get("round_state")) != "LIVE":
@@ -297,6 +297,17 @@ func process_host_fire(origin: Vector3, direction: Vector3, weapon_id_value: Str
     var shooter = root.get("player")
     if shooter == null:
         return false
+
+    # Resolve combat values from the authoritative catalog instead of trusting
+    # the caller's damage value. The host has already passed local input
+    # validation, but this boundary remains authoritative by design.
+    var weapon := _weapon_definition(weapon_id_value)
+    if weapon.is_empty():
+        return false
+    var authoritative_damage := int(weapon.get("damage", 0))
+    if authoritative_damage <= 0:
+        return false
+    damage = authoritative_damage
 
     var best_target: Node = null
     var best_distance := INF
