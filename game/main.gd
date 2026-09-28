@@ -29,6 +29,8 @@ const COMBAT_SLOT_UPDATE_INTERVAL := 0.75
 const COMBAT_ASSIGNMENT_UPDATE_INTERVAL := 1.25
 const TACTICAL_MEMORY_TIMEOUT := 4.5
 const TACTICAL_MEMORY_MIN_UPDATE := 0.35
+const CONTACT_MEMORY_TIMEOUT := 4.0
+const CONTACT_UPDATE_INTERVAL := 0.25
 const TACTICAL_MEMORY_MAX_DISTANCE := 34.0
 const SQUAD_SEARCH_DURATION := 6.0
 const SQUAD_SEARCH_UPDATE_INTERVAL := 0.75
@@ -98,6 +100,11 @@ var combat_engagement_revision := 0
 var tactical_memory_position := Vector3.ZERO
 var tactical_memory_timer := 0.0
 var tactical_memory_revision := 0
+var squad_contact_position := Vector3.ZERO
+var squad_contact_timer := 0.0
+var squad_contact_revision := 0
+var squad_contact_source: Node = null
+var squad_contact_update_timer := 0.0
 var last_known_player_position := Vector3.ZERO
 var last_known_player_timer := 0.0
 var squad_search_active := false
@@ -518,6 +525,11 @@ func _start_round() -> void:
     tactical_memory_position = Vector3.ZERO
     tactical_memory_timer = 0.0
     tactical_memory_revision += 1
+    squad_contact_position = Vector3.ZERO
+    squad_contact_timer = 0.0
+    squad_contact_revision += 1
+    squad_contact_source = null
+    squad_contact_update_timer = 0.0
     last_known_player_position = Vector3.ZERO
     last_known_player_timer = 0.0
     squad_search_active = false
@@ -557,9 +569,12 @@ func _update_bots(delta: float) -> void:
         combat_slot_update_timer = COMBAT_SLOT_UPDATE_INTERVAL
 
     combat_assignment_update_timer = maxf(0.0, combat_assignment_update_timer - delta)
-    if combat_assignment_update_timer <= 0.0:
+    var contact_revision_changed := squad_contact_revision != combat_engagement_revision
+    if combat_assignment_update_timer <= 0.0 or contact_revision_changed:
         _update_combat_assignments()
         combat_assignment_update_timer = COMBAT_ASSIGNMENT_UPDATE_INTERVAL
+        if contact_revision_changed:
+            combat_engagement_revision = squad_contact_revision
 
     for bot in bots:
         if is_instance_valid(bot) and not bot.dead:
@@ -567,12 +582,53 @@ func _update_bots(delta: float) -> void:
 
 func _update_tactical_memory(delta: float) -> void:
     tactical_memory_timer = maxf(0.0, tactical_memory_timer - delta)
+    squad_contact_timer = maxf(0.0, squad_contact_timer - delta)
+    squad_contact_update_timer = maxf(0.0, squad_contact_update_timer - delta)
     last_known_player_timer = maxf(0.0, last_known_player_timer - delta)
     squad_search_update_timer = maxf(0.0, squad_search_update_timer - delta)
 
+    if not is_instance_valid(player) or dead:
+        squad_contact_source = null
+        return
+
+    var contact_source: Node = null
+    var contact_position := Vector3.ZERO
+    for bot in bots:
+        if not is_instance_valid(bot) or bot.dead:
+            continue
+        if bool(bot.call("_has_line_of_sight")):
+            contact_source = bot
+            contact_position = player.global_position
+            break
+
+    if contact_source != null and squad_contact_update_timer <= 0.0:
+        var source_changed := squad_contact_source != contact_source
+        var position_changed := squad_contact_position.distance_to(contact_position) >= 1.0
+        squad_contact_source = contact_source
+        squad_contact_position = contact_position
+        squad_contact_timer = CONTACT_MEMORY_TIMEOUT
+        squad_contact_update_timer = CONTACT_UPDATE_INTERVAL
+        if source_changed or position_changed:
+            squad_contact_revision += 1
+            combat_engagement_revision += 1
+        last_known_player_position = contact_position
+        last_known_player_timer = TACTICAL_MEMORY_TIMEOUT
+        tactical_memory_position = contact_position
+        tactical_memory_timer = TACTICAL_MEMORY_TIMEOUT
+        tactical_memory_revision += 1
+        squad_search_active = false
+        squad_search_timer = 0.0
+        squad_search_update_timer = 0.0
+    elif squad_contact_timer <= 0.0:
+        if squad_contact_source != null:
+            squad_contact_revision += 1
+            combat_engagement_revision += 1
+        squad_contact_source = null
+        squad_contact_position = Vector3.ZERO
+
     if squad_search_active:
         squad_search_timer = maxf(0.0, squad_search_timer - delta)
-        if _player_has_bot_los():
+        if contact_source != null:
             squad_search_active = false
             squad_search_timer = 0.0
             squad_search_update_timer = 0.0
@@ -586,11 +642,11 @@ func _update_tactical_memory(delta: float) -> void:
             squad_search_revision += 1
             squad_search_update_timer = SQUAD_SEARCH_UPDATE_INTERVAL
 
-    if not is_instance_valid(player) or dead:
+    if contact_source != null:
         return
 
     if not _player_has_bot_los():
-        if not squad_search_active and last_known_player_position != Vector3.ZERO and last_known_player_timer > 0.0 and tactical_memory_timer <= 0.0:
+        if not squad_search_active and not _is_squad_contact_active() and last_known_player_position != Vector3.ZERO and last_known_player_timer > 0.0 and tactical_memory_timer <= 0.0:
             squad_search_active = true
             squad_search_timer = SQUAD_SEARCH_DURATION
             squad_search_update_timer = 0.0
@@ -618,6 +674,14 @@ func _update_tactical_memory(delta: float) -> void:
     squad_search_active = false
     squad_search_timer = 0.0
     squad_search_update_timer = 0.0
+
+func _is_squad_contact_active() -> bool:
+    return squad_contact_position != Vector3.ZERO and squad_contact_timer > 0.0
+
+func _get_bot_squad_contact(bot: Node) -> Dictionary:
+    if not _is_squad_contact_active():
+        return {"position": Vector3.ZERO, "time_left": 0.0, "revision": squad_contact_revision, "source": null}
+    return {"position": squad_contact_position, "time_left": squad_contact_timer, "revision": squad_contact_revision, "source": squad_contact_source}
 
 func _player_has_bot_los() -> bool:
     if not is_instance_valid(player):
@@ -649,14 +713,23 @@ func _get_bot_squad_engagement_target(bot: Node) -> Vector3:
 
     var target_position := player.global_position
     var bot_assignment := str(bot.get("combat_assignment"))
+    var has_los := bool(bot.call("_has_line_of_sight"))
+    var contact_active := _is_squad_contact_active()
     var memory_position := tactical_memory_position
     var memory_active := memory_position != Vector3.ZERO and tactical_memory_timer > 0.0
 
-    if not bool(bot.call("_has_line_of_sight")) and memory_active:
+    if not has_los and contact_active:
+        target_position = squad_contact_position
+    elif not has_los and memory_active:
         target_position = memory_position
 
-    if not memory_active or bool(bot.call("_has_line_of_sight")):
+    if has_los:
         return target_position
+    if not contact_active and not memory_active:
+        return target_position
+
+    if contact_active:
+        memory_position = squad_contact_position
 
     var from_memory := bot.global_position - memory_position
     from_memory.y = 0.0
