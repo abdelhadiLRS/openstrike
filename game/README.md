@@ -221,3 +221,13 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - If the contact source is eliminated or loses contact, the director selects a replacement from alive bots with line of sight, preferring the active PRESSURE role, then SUPPORT, then FLANK through a small role-aware distance bias.
 - A replacement source changes the contact revision and restarts the Combat Director contact timing window, preventing the squad from inheriting stale fire timing from the previous source.
 - If no replacement has line of sight, the existing tactical memory and search/re-engagement pipeline remains responsible for the squad target.
+
+
+### Squad threat assessment
+- The squad now exposes an explicit threat state derived from the existing contact, tactical-memory, and search systems: **CONTACT**, **TRACKED**, **SEARCHING**, or **LOST**.
+- CONTACT uses the live observed player position and preserves the existing Combat Director timing.
+- TRACKED means the player is no longer directly visible but a fresh shared tactical position is still available; bots can re-engage that position without treating it as live vision.
+- SEARCHING means the tactical memory has expired and the squad is actively sweeping the bounded last-known area.
+- LOST means the squad has neither a current contact, fresh tactical memory, nor an active search target; bots stop treating the stale position as authoritative and fall back to defense.
+- Threat revisions are published through the Combat Director so role-versioned handoffs and stale movement state can react to a meaningful change in threat state.
+- Bomb DEFUSE and BOMB_COVER remain higher-priority objective states.
