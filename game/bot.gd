@@ -409,12 +409,20 @@ func _update_goal() -> void:
             route.clear()
             route_index = 0
         current_goal = bomb_cover_goal if bomb_cover_goal != Vector3.ZERO else site_position
+        if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+            route.clear()
+            route_index = 0
+            return
         _ensure_route(current_goal)
         return
 
     if state == "DEFUSE" and objective_state == "PLANTED":
         var planted_site := str(main.get("planted_site"))
         current_goal = main.get("bomb_site_a") if planted_site == "A" else main.get("bomb_site_b")
+        if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+            route.clear()
+            route_index = 0
+            return
         _ensure_route(current_goal)
         return
 
