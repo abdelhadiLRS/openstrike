@@ -98,6 +98,8 @@ Examples:
 - Client: `godot --path game -- --connect=127.0.0.1 --port=27015`
 - Server with a custom bot count: `godot --path game -- --server --port=27015 --bots=5`
 
+The server validates input packet field types before parsing, rejects malformed or oversized weapon identifiers, and refuses negative, stale, future, duplicate, or regressing input ticks; accepted movement and look values are bounded before simulation.
+
 The flags are parsed only at startup; without them the existing offline flow is unchanged.
 
 ### Network diagnostics
