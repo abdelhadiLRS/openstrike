@@ -644,6 +644,27 @@ func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 	last_received_snapshot_tick_by_peer[peer_id] = snapshot.tick
 	return true
 
+func _valid_bot_roster_payload(snapshot: OpenStrikeSnapshot) -> bool:
+	if snapshot.bot_count < 0 or snapshot.bot_count > 15:
+		return false
+	if snapshot.bot_states.size() != snapshot.bot_count:
+		return false
+	var seen_ids := {}
+	for state_value in snapshot.bot_states:
+		if not state_value is Dictionary:
+			return false
+		var bot_id := int(state_value.get("id", 0))
+		if bot_id <= 0 or bot_id > snapshot.bot_count or seen_ids.has(bot_id):
+			return false
+		var position = state_value.get("position", null)
+		var velocity = state_value.get("velocity", null)
+		if not position is Vector3 or not velocity is Vector3:
+			return false
+		if not position.is_finite() or not velocity.is_finite():
+			return false
+		seen_ids[bot_id] = true
+	return true
+
 func _reset_snapshot_receive_state() -> void:
 	last_received_snapshot_tick_by_peer.clear()
 	last_received_snapshot_round_by_peer.clear()
