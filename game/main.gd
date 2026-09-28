@@ -54,6 +54,10 @@ const WEAPON_ASSETS := [
 var weapons: Array[Dictionary] = []
 
 var combat_events: OpenStrikeCombatEvents
+var combat_authority: OpenStrikeCombatAuthority
+var player_snapshots := OpenStrikeSnapshotHistory.new()
+var input_sequence := 0
+var last_processed_input_sequence := 0
 
 var weapon_index := 0
 var ammo := 30
@@ -155,6 +159,9 @@ func _ready() -> void:
     _load_weapon_catalog()
     combat_events = OpenStrikeCombatEvents.new()
     add_child(combat_events)
+    combat_authority = OpenStrikeCombatAuthority.new()
+    add_child(combat_authority)
+    combat_authority.setup(combat_events)
     bomb_site_a = BOMB_SITE_A
     bomb_site_b = BOMB_SITE_B
     _world()
@@ -185,6 +192,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
     _update_bomb_visual()
+    player_snapshots.push(combat_events.tick, player.global_position, player.rotation.y, health)
     if dead:
         respawn_timer = maxf(0.0, respawn_timer - delta)
         if respawn_timer <= 0.0:
@@ -489,15 +497,28 @@ func _current_speed() -> float:
     return float(_current_weapon()["speed"])
 
 func _fire() -> void:
-    if round_state != "LIVE" or cooldown > 0.0:
-        return
     if ammo <= 0:
         _reload()
         return
 
     var weapon := _current_weapon()
+    var result := combat_events.validate_fire(
+        round_state,
+        dead,
+        weapon,
+        weapon_index == 1 or primary_owned,
+        cooldown,
+        ammo,
+        null,
+        player_team
+    )
+    if not result.accepted:
+        return
+
+    input_sequence = combat_authority.next_input_sequence()
     cooldown = float(weapon["delay"])
     ammo -= 1
+    last_processed_input_sequence = input_sequence
     recoil_kick += float(weapon["recoil"])
     combat_events.advance_tick()
     combat_events.emit_shot("player", str(weapon["id"]), ammo, reserve)
