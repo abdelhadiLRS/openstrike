@@ -105,6 +105,7 @@ var combat_assignment_update_timer := 0.0
 var combat_engagement_revision := 0
 var combat_role_revision := 0
 var combat_assignment_contact_revision := -1
+var combat_assignment_threat_revision := -1
 var tactical_memory_position := Vector3.ZERO
 var tactical_memory_timer := 0.0
 var tactical_memory_revision := 0
@@ -562,6 +563,7 @@ func _start_round() -> void:
     squad_threat_position = Vector3.ZERO
     squad_threat_timer = 0.0
     squad_threat_revision += 1
+    combat_assignment_threat_revision = -1
     combat_director_phase = "IDLE"
     combat_director_timer = 0.0
     combat_director_revision += 1
@@ -600,10 +602,12 @@ func _update_bots(delta: float) -> void:
 
     combat_assignment_update_timer = maxf(0.0, combat_assignment_update_timer - delta)
     var contact_revision_changed := squad_contact_revision != combat_assignment_contact_revision
-    if combat_assignment_update_timer <= 0.0 or contact_revision_changed:
+    var threat_revision_changed := squad_threat_revision != combat_assignment_threat_revision
+    if combat_assignment_update_timer <= 0.0 or contact_revision_changed or threat_revision_changed:
         _update_combat_assignments()
         combat_assignment_update_timer = COMBAT_ASSIGNMENT_UPDATE_INTERVAL
         combat_assignment_contact_revision = squad_contact_revision
+        combat_assignment_threat_revision = squad_threat_revision
 
     for bot in bots:
         if is_instance_valid(bot) and not bot.dead:
@@ -1061,6 +1065,7 @@ func _update_combat_assignments() -> void:
             combat_engagement_revision += 1
 
     combat_assignment_contact_revision = squad_contact_revision
+    combat_assignment_threat_revision = squad_threat_revision
 
 func _update_combat_slots() -> void:
     if not is_instance_valid(player):
