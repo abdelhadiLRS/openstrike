@@ -690,13 +690,23 @@ func _valid_bot_roster_payload(snapshot: OpenStrikeSnapshot) -> bool:
 			return false
 		var position = state_value.get("position", null)
 		var velocity = state_value.get("velocity", null)
-		var yaw_value = state_value.get("yaw", 0.0)
+		var yaw_value = state_value.get("yaw", null)
+		var health_value = state_value.get("health", null)
+		var dead_value = state_value.get("dead", null)
+		var bot_state_value = state_value.get("state", null)
+		var assignment_value = state_value.get("assignment", null)
 		var state_round := int(state_value.get("round_number", snapshot.round_number))
 		if not position is Vector3 or not velocity is Vector3:
 			return false
 		if not position.is_finite() or not velocity.is_finite():
 			return false
-		if not is_finite(float(yaw_value)) or state_round != snapshot.round_number:
+		if yaw_value == null or not is_finite(float(yaw_value)):
+			return false
+		if health_value == null or int(health_value) < 0 or int(health_value) > 100:
+			return false
+		if not dead_value is bool or not bot_state_value is String or not assignment_value is String:
+			return false
+		if state_round != snapshot.round_number:
 			return false
 		seen_ids[bot_id] = true
 	return true
