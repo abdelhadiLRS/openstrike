@@ -216,6 +216,7 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	rotation.y = yaw
 	health = snapshot.health
 	dead = snapshot.dead
+	crouched = snapshot.crouched
 	last_processed_sequence = snapshot.acknowledged_input_sequence
 	for weapon_value in weapon_states.keys():
 		var state = weapon_states.get(weapon_value)
@@ -227,7 +228,6 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if state != null:
 		state.set_loaded_state(snapshot.ammo, snapshot.reserve)
 	_sync_active_weapon()
-	crouched = false
 	_update_collider()
 
 func make_snapshot(tick: int, round_state: String, round_number: int, objective_state: String, planted_site: String, bomb_time_left: float, carrier_peer_id_value: int = 0, dropped_bomb_position_value: Vector3 = Vector3.ZERO, round_won_value: bool = false, round_outcome_reason_value: String = "", objective_action_value: String = "", objective_action_peer_id_value: int = -1, objective_action_time_left_value: float = 0.0) -> OpenStrikeSnapshot:
@@ -251,6 +251,7 @@ func make_snapshot(tick: int, round_state: String, round_number: int, objective_
 			snapshot.owned_weapons.append(str(weapon_value))
 	snapshot.health = health
 	snapshot.dead = dead
+	snapshot.crouched = crouched
 	snapshot.round_state = round_state
 	snapshot.round_number = round_number
 	snapshot.round_won = round_won_value
