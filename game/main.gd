@@ -847,6 +847,20 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
 
     return best
 
+func _combat_position_conflict(bot: Node, position: Vector3) -> bool:
+    for other in bots:
+        if other == bot or not is_instance_valid(other) or other.dead:
+            continue
+        if other.global_position.distance_to(position) < 2.8:
+            return true
+        if str(other.state) == "REPOSITION" and other.combat_reposition_goal != Vector3.ZERO:
+            if other.combat_reposition_goal.distance_to(position) < 2.8:
+                return true
+        if str(other.state) == "ATTACK" or str(other.state) == "PEEK":
+            if other.current_goal.distance_to(position) < 2.8:
+                return true
+    return false
+
 func _select_bot_attack_position(bot: Node, player_position: Vector3, slot: int) -> Vector3:
     var best := Vector3.ZERO
     var best_score := INF
@@ -871,32 +885,41 @@ func _select_bot_attack_position(bot: Node, player_position: Vector3, slot: int)
         if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
             continue
 
-        var occupied := false
-        for other in bots:
-            if other == bot or not is_instance_valid(other) or other.dead:
-                continue
-            if other.global_position.distance_to(peek_position) < 3.0:
-                occupied = true
-                break
-            if (str(other.state) == "REPOSITION" or str(other.state) == "ATTACK" or str(other.state) == "PEEK") and other.current_goal.distance_to(peek_position) < 3.0:
-                occupied = true
-                break
-        if occupied:
-            continue
-
         var from_player := peek_position - player_position
         from_player.y = 0.0
         if from_player.length() < 0.1:
             continue
-        var lateral := absf(from_player.normalized().dot(side))
-        var forward_alignment := from_player.normalized().dot(forward)
-        var slot_score := absf(lateral - (0.85 if target_side != 0.0 else 0.35))
+        var direction_from_player := from_player.normalized()
+        var lateral := absf(direction_from_player.dot(side))
+        var forward_alignment := direction_from_player.dot(forward)
+        var slot_target := 0.85 if target_side != 0.0 else 0.35
+        var slot_score := absf(lateral - slot_target)
         if target_side != 0.0:
             slot_score += maxf(0.0, -forward_alignment) * 0.25
         else:
             slot_score += absf(forward_alignment) * 0.12
 
-        var score := bot_distance * 0.25 + absf(player_distance - 14.0) * 0.45 + slot_score * 4.0
+        var conflict_penalty := 0.0
+        for other in bots:
+            if other == bot or not is_instance_valid(other) or other.dead:
+                continue
+            var other_position := other.global_position
+            var separation := other_position.distance_to(peek_position)
+            if str(other.state) == "REPOSITION" and other.combat_reposition_goal != Vector3.ZERO:
+                separation = minf(separation, other.combat_reposition_goal.distance_to(peek_position))
+            elif str(other.state) == "ATTACK" or str(other.state) == "PEEK":
+                separation = minf(separation, other.current_goal.distance_to(peek_position))
+            if separation < 2.8:
+                conflict_penalty += 12.0
+            elif separation < 5.0:
+                conflict_penalty += 3.0
+        var slot_separation_bonus := 0.0
+        if target_side != 0.0:
+            slot_separation_bonus = -lateral * 1.5
+
+        var score := bot_distance * 0.25 + absf(player_distance - 14.0) * 0.45 + slot_score * 4.0 + conflict_penalty + slot_separation_bonus
+        if _combat_position_conflict(bot, peek_position):
+            score += 8.0
         if score < best_score:
             best_score = score
             best = peek_position
