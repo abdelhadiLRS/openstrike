@@ -56,7 +56,9 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Roamers can pressure visible targets at a larger tactical distance, while site defenders only push aggressively when the player is close to their assigned site
 - Bomb recovery uses a tighter pickup radius than the plant/defuse site radius
 - Damageable combat units
-- Procedural graybox training range
+- Procedural graybox training range with cool ambient lighting and directional shadows
+- Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
+- RED combatants use a layered low-poly silhouette with vest, head, helmet, and a readable team-color band
 - Minimal HUD and crosshair
 - Godot Compatibility renderer
 
