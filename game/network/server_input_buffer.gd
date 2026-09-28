@@ -23,6 +23,8 @@ func submit(peer_id: int, command: OpenStrikeInputCommand, server_tick: int) -> 
 		return "non_finite_input"
 	if command.sequence <= int(_last_sequence.get(peer_id, 0)):
 		return "duplicate_sequence"
+	if command.tick < 0:
+		return "invalid_tick"
 	if command.tick > server_tick + MAX_TICK_LEAD:
 		return "tick_too_far_ahead"
 	if command.tick < server_tick - MAX_REWIND_TICKS:
