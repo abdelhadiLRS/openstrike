@@ -670,6 +670,10 @@ func _refresh_network_bot_cache() -> void:
 	network_bot_cache = rebuilt
 
 func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
+	var root := _root()
+	if root != null and not is_server and root.has_method("configure_network_bot_count"):
+		root.configure_network_bot_count(states.size())
+		_refresh_network_bot_cache()
 	if network_bot_cache.is_empty():
 		_refresh_network_bot_cache()
 	if states.is_empty():
