@@ -19,9 +19,12 @@ func is_valid() -> bool:
 		and magazine_size > 0
 		and reserve_ammo >= 0
 		and damage > 0
+		and is_finite(fire_interval)
 		and fire_interval > 0.0
+		and is_finite(recoil)
 		and recoil >= 0.0
 		and cost >= 0
+		and is_finite(movement_speed)
 		and movement_speed > 0.0
 	)
 
