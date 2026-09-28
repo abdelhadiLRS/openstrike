@@ -693,7 +693,7 @@ func _move_toward_goal(delta: float) -> void:
     if state == "BOMB_COVER" and str(main.get("objective_state")) == "PLANTED":
         var bomb_cover_offset := current_goal - global_position
         bomb_cover_offset.y = 0.0
-        if bomb_cover_offset.length() <= COVER_REACHED:
+        if bomb_cover_offset.length() <= WAYPOINT_REACHED:
             velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
             velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
             var bomb_look := (target.global_position - global_position).normalized()
@@ -707,7 +707,7 @@ func _move_toward_goal(delta: float) -> void:
     if state == "FLANK":
         var flank_offset := current_goal - global_position
         flank_offset.y = 0.0
-        if flank_offset.length() <= COVER_REACHED:
+        if flank_offset.length() <= WAYPOINT_REACHED:
             velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
             velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
             var flank_look := (target.global_position - global_position).normalized()
@@ -717,7 +717,7 @@ func _move_toward_goal(delta: float) -> void:
     if state == "REENGAGE":
         var reengage_offset := current_goal - global_position
         reengage_offset.y = 0.0
-        if reengage_offset.length() <= COVER_REACHED:
+        if reengage_offset.length() <= WAYPOINT_REACHED:
             velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
             velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
             var reengage_look := (current_goal - global_position).normalized()
@@ -727,7 +727,7 @@ func _move_toward_goal(delta: float) -> void:
     if state == "SEARCH":
         var search_offset := current_goal - global_position
         search_offset.y = 0.0
-        if search_offset.length() <= COVER_REACHED:
+        if search_offset.length() <= WAYPOINT_REACHED:
             velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
             velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
             var search_look := (current_goal - global_position).normalized()
