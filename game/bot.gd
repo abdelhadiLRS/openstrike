@@ -986,7 +986,6 @@ func take_damage(amount: int, source_id: String = "player") -> void:
     if dead:
         return
     last_damage_source_id = source_id
-        return
     health = maxi(0, health - amount)
     recently_hit_timer = RECENT_HIT_REACTION_TIME
     combat_reposition_timer = 0.0
