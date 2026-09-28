@@ -2820,16 +2820,53 @@ func _create_bot(index: int) -> CharacterBody3D:
     capsule_shape.radius = 0.42
     shape.shape = capsule_shape
 
+    # Extra low-poly armor pieces give bots a clearer soldier silhouette.
+    # These are render-only meshes: the original capsule remains the sole collider.
+    var armor_material := StandardMaterial3D.new()
+    armor_material.albedo_color = Color(0.16, 0.20, 0.23)
+    armor_material.metallic = 0.12
+    armor_material.roughness = 0.82
+    var dark_material := StandardMaterial3D.new()
+    dark_material.albedo_color = Color(0.055, 0.065, 0.075)
+    dark_material.roughness = 0.96
+
+    var left_shoulder := _bot_detail(Vector3(0.25, 0.22, 0.30), Vector3(-0.36, 0.22, 0.0), armor_material)
+    var right_shoulder := _bot_detail(Vector3(0.25, 0.22, 0.30), Vector3(0.36, 0.22, 0.0), armor_material)
+    var left_arm := _bot_detail(Vector3(0.18, 0.48, 0.20), Vector3(-0.39, -0.13, -0.015), dark_material)
+    var right_arm := _bot_detail(Vector3(0.18, 0.48, 0.20), Vector3(0.39, -0.13, -0.015), dark_material)
+    var left_leg := _bot_detail(Vector3(0.24, 0.48, 0.28), Vector3(-0.17, -0.63, 0.015), armor_material)
+    var right_leg := _bot_detail(Vector3(0.24, 0.48, 0.28), Vector3(0.17, -0.63, 0.015), armor_material)
+    var backpack := _bot_detail(Vector3(0.42, 0.52, 0.20), Vector3(0.0, 0.02, 0.25), dark_material)
+    var chest_rig := _bot_detail(Vector3(0.48, 0.12, 0.36), Vector3(0.0, 0.16, -0.205), armor_material)
+
     bot.add_child(mesh)
     bot.add_child(vest)
     bot.add_child(head)
     bot.add_child(helmet)
     bot.add_child(team_band)
+    bot.add_child(left_shoulder)
+    bot.add_child(right_shoulder)
+    bot.add_child(left_arm)
+    bot.add_child(right_arm)
+    bot.add_child(left_leg)
+    bot.add_child(right_leg)
+    bot.add_child(backpack)
+    bot.add_child(chest_rig)
     bot.add_child(shape)
     bot.add_to_group("bots")
     add_child(bot)
     bot.eliminated.connect(_on_enemy_eliminated)
     return bot
+
+func _bot_detail(size: Vector3, detail_position: Vector3, material: StandardMaterial3D) -> MeshInstance3D:
+    var detail := MeshInstance3D.new()
+    var detail_mesh := BoxMesh.new()
+    detail_mesh.size = size
+    detail.mesh = detail_mesh
+    detail.position = detail_position
+    detail.material_override = material
+    detail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    return detail
 
 func _spawn_bots() -> void:
     bots.clear()
