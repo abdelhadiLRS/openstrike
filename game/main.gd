@@ -69,6 +69,8 @@ var objective_state := "CARRIED"
 var objective_site := ""
 var planted_site := ""
 var dropped_bomb_position := Vector3.ZERO
+var bomb_visual: MeshInstance3D
+var bomb_light: OmniLight3D
 var bomb_time_left := 0.0
 var objective_action := ""
 var objective_action_time_left := 0.0
@@ -138,6 +140,7 @@ func _physics_process(delta: float) -> void:
 
     _update_bots(delta)
     _update_objective(delta)
+    _update_bomb_visual()
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
 
@@ -291,6 +294,28 @@ func _update_bot_defuse(delta: float) -> void:
             objective_state = "DEFUSED"
             _finish_round(false)
 
+
+func _update_bomb_visual() -> void:
+    if bomb_visual == null:
+        return
+
+    var visible_bomb := objective_state == "DROPPED" or objective_state == "PLANTED"
+    bomb_visual.visible = visible_bomb
+    if bomb_light != null:
+        bomb_light.visible = visible_bomb
+
+    if not visible_bomb:
+        return
+
+    var bomb_position := dropped_bomb_position
+    if objective_state == "PLANTED":
+        bomb_position = bomb_site_a if planted_site == "A" else bomb_site_b
+
+    bomb_visual.global_position = bomb_position + Vector3(0, 0.35, 0)
+    var blink_phase := fmod(Time.get_ticks_msec() / 1000.0, 1.0)
+    var active_blink := blink_phase < 0.5 if objective_state == "PLANTED" else true
+    if bomb_light != null:
+        bomb_light.light_energy = 2.5 if active_blink else 0.35
 
 func _objective_label() -> String:
     if objective_state == "CARRIED":
@@ -535,6 +560,33 @@ func _world() -> void:
     _spawn_bots()
     _objective_site(BOMB_SITE_A, "A")
     _objective_site(BOMB_SITE_B, "B")
+    _create_bomb_visual()
+
+func _create_bomb_visual() -> void:
+    bomb_visual = MeshInstance3D.new()
+    bomb_visual.name = "BombVisual"
+    var bomb_mesh := BoxMesh.new()
+    bomb_mesh.size = Vector3(0.65, 0.35, 0.45)
+    bomb_visual.mesh = bomb_mesh
+
+    var bomb_material := StandardMaterial3D.new()
+    bomb_material.albedo_color = Color(0.08, 0.09, 0.11, 1.0)
+    bomb_material.metallic = 0.25
+    bomb_material.roughness = 0.45
+    bomb_material.emission_enabled = true
+    bomb_material.emission = Color(0.9, 0.18, 0.08, 1.0)
+    bomb_material.emission_energy_multiplier = 0.8
+    bomb_visual.material_override = bomb_material
+    bomb_visual.visible = false
+    add_child(bomb_visual)
+
+    bomb_light = OmniLight3D.new()
+    bomb_light.name = "BombLight"
+    bomb_light.light_color = Color(1.0, 0.2, 0.08, 1.0)
+    bomb_light.omni_range = 3.5
+    bomb_light.light_energy = 2.5
+    bomb_light.visible = false
+    bomb_visual.add_child(bomb_light)
 
 func _objective_site(pos: Vector3, label: String) -> void:
     var marker := MeshInstance3D.new()
@@ -676,6 +728,45 @@ func _has_obstacle_between(from: Vector3, to: Vector3) -> bool:
     query.exclude = excluded
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
     return not hit.is_empty()
+
+func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bot: Node) -> Vector3:
+    var best := Vector3.ZERO
+    var best_score := INF
+
+    for data in cover_points:
+        var cover_position: Vector3 = data["cover"]
+        var peek_position: Vector3 = data["peek"]
+        var site_distance := cover_position.distance_to(site_position)
+        if site_distance > 10.0:
+            continue
+
+        var player_distance := cover_position.distance_to(player_position)
+        if player_distance < 6.0:
+            continue
+
+        if _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
+            if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
+                continue
+        else:
+            continue
+
+        var occupied := false
+        for other in bots:
+            if other == bot or not is_instance_valid(other) or other.dead:
+                continue
+            if other.global_position.distance_to(cover_position) < 2.5:
+                occupied = true
+                break
+        if occupied:
+            continue
+
+        var bot_distance := bot.global_position.distance_to(cover_position)
+        var score := site_distance * 1.15 + absf(player_distance - 14.0) * 0.22 + bot_distance * 0.18
+        if score < best_score:
+            best_score = score
+            best = cover_position
+
+    return best
 
 func _select_bot_site_cover(site_position: Vector3, player_position: Vector3, role: String) -> Vector3:
     var best := Vector3.ZERO
