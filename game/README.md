@@ -266,3 +266,9 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Bot fire now respects the explicit `FIRE_RANGE` limit instead of firing at any target that happens to have a clear raycast.
 - Attempts to fire beyond that range cancel the pending burst rather than carrying it into a later engagement.
 - The existing threat gate still requires `CONTACT` plus direct line of sight before a shot can be taken.
+
+
+### Burst discipline
+- A bot burst is now cancelled immediately when squad threat is no longer CONTACT, line of sight is lost, or the current state is not a firing state.
+- A later re-acquisition therefore starts a fresh burst instead of resuming fire from a stale visual contact.
+- This complements the existing threat-revision reset and FIRE_RANGE gate.
