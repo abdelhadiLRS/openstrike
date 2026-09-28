@@ -801,9 +801,13 @@ func _move_toward_goal(delta: float) -> void:
             return
 
     if route.size() == 0:
+        velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+        velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
         return
 
     if route_index >= route.size():
+        velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+        velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
         return
 
     var waypoint: Vector3 = route[route_index]
