@@ -394,9 +394,10 @@ func _update_round_state(delta: float) -> void:
             _start_round()
 
 func _current_bomb_site() -> String:
-    if player.global_position.distance_to(BOMB_SITE_A) <= BOMB_SITE_RADIUS:
+    var position := _objective_actor_position()
+    if position.distance_to(BOMB_SITE_A) <= BOMB_SITE_RADIUS:
         return "A"
-    if player.global_position.distance_to(BOMB_SITE_B) <= BOMB_SITE_RADIUS:
+    if position.distance_to(BOMB_SITE_B) <= BOMB_SITE_RADIUS:
         return "B"
     return ""
 
@@ -461,13 +462,35 @@ func _update_objective(delta: float) -> void:
     if round_state != "LIVE":
         objective_action = ""
         objective_action_time_left = 0.0
+        network_objective_peer_id = -1
         return
 
+    var network_actor := _network_objective_actor()
+    if network_actor != null and objective_action == "":
+        if objective_state == "CARRIED":
+            var network_site := _current_bomb_site()
+            if network_site != "":
+                objective_site = network_site
+                objective_action = "PLANT"
+                objective_action_time_left = PLANT_TIME
+        elif objective_state == "DROPPED":
+            if network_actor.global_position.distance_to(dropped_bomb_position) <= BOMB_PICKUP_RADIUS:
+                objective_state = "CARRIED"
+                objective_site = ""
+                dropped_bomb_position = Vector3.ZERO
+        elif objective_state == "PLANTED":
+            var network_defuse_site := _current_bomb_site()
+            if network_defuse_site == planted_site:
+                objective_site = network_defuse_site
+                objective_action = "DEFUSE"
+                objective_action_time_left = DEFUSE_TIME
+
     var site := _current_bomb_site()
+    var objective_input_active := network_actor != null or Input.is_key_pressed(KEY_F)
 
     if objective_state == "CARRIED":
         if objective_action == "PLANT":
-            if site == "" or site != objective_site or not Input.is_key_pressed(KEY_F):
+            if site == "" or site != objective_site or not objective_input_active:
                 objective_action = ""
                 objective_action_time_left = 0.0
             else:
