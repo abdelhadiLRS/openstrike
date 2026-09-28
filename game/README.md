@@ -207,3 +207,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - The existing PRESSURE role is preserved when its bot is alive; when that bot is eliminated, another active bot is promoted to PRESSURE.
 - SUPPORT and FLANK roles are then redistributed among the remaining bots, with role changes marked as `HANDOFF` so stale engagement intent can be replaced.
 - The reassignment runs without changing bomb-objective priority and works with the existing contact revision/director timing system.
+
+
+### Role-versioned combat handoff
+- Combat role changes now carry a squad-wide role revision so bots can invalidate stale movement and firing state immediately after a promotion or reassignment.
+- A promoted PRESSURE, SUPPORT, or FLANK bot clears its previous attack/reposition route before executing the new command.
+- The director temporarily suppresses firing authority on the handoff tick, preventing a bot from firing with stale role timing while its new angle is being selected.
+- This keeps role promotion synchronized with the existing contact revision and Combat Director systems.
