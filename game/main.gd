@@ -290,8 +290,8 @@ func _world() -> void:
     _box(Vector3(18,2,0), Vector3(1,4,36), Color(0.10,0.12,0.15))
     for p in [Vector3(-7,1,-5), Vector3(6,1,-2), Vector3(-3,1,7), Vector3(10,1,9)]:
         _box(p, Vector3(3,2,2), Color(0.28,0.30,0.33))
-    for i in red_spawn_points.size():
-        _target(red_spawn_points[i])
+    for p in red_spawn_points:
+        _target(p)
 
 func _box(pos: Vector3, size: Vector3, color: Color) -> void:
     var body := StaticBody3D.new()
