@@ -660,15 +660,26 @@ func _update_bomb_visual() -> void:
     if bomb_light != null:
         bomb_light.light_energy = 2.5 if active_blink else 0.35
 
+func _objective_carrier_label() -> String:
+    if objective_state != "CARRIED":
+        return ""
+    if bomb_carrier_peer_id == 0:
+        return "HOST"
+    if network_session != null and bomb_carrier_peer_id == multiplayer.get_unique_id():
+        return "YOU"
+    return "PLAYER #%d" % bomb_carrier_peer_id
+
 func _objective_label() -> String:
     if objective_state == "CARRIED":
+        var carrier := _objective_carrier_label()
         if objective_action == "PLANT":
-            return "BOMB: PLANTING %s %0.1fs" % [objective_site, objective_action_time_left]
+            return "BOMB: PLANTING %s %0.1fs — %s" % [objective_site, objective_action_time_left, carrier]
         if objective_site != "":
-            return "BOMB: CARRIED — SITE %s — HOLD F" % objective_site
-        return "BOMB: CARRIED — MOVE TO A/B"
+            return "BOMB: CARRIED BY %s — SITE %s — HOLD F" % [carrier, objective_site]
+        return "BOMB: CARRIED BY %s — MOVE TO A/B" % carrier
     if objective_state == "DROPPED":
-        if objective_site == "NEAR":
+        var local_near := player.global_position.distance_to(dropped_bomb_position) <= BOMB_PICKUP_RADIUS
+        if local_near:
             return "BOMB: DROPPED — HOLD F TO RECOVER"
         return "BOMB: DROPPED — RECOVER AT %0.1f, %0.1f" % [dropped_bomb_position.x, dropped_bomb_position.z]
     if objective_state == "PLANTED":
