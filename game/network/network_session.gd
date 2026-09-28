@@ -38,8 +38,8 @@ var snapshot_accumulator := 0.0
 var observed_round_number := 0
 var observed_round_state := ""
 var network_bot_cache: Dictionary = {}
-var last_received_snapshot_tick := -1
-var last_received_snapshot_round := -1
+var last_received_snapshot_tick_by_peer: Dictionary = {}
+var last_received_snapshot_round_by_peer: Dictionary = {}
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -520,23 +520,21 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 func _accept_snapshot(snapshot: OpenStrikeSnapshot) -> bool:
 	if snapshot == null or snapshot.peer_id <= 0:
 		return false
-	if last_received_snapshot_round >= 0:
-		if snapshot.round_number < last_received_snapshot_round:
+	var peer_id := snapshot.peer_id
+	var last_round := int(last_received_snapshot_round_by_peer.get(peer_id, -1))
+	var last_tick := int(last_received_snapshot_tick_by_peer.get(peer_id, -1))
+	if last_round >= 0:
+		if snapshot.round_number < last_round:
 			return false
-		if snapshot.round_number == last_received_snapshot_round and snapshot.tick < last_received_snapshot_tick:
+		if snapshot.round_number == last_round and snapshot.tick < last_tick:
 			return false
-	if snapshot.round_number > last_received_snapshot_round:
-		last_received_snapshot_round = snapshot.round_number
-		last_received_snapshot_tick = snapshot.tick
-	elif snapshot.tick >= last_received_snapshot_tick:
-		last_received_snapshot_tick = snapshot.tick
-	else:
-		return false
+	last_received_snapshot_round_by_peer[peer_id] = snapshot.round_number
+	last_received_snapshot_tick_by_peer[peer_id] = snapshot.tick
 	return true
 
 func _reset_snapshot_receive_state() -> void:
-	last_received_snapshot_tick = -1
-	last_received_snapshot_round = -1
+	last_received_snapshot_tick_by_peer.clear()
+	last_received_snapshot_round_by_peer.clear()
 
 func _apply_remote_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if snapshot == null or snapshot.peer_id <= 0:
