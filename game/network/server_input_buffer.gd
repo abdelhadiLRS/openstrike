@@ -20,6 +20,9 @@ func submit(peer_id: int, command: OpenStrikeInputCommand, server_tick: int) -> 
 		return false
 	if command.tick < server_tick - MAX_REWIND_TICKS:
 		return false
+	var previous_tick := int(_last_tick.get(peer_id, -1))
+	if previous_tick >= 0 and command.tick < previous_tick:
+		return false
 
 	command.move = command.move.limit_length(MAX_MOVE)
 	command.look_delta.x = clampf(command.look_delta.x, -MAX_LOOK_DELTA, MAX_LOOK_DELTA)
