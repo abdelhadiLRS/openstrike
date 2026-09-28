@@ -238,7 +238,8 @@ func _physics_process(delta: float) -> void:
         Input.is_action_pressed("fire"),
         Input.is_action_just_pressed("reload"),
         Input.is_action_pressed("crouch"),
-        Input.is_action_just_pressed("jump")
+        Input.is_action_just_pressed("jump"),
+        str(_current_weapon()["id"])
     )
     pending_look_delta = Vector2.ZERO
     prediction.record_predicted(command, player.global_position, player.velocity, player.rotation.y, pitch)
