@@ -567,6 +567,83 @@ func _setup_navigation_points() -> void:
         Vector3(13, 1.0, 13)
     ]
 
+func _navigation_visible(from: Vector3, to: Vector3) -> bool:
+    var start := from + Vector3(0, 0.15, 0)
+    var end := to + Vector3(0, 0.15, 0)
+    var query := PhysicsRayQueryParameters3D.create(start, end)
+    query.exclude = [player]
+    var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    return hit.is_empty()
+
+func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
+    var points: Array = navigation_points
+    if points.is_empty():
+        return [goal]
+
+    var start_index := -1
+    var goal_index := -1
+    var start_distance := INF
+    var goal_distance := INF
+
+    for i in points.size():
+        var start_dist := points[i].distance_to(start)
+        if start_dist < start_distance and _navigation_visible(start, points[i]):
+            start_distance = start_dist
+            start_index = i
+
+        var goal_dist := points[i].distance_to(goal)
+        if goal_dist < goal_distance and _navigation_visible(points[i], goal):
+            goal_distance = goal_dist
+            goal_index = i
+
+    if start_index < 0 or goal_index < 0:
+        return [goal]
+
+    var queue: Array[int] = [start_index]
+    var visited := {}
+    var previous := {}
+    visited[start_index] = true
+
+    while not queue.is_empty():
+        var current: int = queue.pop_front()
+        if current == goal_index:
+            break
+
+        for neighbor in points.size():
+            if neighbor == current or visited.has(neighbor):
+                continue
+            if not _navigation_visible(points[current], points[neighbor]):
+                continue
+            visited[neighbor] = true
+            previous[neighbor] = current
+            queue.append(neighbor)
+
+    if not visited.has(goal_index):
+        return [points[start_index], goal]
+
+    var indices: Array[int] = []
+    var cursor := goal_index
+    while true:
+        indices.push_front(cursor)
+        if cursor == start_index:
+            break
+        cursor = int(previous[cursor])
+
+    var route: Array = []
+    for index in indices:
+        route.append(points[index])
+    if route.is_empty() or route[route.size() - 1].distance_to(goal) > WAYPOINT_REACHED:
+        route.append(goal)
+    return route
+
+func _has_obstacle_between(from: Vector3, to: Vector3) -> bool:
+    var start := from + Vector3(0, 0.9, 0)
+    var end := to + Vector3(0, 0.9, 0)
+    var query := PhysicsRayQueryParameters3D.create(start, end)
+    query.exclude = [player]
+    var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    return not hit.is_empty()
+
 func _setup_cover_points() -> void:
     cover_points = [
         {"cover": Vector3(-9.0, 1.0, -5.0), "peek": Vector3(-7.2, 1.0, -3.6)},
