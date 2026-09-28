@@ -231,3 +231,13 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - LOST means the squad has neither a current contact, fresh tactical memory, nor an active search target; bots stop treating the stale position as authoritative and fall back to defense.
 - Threat revisions are published through the Combat Director so role-versioned handoffs and stale movement state can react to a meaningful change in threat state.
 - Bomb DEFUSE and BOMB_COVER remain higher-priority objective states.
+
+
+### Threat-based role redistribution
+- Squad role assignment now reads the explicit threat state instead of relying only on bot distance and previous roles.
+- **CONTACT** keeps the normal PRESSURE / SUPPORT / FLANK structure while favoring a healthy close pressure unit, a stable support unit, and a separated flank.
+- **TRACKED** biases PRESSURE toward the tracked threat position, keeps SUPPORT closer to the squad center, and gives FLANK a wider lateral separation for re-engagement.
+- **SEARCHING** biases PRESSURE toward the center search lane while SUPPORT and FLANK spread into separate search sectors.
+- **LOST** keeps role continuity but removes stale positional aggression through the Combat Director's HOLD command.
+- Role persistence is still used as a small tie-breaker, so bots do not swap roles unnecessarily when the tactical scores are close.
+- Threat revisions now trigger an immediate role reassessment instead of waiting for the normal assignment interval.
