@@ -131,6 +131,9 @@ func _physics_process(delta: float) -> void:
             combat_decision_timer = 0.0
             combat_reposition_timer = 0.0
             combat_reposition_goal = Vector3.ZERO
+            fire_cooldown = 0.0
+            burst_remaining = 0
+            burst_pause = 0.0
             route.clear()
             route_index = 0
             route_goal = Vector3.ZERO
@@ -143,6 +146,8 @@ func _physics_process(delta: float) -> void:
             combat_director_fire_ready = false
             combat_reposition_timer = 0.0
             combat_reposition_goal = Vector3.ZERO
+            burst_remaining = 0
+            burst_pause = 0.0
             route.clear()
             route_index = 0
             route_goal = Vector3.ZERO
