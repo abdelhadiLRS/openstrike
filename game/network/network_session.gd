@@ -210,8 +210,9 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 		best_target.dead = best_target.health <= 0
 		if events != null:
 			events.emit_hit(str(shooter.peer_id), str(best_target.peer_id), shooter.weapon_id, damage, best_target.global_position, true)
-				if best_target.dead:
-				shooter.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, shooter.credits + KILL_REWARD)
+		if best_target.dead:
+			shooter.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, shooter.credits + KILL_REWARD)
+			if events != null:
 				events.emit_elimination(str(shooter.peer_id), str(best_target.peer_id), shooter.weapon_id, true)
 	elif best_target.has_method("take_damage") and target_team != "BLUE":
 		best_target.take_damage(damage)
