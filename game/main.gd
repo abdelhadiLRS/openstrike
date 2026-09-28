@@ -789,6 +789,62 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
 
     return best
 
+func _select_bot_attack_position(bot: Node, player_position: Vector3, slot: int) -> Vector3:
+    var best := Vector3.ZERO
+    var best_score := INF
+    var player_to_bot := bot.global_position - player_position
+    player_to_bot.y = 0.0
+    if player_to_bot.length() < 0.1:
+        player_to_bot = Vector3(0, 0, 1)
+    var forward := player_to_bot.normalized()
+    var side := Vector3(-forward.z, 0.0, forward.x)
+    var target_side := -1.0 if slot == 0 else (1.0 if slot == 1 else 0.0)
+
+    for i in cover_points.size():
+        var data: Dictionary = cover_points[i]
+        var cover_position: Vector3 = data["cover"]
+        var peek_position: Vector3 = data["peek"]
+        var player_distance := peek_position.distance_to(player_position)
+        var bot_distance := bot.global_position.distance_to(peek_position)
+        if player_distance < 8.0 or player_distance > 20.0 or bot_distance > 20.0:
+            continue
+        if not _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
+            continue
+        if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
+            continue
+
+        var occupied := false
+        for other in bots:
+            if other == bot or not is_instance_valid(other) or other.dead:
+                continue
+            if other.global_position.distance_to(peek_position) < 3.0:
+                occupied = true
+                break
+            if (str(other.state) == "REPOSITION" or str(other.state) == "ATTACK" or str(other.state) == "PEEK") and other.current_goal.distance_to(peek_position) < 3.0:
+                occupied = true
+                break
+        if occupied:
+            continue
+
+        var from_player := peek_position - player_position
+        from_player.y = 0.0
+        if from_player.length() < 0.1:
+            continue
+        var lateral := absf(from_player.normalized().dot(side))
+        var forward_alignment := from_player.normalized().dot(forward)
+        var slot_score := absf(lateral - (0.85 if target_side != 0.0 else 0.35))
+        if target_side != 0.0:
+            slot_score += maxf(0.0, -forward_alignment) * 0.25
+        else:
+            slot_score += absf(forward_alignment) * 0.12
+
+        var score := bot_distance * 0.25 + absf(player_distance - 14.0) * 0.45 + slot_score * 4.0
+        if score < best_score:
+            best_score = score
+            best = peek_position
+
+    return best
+
 func _select_bot_combat_cover(bot: Node, player_position: Vector3, preferred_distance: float) -> Vector3:
     var best := Vector3.ZERO
     var best_score := INF
@@ -914,6 +970,7 @@ func _spawn_bots() -> void:
         bot.position = red_spawn_points[i % red_spawn_points.size()]
         bot.set("team", enemy_team)
         bot.set("role", "DEFENDER_A" if i == 0 else ("DEFENDER_B" if i == 1 else "ROAMER"))
+        bot.set("combat_slot", i)
 
         var mesh := MeshInstance3D.new()
         var capsule := CapsuleMesh.new()
