@@ -572,6 +572,7 @@ func _spawn_bots() -> void:
         bot.set_script(load("res://bot.gd"))
         bot.position = red_spawn_points[i % red_spawn_points.size()]
         bot.set("team", enemy_team)
+        bot.set("role", "DEFENDER_A" if i == 0 else ("DEFENDER_B" if i == 1 else "ROAMER"))
 
         var mesh := MeshInstance3D.new()
         var capsule := CapsuleMesh.new()
