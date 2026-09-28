@@ -6,6 +6,9 @@ const STAND_HEIGHT := 1.8
 const CROUCH_HEIGHT := 1.15
 const STAND_CAMERA_Y := 0.55
 const CROUCH_CAMERA_Y := 0.30
+const MAX_HEALTH := 100
+const ROUND_TIME := 120.0
+const RESPAWN_DELAY := 2.0
 
 var weapons := [
     {"name":"AR-17", "mag":30, "reserve":90, "damage":34, "delay":0.095, "recoil":0.018},
@@ -23,11 +26,19 @@ var cooldown := 0.0
 var recoil_kick := 0.0
 var crouched := false
 var hud: Label
+var health := MAX_HEALTH
+var dead := false
+var respawn_timer := 0.0
+var round_number := 1
+var round_time_left := ROUND_TIME
+var round_active := true
+var enemies_alive := 3
 
 func _ready() -> void:
     _world()
     _player()
     _hud()
+    _start_round()
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -45,6 +56,18 @@ func _unhandled_input(event: InputEvent) -> void:
         Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _physics_process(delta: float) -> void:
+    if dead:
+        respawn_timer = maxf(0.0, respawn_timer - delta)
+        if respawn_timer <= 0.0:
+            _respawn_player()
+        _update_hud()
+        return
+
+    if round_active:
+        round_time_left = maxf(0.0, round_time_left - delta)
+        if round_time_left <= 0.0:
+            _finish_round(false)
+
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
 
@@ -101,6 +124,10 @@ func _fire() -> void:
 
     if hit and hit.collider.has_method("take_damage"):
         hit.collider.take_damage(int(weapon["damage"]))
+        if int(hit.collider.get("health")) <= 0:
+            enemies_alive = maxi(0, enemies_alive - 1)
+            if enemies_alive == 0:
+                _finish_round(true)
 
 func _reload() -> void:
     if ammo >= int(_current_weapon()["mag"]) or reserve <= 0:
@@ -132,9 +159,61 @@ func _set_crouch(value: bool) -> void:
 func _update_hud() -> void:
     var weapon := _current_weapon()
     var state := "CROUCH" if crouched else "STAND"
-    hud.text = "%s    %s    AMMO %02d / %02d\nHP 100    WASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   ESC mouse" % [
-        weapon["name"], state, ammo, reserve
+    var round_state := "ROUND %02d  %s  %03d" % [round_number, "LIVE" if round_active else "ENDED", ceili(round_time_left)]
+    if dead:
+        hud.text = "%s\nYOU ARE DOWN — RESPAWNING %0.1fs" % [round_state, respawn_timer]
+        return
+    hud.text = "%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   ESC mouse" % [
+        round_state, weapon["name"], state, ammo, reserve, health, enemies_alive
     ]
+
+func _start_round() -> void:
+    round_active = true
+    round_time_left = ROUND_TIME
+    enemies_alive = 3
+    health = MAX_HEALTH
+    dead = false
+    respawn_timer = 0.0
+
+func _finish_round(won: bool) -> void:
+    if not round_active:
+        return
+    round_active = false
+    await get_tree().create_timer(2.0).timeout
+    round_number += 1
+    _reset_targets()
+    _start_round()
+
+func _reset_targets() -> void:
+    var count := 0
+    for child in get_children():
+        if child.has_method("reset_target"):
+            child.reset_target()
+            count += 1
+    enemies_alive = count
+
+func _apply_damage(amount: int) -> void:
+    if dead:
+        return
+    health = maxi(0, health - amount)
+    if health == 0:
+        _kill_player()
+
+func _kill_player() -> void:
+    dead = true
+    respawn_timer = RESPAWN_DELAY
+    player.visible = false
+    camera.current = false
+
+func _respawn_player() -> void:
+    dead = false
+    health = MAX_HEALTH
+    player.global_position = Vector3(0, 1.2, 14)
+    player.velocity = Vector3.ZERO
+    player.visible = true
+    camera.current = true
+    _set_crouch(false)
+    Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _world() -> void:
     _box(Vector3(0,-0.5,0), Vector3(36,1,36), Color(0.18,0.20,0.23))
