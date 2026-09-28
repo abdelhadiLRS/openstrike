@@ -87,6 +87,10 @@ var cooldown := 0.0
 var recoil_kick := 0.0
 var crouched := false
 var hud: Label
+var hit_marker: Label
+var damage_flash: ColorRect
+var hit_feedback_timer := 0.0
+var damage_feedback_timer := 0.0
 
 var player_team := TEAM_BLUE
 var enemy_team := TEAM_RED
@@ -296,6 +300,9 @@ func _physics_process(delta: float) -> void:
         _update_objective(delta)
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
+    hit_feedback_timer = maxf(0.0, hit_feedback_timer - delta)
+    damage_feedback_timer = maxf(0.0, damage_feedback_timer - delta)
+    _update_combat_feedback()
 
     if not player.is_on_floor():
         player.velocity.y -= GRAVITY * delta
@@ -921,6 +928,7 @@ func _fire() -> void:
             hit.collider.take_damage(int(weapon["damage"]), "player")
             var target_id := str(hit.collider.get_instance_id())
             combat_events.emit_hit("player", target_id, str(weapon["id"]), int(weapon["damage"]), hit.position, false)
+            _show_hit_feedback()
 
 func _reload() -> void:
     if ammo >= int(_current_weapon()["mag"]) or reserve <= 0:
@@ -1778,6 +1786,7 @@ func _spawn_player() -> void:
 func _apply_damage(amount: int) -> void:
     if dead or round_state != "LIVE":
         return
+    damage_feedback_timer = 0.18
     health = maxi(0, health - amount)
     if health == 0:
         _kill_player()
@@ -1852,6 +1861,18 @@ func _world() -> void:
     _box(Vector3(18,2,0), Vector3(1,4,36), Color(0.10,0.12,0.15))
     for p in [Vector3(-7,1,-5), Vector3(6,1,-2), Vector3(-3,1,7), Vector3(10,1,9)]:
         _box(p, Vector3(3,2,2), Color(0.28,0.30,0.33))
+    # Additional low cover creates readable lanes and gives the bot cover
+    # system more meaningful choices without turning the graybox into a
+    # navigation-heavy maze.
+    for data in [
+        {"p": Vector3(-12,0.65,-7), "s": Vector3(2.8,1.3,1.2)},
+        {"p": Vector3(-2,0.65,-8), "s": Vector3(3.4,1.3,1.2)},
+        {"p": Vector3(7,0.65,-7), "s": Vector3(2.6,1.3,1.2)},
+        {"p": Vector3(-9,0.65,4), "s": Vector3(2.4,1.3,1.4)},
+        {"p": Vector3(2,0.65,5), "s": Vector3(3.2,1.3,1.2)},
+        {"p": Vector3(11,0.65,4), "s": Vector3(2.4,1.3,1.4)}
+    ]:
+        _box(data["p"], data["s"], Color(0.22,0.25,0.29))
     _setup_navigation_points()
     _setup_cover_points()
     _spawn_bots()
@@ -2443,6 +2464,13 @@ func _player() -> void:
 func _hud() -> void:
     var layer := CanvasLayer.new()
     add_child(layer)
+
+    damage_flash = ColorRect.new()
+    damage_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    damage_flash.color = Color(0.65, 0.02, 0.02, 0.0)
+    damage_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    layer.add_child(damage_flash)
+
     hud = Label.new()
     hud.position = Vector2(24,24)
     hud.add_theme_font_size_override("font_size",20)
@@ -2450,6 +2478,24 @@ func _hud() -> void:
 
     var crosshair := Label.new()
     crosshair.text = "+"
-    crosshair.position = Vector2(632,342)
+    crosshair.set_anchors_preset(Control.PRESET_CENTER)
+    crosshair.position = Vector2(-8,-17)
     crosshair.add_theme_font_size_override("font_size",28)
     layer.add_child(crosshair)
+
+    hit_marker = Label.new()
+    hit_marker.text = "×"
+    hit_marker.set_anchors_preset(Control.PRESET_CENTER)
+    hit_marker.position = Vector2(-10,-18)
+    hit_marker.add_theme_font_size_override("font_size",30)
+    hit_marker.modulate = Color(1.0, 1.0, 1.0, 0.0)
+    layer.add_child(hit_marker)
+
+func _show_hit_feedback() -> void:
+    hit_feedback_timer = 0.12
+
+func _update_combat_feedback() -> void:
+    if hit_marker != null:
+        hit_marker.modulate.a = clampf(hit_feedback_timer / 0.12, 0.0, 1.0)
+    if damage_flash != null:
+        damage_flash.color.a = clampf(damage_feedback_timer / 0.18, 0.0, 1.0) * 0.24
