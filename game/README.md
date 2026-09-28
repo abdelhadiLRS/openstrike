@@ -184,3 +184,12 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - PRESSURE, SUPPORT, and FLANK keep using the shared engagement-target offsets, so re-engagement preserves squad separation rather than collapsing every bot onto the reporter.
 - Combat assignments are refreshed when the contact revision changes, allowing the squad to redistribute roles as soon as a new contact is reported.
 - The contact memory expires after 4 seconds without a fresh report; planted-bomb defuse and bomb-cover states retain priority over contact behavior.
+
+
+### Squad Combat Director
+- A lightweight combat director now coordinates the squad through contact timing instead of allowing every bot to attack simultaneously.
+- The first contact window gives the PRESSURE bot immediate firing authority, while SUPPORT waits briefly before entering a controlled suppression phase.
+- FLANK receives a later firing window, creating a short stagger between the lead attack, supporting fire, and the wider-angle flank.
+- SUPPORT uses a dedicated `SUPPRESS` movement state and holds its engagement lane instead of blindly joining the pressure bot's chase.
+- The director exposes a revision and phase to each bot, so contact changes can invalidate stale coordination without replacing the existing bomb-objective priorities.
+- When contact is lost, the director falls back through SEARCH/LOST phases while the existing tactical-memory and re-engagement systems continue to control movement.
