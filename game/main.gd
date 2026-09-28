@@ -856,10 +856,7 @@ func _get_bot_squad_search_goal(bot: Node) -> Vector3:
     return goal
 
 func _update_combat_assignments() -> void:
-    if not is_instance_valid(player):
-        return
-
-    var active_bots: Array[CharacterBody3D] = []
+    var active_bots: Array[Node] = []
     for bot in bots:
         if is_instance_valid(bot) and not bot.dead:
             active_bots.append(bot)
@@ -867,72 +864,61 @@ func _update_combat_assignments() -> void:
     if active_bots.is_empty():
         return
 
-    var pressure_bot: CharacterBody3D = null
-    var support_bot: CharacterBody3D = null
-    var flank_bot: CharacterBody3D = null
-    var pressure_score := INF
-    var support_score := INF
-    var flank_score := INF
-
+    var previous_roles: Dictionary = {}
     for bot in active_bots:
-        var distance := bot.global_position.distance_to(player.global_position)
-        var health_value := int(bot.get("health"))
-        var slot := int(bot.get("combat_slot"))
-        var candidate_score := distance + maxf(0.0, 70.0 - float(health_value)) * 0.08
-        if slot == 2:
-            candidate_score -= 1.5
-        if str(bot.get("combat_assignment")) == "PRESSURE":
-            candidate_score -= 1.0
-        if candidate_score < pressure_score:
-            pressure_score = candidate_score
+        previous_roles[bot] = str(bot.get("combat_assignment"))
+
+    active_bots.sort_custom(func(a: Node, b: Node) -> bool:
+        var da := a.global_position.distance_to(player.global_position)
+        var db := b.global_position.distance_to(player.global_position)
+        return da < db
+    )
+
+    var pressure_bot: Node = null
+    for bot in active_bots:
+        if previous_roles.get(bot, "") == "PRESSURE":
             pressure_bot = bot
+            break
+    if pressure_bot == null:
+        pressure_bot = active_bots[0]
 
+    var support_bot: Node = null
     for bot in active_bots:
-        if bot == pressure_bot:
-            continue
-        var distance := bot.global_position.distance_to(player.global_position)
-        var health_value := int(bot.get("health"))
-        var candidate_score := float(health_value) + distance * 0.35
-        if health_value < 55:
-            candidate_score -= 25.0
-        if str(bot.get("combat_assignment")) == "SUPPORT":
-            candidate_score -= 1.0
-        if candidate_score < support_score:
-            support_score = candidate_score
+        if bot != pressure_bot and previous_roles.get(bot, "") == "SUPPORT":
             support_bot = bot
+            break
+    if support_bot == null:
+        for bot in active_bots:
+            if bot != pressure_bot:
+                support_bot = bot
+                break
+
+    var flank_bot: Node = null
+    for bot in active_bots:
+        if bot != pressure_bot and bot != support_bot and previous_roles.get(bot, "") == "FLANK":
+            flank_bot = bot
+            break
+    if flank_bot == null:
+        for bot in active_bots:
+            if bot != pressure_bot and bot != support_bot:
+                flank_bot = bot
+                break
 
     for bot in active_bots:
-        if bot == pressure_bot or bot == support_bot:
-            continue
-        var distance := bot.global_position.distance_to(player.global_position)
-        var slot := int(bot.get("combat_slot"))
-        var candidate_score := distance
-        if slot == 0 or slot == 1:
-            candidate_score -= 2.0
-        if str(bot.get("combat_assignment")) == "FLANK":
-            candidate_score -= 1.0
-        if candidate_score < flank_score:
-            flank_score = candidate_score
-            flank_bot = bot
+        var assignment := "SUPPORT"
+        if bot == pressure_bot:
+            assignment = "PRESSURE"
+        elif bot == support_bot:
+            assignment = "SUPPORT"
+        elif bot == flank_bot:
+            assignment = "FLANK"
 
-    if active_bots.size() == 1:
-        active_bots[0].set("combat_assignment", "PRESSURE")
-        active_bots[0].set("combat_engagement", "PRESSURE")
-        return
+        if str(bot.get("combat_assignment")) != assignment:
+            bot.set("combat_assignment", assignment)
+            bot.set("combat_engagement", "HANDOFF")
+            combat_engagement_revision += 1
 
-    if pressure_bot != null:
-        pressure_bot.set("combat_assignment", "PRESSURE")
-        pressure_bot.set("combat_engagement", "PRESSURE")
-
-    if support_bot != null:
-        support_bot.set("combat_assignment", "SUPPORT")
-        support_bot.set("combat_engagement", "HANDOFF" if pressure_bot == null or bool(pressure_bot.get("dead")) else "PRESSURE")
-
-    if flank_bot != null:
-        flank_bot.set("combat_assignment", "FLANK")
-        flank_bot.set("combat_engagement", "FLANK")
-
-    combat_engagement_revision += 1
+    combat_assignment_contact_revision = squad_contact_revision
 
 func _update_combat_slots() -> void:
     if not is_instance_valid(player):
