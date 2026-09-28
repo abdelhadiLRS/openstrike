@@ -34,6 +34,9 @@ func acknowledge(sequence: int) -> void:
 func pending_count() -> int:
 	return buffer.pending_count()
 
+func clear_pending() -> void:
+	buffer.clear()
+
 func reset() -> void:
 	next_sequence = 0
 	last_acknowledged_sequence = 0
