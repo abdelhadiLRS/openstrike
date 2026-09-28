@@ -76,6 +76,7 @@ var squad_contact_revision := -1
 var combat_director_phase := "IDLE"
 var combat_director_command := "HOLD"
 var combat_director_revision := -1
+var combat_role_revision := -1
 var combat_director_fire_ready := false
 var collision_shape: CollisionShape3D
 
@@ -118,6 +119,15 @@ func _physics_process(delta: float) -> void:
         combat_director_command = str(director.get("command", "HOLD"))
         combat_director_revision = int(director.get("revision", -1))
         combat_director_fire_ready = bool(director.get("fire_ready", false))
+        var next_role_revision := int(director.get("role_revision", -1))
+        if next_role_revision != combat_role_revision:
+            combat_role_revision = next_role_revision
+            combat_director_fire_ready = false
+            combat_reposition_timer = 0.0
+            combat_reposition_goal = Vector3.ZERO
+            route.clear()
+            route_index = 0
+            route_goal = Vector3.ZERO
 
     _update_state()
     if state != last_state:
@@ -709,6 +719,7 @@ func reset_target() -> void:
     combat_director_phase = "IDLE"
     combat_director_command = "HOLD"
     combat_director_revision = -1
+    combat_role_revision = -1
     combat_director_fire_ready = false
     fire_cooldown = 0.0
     burst_remaining = 0
