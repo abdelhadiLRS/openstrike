@@ -343,31 +343,30 @@ func _decide_combat_intent() -> void:
         combat_intent = "HOLD"
         return
 
+    var aggression := float(main.call("_threat_role_aggression", self))
+
     if combat_assignment == "SUPPORT":
-        if combat_engagement == "PRESSURE" or combat_engagement == "HANDOFF":
-            if has_los and distance <= PUSH_DISTANCE and health >= PUSH_HEALTH_THRESHOLD and combat_engagement == "HANDOFF":
-                combat_intent = "PUSH"
-                return
-            combat_intent = "HOLD"
-            return
-        if has_los and distance <= PUSH_DISTANCE - 1.0 and health >= PUSH_HEALTH_THRESHOLD:
+        var support_range := lerpf(PUSH_DISTANCE - 1.0, PUSH_DISTANCE + 1.0, aggression)
+        var support_health := int(lerpf(65.0, float(PUSH_HEALTH_THRESHOLD), aggression))
+        if has_los and distance <= support_range and health >= support_health:
             combat_intent = "PUSH"
             return
         combat_intent = "HOLD"
         return
 
     if combat_assignment == "PRESSURE":
-        if has_los and distance <= PUSH_DISTANCE + 2.0 and health >= RETREAT_HEALTH_THRESHOLD:
+        var pressure_range := lerpf(PUSH_DISTANCE, PUSH_DISTANCE + 4.0, aggression)
+        var pressure_health := int(lerpf(50.0, float(RETREAT_HEALTH_THRESHOLD), aggression))
+        if has_los and distance <= pressure_range and health >= pressure_health:
             combat_intent = "PUSH"
             return
         combat_intent = "HOLD"
         return
 
     if combat_assignment == "FLANK":
-        if has_los and distance <= HOLD_DISTANCE and health >= PUSH_HEALTH_THRESHOLD:
-            combat_intent = "PUSH"
-            return
-        if has_los and distance <= PUSH_DISTANCE and health >= 50:
+        var flank_range := lerpf(PUSH_DISTANCE, HOLD_DISTANCE, aggression)
+        var flank_health := int(lerpf(50.0, float(PUSH_HEALTH_THRESHOLD), aggression))
+        if has_los and distance <= flank_range and health >= flank_health:
             combat_intent = "PUSH"
             return
         combat_intent = "HOLD"
