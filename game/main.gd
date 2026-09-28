@@ -412,6 +412,8 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         prediction_replay_velocity = snapshot.velocity
         prediction_replay_yaw = snapshot.yaw
         prediction_replay_pitch = snapshot.pitch
+        crouched = snapshot.crouched
+        _set_crouch(crouched)
         prediction_replay_tick = snapshot.tick
         prediction_replay_commands = prediction.buffer.pending_commands_snapshot()
         pending_prediction_replay = not prediction_replay_commands.is_empty()
