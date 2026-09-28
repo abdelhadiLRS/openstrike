@@ -4,6 +4,12 @@ Original Godot 4 vertical slice for the OpenStrike project.
 
 ## Current systems
 
+- Player health and death state
+- Automatic respawn after player death
+- Timed round lifecycle
+- Round win condition when all training targets are eliminated
+- Round reset and target restoration
+
 - First-person movement and mouse look
 - Jumping
 - Crouch movement with reduced player height and camera height
