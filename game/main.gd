@@ -218,14 +218,19 @@ func _physics_process(delta: float) -> void:
         network_session.set_server_tick(combat_events.tick)
     _update_bomb_visual()
     player_snapshots.push(combat_events.tick, player.global_position, player.rotation.y, health)
+    var network_client := network_session != null and network_session.is_online and not network_session.is_server
     if dead:
+        if network_client:
+            _update_hud()
+            return
         respawn_timer = maxf(0.0, respawn_timer - delta)
         if respawn_timer <= 0.0:
             _respawn_player()
         _update_hud()
         return
 
-    _update_round_state(delta)
+    if not network_client:
+        _update_round_state(delta)
     if round_state != "LIVE":
         var network_client := network_session != null and network_session.is_online and not network_session.is_server
         if network_client and (pending_buy_weapon_id != "" or pending_switch_weapon or pending_reload):
@@ -323,11 +328,16 @@ func _physics_process(delta: float) -> void:
 func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     if snapshot == null:
         return
+    var was_dead := dead
     network_diagnostics.record_snapshot(snapshot.tick, snapshot.acknowledged_input_sequence)
     prediction.acknowledge(snapshot.acknowledged_input_sequence)
     last_processed_input_sequence = maxi(last_processed_input_sequence, snapshot.acknowledged_input_sequence)
     health = snapshot.health
     dead = snapshot.dead
+    if dead and not was_dead:
+        respawn_timer = RESPAWN_DELAY
+    elif not dead:
+        respawn_timer = 0.0
     if snapshot.round_state != "":
         round_state = snapshot.round_state
     round_number = snapshot.round_number
