@@ -158,6 +158,8 @@ func _physics_process(delta: float) -> void:
     if state != last_state:
         route.clear()
         route_index = 0
+        route_goal = Vector3.ZERO
+        current_goal = Vector3.ZERO
         if state != "BOMB_COVER":
             bomb_cover_goal = Vector3.ZERO
             bomb_cover_site = ""
