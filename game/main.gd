@@ -2818,8 +2818,32 @@ func _refresh_view_weapon() -> void:
     if is_rifle:
         _view_box(Vector3(0.0, -0.005, 0.30), Vector3(0.13, 0.12, 0.28), grip_material)
         _view_box(Vector3(0.0, 0.14, -0.02), Vector3(0.09, 0.07, 0.10), accent_material)
+        # Low-poly rail, iron sights and a distinct barrel give the rifle a
+        # clearer silhouette without adding physics or shadow cost.
+        _view_box(Vector3(0.0, 0.105, -0.25), Vector3(0.055, 0.025, 0.34), grip_material)
+        _view_box(Vector3(0.0, 0.155, -0.36), Vector3(0.045, 0.07, 0.045), accent_material)
+        _view_box(Vector3(0.0, 0.145, -0.06), Vector3(0.055, 0.05, 0.045), accent_material)
+        _view_cylinder(Vector3(0.0, 0.0, -0.54), 0.032, 0.28, body_material)
+        _view_cylinder(Vector3(0.0, 0.0, -0.69), 0.038, 0.035, grip_material)
     else:
         _view_box(Vector3(0.0, 0.09, 0.11), Vector3(0.09, 0.07, 0.08), accent_material)
+        _view_box(Vector3(0.0, 0.105, -0.16), Vector3(0.045, 0.022, 0.18), grip_material)
+        _view_box(Vector3(0.0, 0.15, -0.23), Vector3(0.035, 0.055, 0.035), accent_material)
+        _view_cylinder(Vector3(0.0, 0.0, -0.32), 0.024, 0.20, body_material)
+        _view_cylinder(Vector3(0.0, 0.0, -0.425), 0.03, 0.03, grip_material)
+
+func _view_cylinder(pos: Vector3, radius: float, height: float, material: StandardMaterial3D) -> void:
+    var mesh_instance := MeshInstance3D.new()
+    var mesh := CylinderMesh.new()
+    mesh.top_radius = radius
+    mesh.bottom_radius = radius
+    mesh.height = height
+    mesh_instance.mesh = mesh
+    mesh_instance.position = pos
+    mesh_instance.rotation_degrees.x = 90.0
+    mesh_instance.material_override = material
+    mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    view_weapon_root.add_child(mesh_instance)
 
 func _view_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> void:
     var mesh_instance := MeshInstance3D.new()
