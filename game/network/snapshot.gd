@@ -30,6 +30,7 @@ var ammo: int = 0
 var reserve: int = 0
 var credits: int = 1200
 var owned_weapons: Array[String] = []
+var bot_count: int = 0
 var bot_states: Array[Dictionary] = []
 
 func to_dict() -> Dictionary:
@@ -61,6 +62,7 @@ func to_dict() -> Dictionary:
 		"reserve": reserve,
 		"credits": credits,
 		"owned_weapons": owned_weapons,
+		"bot_count": bot_count,
 		"bot_states": bot_states
 	}
 
@@ -92,6 +94,7 @@ static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	snapshot.ammo = int(data.get("ammo", 0))
 	snapshot.reserve = int(data.get("reserve", 0))
 	snapshot.credits = int(data.get("credits", 1200))
+	snapshot.bot_count = clampi(int(data.get("bot_count", 0)), 0, 15)
 	var bot_value = data.get("bot_states", [])
 	if bot_value is Array:
 		for bot_state in bot_value:
