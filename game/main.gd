@@ -344,7 +344,6 @@ func _physics_process(delta: float) -> void:
     if want_crouch != crouched:
         _set_crouch(want_crouch)
 
-    var network_client := network_session != null and network_session.is_online and not network_session.is_server
     if command.fire and not network_client:
         _fire()
     if command.reload and not network_client:
