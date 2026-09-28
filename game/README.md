@@ -169,3 +169,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - SUPPORT receives a small offset to avoid collapsing onto the pressure lane.
 - FLANK receives a wider lateral offset based on its combat slot, creating a separate approach lane around the last-known position.
 - When a bot has fresh line of sight, the real player position remains authoritative and the memory offsets are not applied.
+
+### Squad search and sweep
+- When the shared tactical memory expires without a fresh line of sight, the squad enters a bounded search window around the last confirmed player position.
+- PRESSURE searches the center lane, while SUPPORT and FLANK search opposite lateral sectors instead of converging on one point.
+- Search goals advance through short forward sweeps on a throttled revision interval, creating a simple three-sector sweep rather than a static waypoint.
+- A fresh visual contact immediately cancels the search and returns normal combat intent to the squad.
+- Search state never overrides planted-bomb defuse or bomb-cover priority.
