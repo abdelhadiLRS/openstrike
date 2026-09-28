@@ -643,6 +643,10 @@ func _fire() -> void:
 
     var origin := camera.global_position
     var direction := -camera.global_transform.basis.z
+    if network_session != null and network_session.is_server and network_session.is_online:
+        if network_session.process_host_fire(origin, direction, str(weapon["id"]), int(weapon["damage"])):
+            return
+
     var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * 120.0)
     query.exclude = [player]
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
