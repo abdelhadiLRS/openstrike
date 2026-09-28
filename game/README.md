@@ -116,3 +116,9 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Navigation route smoothing
 - A* routes are now post-processed with line-of-sight checks to remove unnecessary intermediate waypoints.
 - Bots therefore keep the obstacle-safe route while taking straighter segments whenever the graybox geometry allows it.
+
+
+### Adaptive bot route replanning
+- Bots now retain the current route goal and periodically re-evaluate navigation instead of following a stale path indefinitely.
+- Significant goal movement triggers an immediate route rebuild.
+- A short replan interval keeps dynamic tactical movement responsive while avoiding per-frame pathfinding.
