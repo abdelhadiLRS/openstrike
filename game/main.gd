@@ -578,7 +578,9 @@ func _update_tactical_memory(delta: float) -> void:
             squad_search_update_timer = 0.0
         elif squad_search_timer <= 0.0:
             squad_search_active = false
+            squad_search_timer = 0.0
             squad_search_update_timer = 0.0
+            last_known_player_timer = 0.0
         elif squad_search_update_timer <= 0.0:
             squad_search_cycle += 1
             squad_search_revision += 1
@@ -696,8 +698,7 @@ func _get_bot_squad_search_goal(bot: Node) -> Vector3:
     elif assignment == "SUPPORT":
         sector = side * SQUAD_SEARCH_SECTOR_RADIUS + forward * cycle_offset
     elif assignment == "FLANK":
-        var flank_side := -1.0 if slot == 0 else 1.0
-        sector = -side * flank_side * SQUAD_SEARCH_SECTOR_RADIUS + forward * cycle_offset
+        sector = -side * SQUAD_SEARCH_SECTOR_RADIUS + forward * cycle_offset
     else:
         sector = side * (float(slot) - 1.0) * SQUAD_SEARCH_SECTOR_RADIUS
 
