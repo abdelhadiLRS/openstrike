@@ -850,16 +850,12 @@ func _move_toward_goal(delta: float) -> void:
             var next_waypoint: Vector3 = route[1]
             can_advance_waypoint = bool(main.call("_navigation_visible", global_position, next_waypoint))
         if not can_advance_waypoint:
-            if offset.length() <= 0.05:
-                route.clear()
-                route_index = 0
-                route_goal = Vector3.ZERO
-                route_replan_timer = 0.0
-                return
-            var close_direction := offset.normalized()
-            velocity.x = move_toward(velocity.x, close_direction.x * MOVE_SPEED, 12.0 * delta)
-            velocity.z = move_toward(velocity.z, close_direction.z * MOVE_SPEED, 12.0 * delta)
-            look_at(global_position + Vector3(close_direction.x, 0.0, close_direction.z), Vector3.UP)
+            route.clear()
+            route_index = 0
+            route_goal = Vector3.ZERO
+            route_replan_timer = 0.0
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
             return
         route_index += 1
         if route_index >= route.size():
