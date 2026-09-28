@@ -677,6 +677,31 @@ func _has_obstacle_between(from: Vector3, to: Vector3) -> bool:
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
     return not hit.is_empty()
 
+func _select_bot_site_cover(site_position: Vector3, player_position: Vector3, role: String) -> Vector3:
+    var best := Vector3.ZERO
+    var best_score := INF
+    for data in cover_points:
+        var cover_position: Vector3 = data["cover"]
+        var peek_position: Vector3 = data["peek"]
+        var site_distance := cover_position.distance_to(site_position)
+        if site_distance > 9.0:
+            continue
+        var player_distance := cover_position.distance_to(player_position)
+        if player_distance < 5.0:
+            continue
+        if _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
+            var peek_blocked := _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0))
+            if peek_blocked:
+                continue
+            var role_bias := 0.0
+            if role == "ROAMER":
+                role_bias = site_distance * 0.15
+            var score := site_distance * 1.4 + absf(player_distance - 15.0) * 0.25 + role_bias
+            if score < best_score:
+                best_score = score
+                best = cover_position
+    return best
+
 func _setup_cover_points() -> void:
     cover_points = [
         {"cover": Vector3(-9.0, 1.0, -5.0), "peek": Vector3(-7.2, 1.0, -3.6)},
