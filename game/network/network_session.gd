@@ -205,7 +205,7 @@ func _process_server_input(peer_id: int) -> void:
 		player.apply_input(command, input_step, round_state)
 		if root != null and root.has_method("set_network_objective_input"):
 			root.set_network_objective_input(peer_id, command.objective)
-		player.record_snapshot(server_tick)
+		player.record_snapshot(command.tick)
 		if command.fire and round_state == "LIVE":
 			_process_server_fire(player, command)
 
