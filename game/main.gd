@@ -667,7 +667,7 @@ func _fire() -> void:
         if target_team != player_team:
             # Bot eliminations are scored by the bot's `eliminated` signal.
             # Keep this path limited to applying damage to avoid double rewards.
-            hit.collider.take_damage(int(weapon["damage"]))
+            hit.collider.take_damage(int(weapon["damage"]), "player")
             var target_id := str(hit.collider.get_instance_id())
             combat_events.emit_hit("player", target_id, str(weapon["id"]), int(weapon["damage"]), hit.position, false)
 
@@ -1464,7 +1464,10 @@ func _on_enemy_eliminated(bot: Node) -> void:
     # authoritative network eliminations. Scoring and round-end checks are
     # handled centrally by _on_combat_event to prevent double rewards.
     var weapon_id := str(bot.get("weapon_id"))
-    combat_events.emit_elimination("player", str(bot.get_instance_id()), weapon_id, false)
+    var shooter_id := str(bot.get("last_damage_source_id"))
+    if shooter_id.is_empty():
+        shooter_id = "player"
+    combat_events.emit_elimination(shooter_id, str(bot.get_instance_id()), weapon_id, false)
 
 func _on_combat_event(event: OpenStrikeCombatEvent) -> void:
     if event == null or event.type != OpenStrikeCombatEvent.Type.ELIMINATION:
