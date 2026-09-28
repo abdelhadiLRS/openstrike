@@ -8,6 +8,7 @@ const STAND_SPEED := 5.6
 const CROUCH_SPEED := 3.4
 const STARTING_CREDITS := 1200
 const MAX_CREDITS := 16000
+const RESPAWN_DELAY := 2.0
 
 var peer_id: int = 0
 var health: int = 100
@@ -23,6 +24,7 @@ var fire_cooldown: float = 0.0
 var primary_owned: bool = false
 var credits: int = STARTING_CREDITS
 var weapon_states: Dictionary = {}
+var respawn_timer: float = 0.0
 var snapshot_history := OpenStrikeSnapshotHistory.new()
 
 var collision_shape: CollisionShape3D
@@ -73,6 +75,7 @@ func begin_round(start_position: Vector3) -> void:
 	velocity = Vector3.ZERO
 	health = 100
 	dead = false
+	respawn_timer = 0.0
 	crouched = false
 	primary_owned = false
 	weapon_id = "px_9"
@@ -83,6 +86,29 @@ func begin_round(start_position: Vector3) -> void:
 			state.cooldown_remaining = 0.0
 	_select_weapon("px_9")
 	_sync_active_weapon()
+
+func begin_respawn(start_position: Vector3) -> void:
+	global_position = start_position
+	velocity = Vector3.ZERO
+	health = 100
+	dead = false
+	respawn_timer = 0.0
+	crouched = false
+	_select_weapon("px_9")
+	_sync_active_weapon()
+
+func mark_eliminated() -> void:
+	dead = true
+	health = 0
+	velocity = Vector3.ZERO
+	respawn_timer = RESPAWN_DELAY
+
+func tick_respawn(delta: float, round_state: String, start_position: Vector3) -> void:
+	if not dead or round_state != "LIVE":
+		return
+	respawn_timer = maxf(0.0, respawn_timer - maxf(delta, 0.0))
+	if respawn_timer <= 0.0:
+		begin_respawn(start_position)
 
 func purchase_weapon(requested_id: String, round_state: String) -> bool:
 	if dead or round_state != "BUY":
@@ -212,6 +238,11 @@ func make_snapshot(tick: int, round_state: String, round_number: int, objective_
 	snapshot.ammo = ammo
 	snapshot.reserve = reserve
 	snapshot.credits = credits
+	snapshot.owned_weapons.clear()
+	for weapon_value in weapon_states.keys():
+		var state = weapon_states.get(weapon_value)
+		if state is OpenStrikeWeaponRuntimeState and state.owned:
+			snapshot.owned_weapons.append(str(weapon_value))
 	snapshot.health = health
 	snapshot.dead = dead
 	snapshot.round_state = round_state
