@@ -444,29 +444,31 @@ func _replay_pending_prediction(delta: float) -> void:
     player.rotation.y = prediction_replay_yaw
     pitch = prediction_replay_pitch
 
+    var physics_step := 1.0 / maxf(1.0, float(Engine.physics_ticks_per_second))
     for command in prediction_replay_commands:
         if command == null:
             continue
         var tick_delta := maxi(1, command.tick - prediction_replay_tick)
-        var physics_step := 1.0 / maxf(1.0, float(Engine.physics_ticks_per_second))
-        var replay_delta := physics_step * minf(float(tick_delta), 4.0)
         prediction_replay_tick = command.tick
         player.rotate_y(-command.look_delta.x * SENS)
         pitch = clamp(pitch - command.look_delta.y * SENS, -1.45, 1.45)
 
         var direction := (player.transform.basis * Vector3(command.move.x, 0.0, command.move.y)).normalized()
         var move_speed := 3.4 if command.crouch else 5.6
-        player.velocity.x = move_toward(player.velocity.x, direction.x * move_speed, 25.0 * replay_delta)
-        player.velocity.z = move_toward(player.velocity.z, direction.z * move_speed, 25.0 * replay_delta)
+        var replay_steps := mini(tick_delta, 4)
+        for step in replay_steps:
+            var replay_delta := physics_step
+            player.velocity.x = move_toward(player.velocity.x, direction.x * move_speed, 25.0 * replay_delta)
+            player.velocity.z = move_toward(player.velocity.z, direction.z * move_speed, 25.0 * replay_delta)
 
-        if not player.is_on_floor():
-            player.velocity.y -= GRAVITY * replay_delta
-        elif command.jump and not command.crouch:
-            player.velocity.y = 5.0
+            if not player.is_on_floor():
+                player.velocity.y -= GRAVITY * replay_delta
+            elif step == 0 and command.jump and not command.crouch:
+                player.velocity.y = 5.0
 
-        if command.crouch != crouched:
-            _set_crouch(command.crouch)
-        player.move_and_slide()
+            if command.crouch != crouched:
+                _set_crouch(command.crouch)
+            player.move_and_slide()
 
     pending_prediction_replay = false
     prediction_replay_tick = 0
