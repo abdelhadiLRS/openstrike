@@ -158,6 +158,12 @@ func _move_toward_goal(delta: float) -> void:
             velocity.z = move_toward(velocity.z, away.z * MOVE_SPEED, 12.0 * delta)
             look_at(global_position + Vector3(-away.x, 0.0, -away.z), Vector3.UP)
             return
+        if distance > OPTIMAL_RANGE:
+            var chase := (target.global_position - global_position).normalized()
+            velocity.x = move_toward(velocity.x, chase.x * MOVE_SPEED, 12.0 * delta)
+            velocity.z = move_toward(velocity.z, chase.z * MOVE_SPEED, 12.0 * delta)
+            look_at(global_position + Vector3(chase.x, 0.0, chase.z), Vector3.UP)
+            return
 
     if route.size() == 0:
         return
