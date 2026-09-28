@@ -207,7 +207,6 @@ func _update_objective(delta: float) -> void:
     var site := _current_bomb_site()
 
     if objective_state == "CARRIED":
-        objective_site = site
         if objective_action == "PLANT":
             if site == "" or site != objective_site or not Input.is_key_pressed(KEY_F):
                 objective_action = ""
