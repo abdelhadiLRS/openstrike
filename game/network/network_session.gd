@@ -709,6 +709,12 @@ func _valid_bot_roster_payload(snapshot: OpenStrikeSnapshot) -> bool:
 		if state_round != snapshot.round_number:
 			return false
 		seen_ids[bot_id] = true
+	# Require the complete stable ID range at validation time, not only during
+	# client application. This keeps malformed rosters out of accepted snapshot
+	# bookkeeping and ensures rejection diagnostics classify them correctly.
+	for expected_bot_id in range(1, snapshot.bot_count + 1):
+		if not seen_ids.has(expected_bot_id):
+			return false
 	return true
 
 func _reset_snapshot_receive_state() -> void:
