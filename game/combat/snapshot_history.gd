@@ -25,6 +25,13 @@ const MAX_SNAPSHOTS := 64
 var _snapshots: Array[Snapshot] = []
 
 func push(tick: int, position: Vector3, rotation_y: float, health: int) -> void:
+	if not _snapshots.is_empty():
+		var latest_tick := _snapshots.back().tick
+		if tick < latest_tick:
+			return
+		if tick == latest_tick:
+			_snapshots[_snapshots.size() - 1] = Snapshot.new(tick, position, rotation_y, health)
+			return
 	_snapshots.push_back(Snapshot.new(tick, position, rotation_y, health))
 	if _snapshots.size() > MAX_SNAPSHOTS:
 		_snapshots.pop_front()
