@@ -510,6 +510,9 @@ func _snapshot_server_players(delta: float) -> void:
 	var root := _root()
 	if root == null:
 		return
+	# Bot state is identical for every recipient in this server tick. Build it
+	# once rather than traversing every bot separately for each connected peer.
+	var bot_states := _build_bot_snapshots(root)
 	for peer_id in network_players.keys():
 		var player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
 		if not is_instance_valid(player):
@@ -529,8 +532,8 @@ func _snapshot_server_players(delta: float) -> void:
 			int(root.get("network_objective_peer_id")),
 			float(root.get("objective_action_time_left"))
 		)
-		snapshot.bot_states = _build_bot_snapshots(root)
-		snapshot.bot_count = snapshot.bot_states.size()
+		snapshot.bot_states = bot_states
+		snapshot.bot_count = bot_states.size()
 		broadcast_snapshot(snapshot)
 
 func set_server_tick(tick: int) -> void:
