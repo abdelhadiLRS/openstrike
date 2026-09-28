@@ -1470,7 +1470,7 @@ func _find_navigation_route(start: Vector3, goal: Vector3) -> Array:
     var goal_index := _find_nearest_navigation_point(goal)
 
     if start_index < 0 or goal_index < 0:
-        return [goal]
+        return []
 
     if start_index == goal_index:
         return [goal]
