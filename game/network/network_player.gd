@@ -319,6 +319,14 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	snapshot_target_pitch = snapshot.pitch
 	has_snapshot_target = true
 	velocity = snapshot.velocity
+	health = snapshot.health
+	dead = snapshot.dead
+	crouched = snapshot.crouched
+	weapon_id = snapshot.weapon_id if not snapshot.weapon_id.is_empty() else weapon_id
+	ammo = snapshot.ammo
+	reserve = snapshot.reserve
+	credits = snapshot.credits
+	_update_collider()
 	if hard_snap:
 		yaw = snapshot.yaw
 		pitch = snapshot.pitch
