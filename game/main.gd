@@ -789,6 +789,44 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
 
     return best
 
+func _select_bot_combat_cover(bot: Node, player_position: Vector3, preferred_distance: float) -> Vector3:
+    var best := Vector3.ZERO
+    var best_score := INF
+    for data in cover_points:
+        var cover_position: Vector3 = data["cover"]
+        var peek_position: Vector3 = data["peek"]
+        var bot_distance := bot.global_position.distance_to(cover_position)
+        if bot_distance > 20.0:
+            continue
+        var player_distance := cover_position.distance_to(player_position)
+        if player_distance < 6.0:
+            continue
+        if not _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
+            continue
+        if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
+            continue
+
+        var occupied := false
+        for other in bots:
+            if other == bot or not is_instance_valid(other) or other.dead:
+                continue
+            if other.global_position.distance_to(cover_position) < 2.5:
+                occupied = true
+                break
+            if (str(other.state) == "COVER" or str(other.state) == "PEEK") and other.current_goal.distance_to(cover_position) < 2.5:
+                occupied = true
+                break
+        if occupied:
+            continue
+
+        var score := bot_distance * 0.35 + absf(player_distance - preferred_distance) * 0.75
+        if str(bot.role) == "ROAMER":
+            score -= minf(player_distance, 18.0) * 0.04
+        if score < best_score:
+            best_score = score
+            best = cover_position
+    return best
+
 func _select_bot_site_cover(site_position: Vector3, player_position: Vector3, role: String) -> Vector3:
     var best := Vector3.ZERO
     var best_score := INF
