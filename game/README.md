@@ -39,6 +39,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - RED bot combat roles: Defender A, Defender B, and Roamer
 - Combat standoff range, retreat behavior, strafing, burst fire, and accuracy spread
 - Waypoint-based bot navigation between defensive objective sites
+- Procedural cover points with low-health retreat and peek behavior
 - RED bots switch to planted-site defense and attack the BLUE player when detected
 - Damageable combat units
 - Procedural graybox training range
