@@ -144,3 +144,12 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - The remaining bot becomes **FLANK**, using wider engagement conditions so pressure can come from a different angle rather than all bots chasing the same line.
 - Assignments refresh on a throttled interval and integrate with the existing combat-intent, repositioning, cover, and dynamic slot systems.
 - With one or two surviving bots, the assignment set degrades cleanly without requiring a full squad.
+
+
+### Squad engagement handoff
+- Combat assignments now include an engagement role in addition to PRESSURE / SUPPORT / FLANK.
+- PRESSURE is treated as the current lead attacker, while SUPPORT is deliberately held from making the same push at the same time.
+- If the lead attacker is removed, the next assignment cycle promotes a surviving bot into PRESSURE and rebuilds the supporting roles around the new lead.
+- FLANK retains independent wider-angle pressure so the squad does not collapse into a single chase line.
+- Assignment selection has light role persistence to reduce unnecessary role swapping when several bots have similar scores.
+- Bomb DEFUSE and BOMB_COVER states still take precedence over the normal squad engagement layer.
