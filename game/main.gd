@@ -238,7 +238,7 @@ func _update_round_state(delta: float) -> void:
     elif round_state == "LIVE":
         round_time_left = maxf(0.0, round_time_left - delta)
         round_state_time_left = round_time_left
-        if round_time_left <= 0.0:
+        if round_time_left <= 0.0 and objective_state != "PLANTED":
             _finish_round(false)
     elif round_state == "POST":
         if round_state_time_left <= 0.0:
