@@ -284,6 +284,66 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 			events.emit_hit(str(shooter.peer_id), str(best_target.get_instance_id()), shooter.weapon_id, damage, best_target.global_position, true)
 
 
+func process_host_fire(origin: Vector3, direction: Vector3, weapon_id_value: String, damage: int) -> bool:
+    if not is_server or not is_online or damage <= 0:
+        return false
+    var root := _root()
+    if root == null or str(root.get("round_state")) != "LIVE":
+        return false
+    var shooter = root.get("player")
+    if shooter == null:
+        return false
+
+    var best_target: Node = null
+    var best_distance := INF
+    var normalized_direction := direction.normalized()
+
+    for peer_value in network_players.keys():
+        var target: OpenStrikeNetworkPlayer = network_players.get(peer_value)
+        if not is_instance_valid(target) or target.dead:
+            continue
+        var target_position := target.global_position + Vector3(0, 0.65, 0)
+        var ray_distance := _point_to_ray_distance(target_position, origin, normalized_direction)
+        if ray_distance <= 0.75 and ray_distance < best_distance:
+            best_distance = ray_distance
+            best_target = target
+
+    if best_target == null:
+        var query := PhysicsRayQueryParameters3D.create(origin, origin + normalized_direction * 120.0)
+        query.exclude = [shooter]
+        var hit := root.get_world_3d().direct_space_state.intersect_ray(query)
+        if not hit.is_empty() and hit.collider != null:
+            best_target = hit.collider
+
+    if best_target == null:
+        return false
+
+    var events: OpenStrikeCombatEvents = root.get("combat_events")
+    if best_target is OpenStrikeNetworkPlayer:
+        var target: OpenStrikeNetworkPlayer = best_target
+        if target.dead or target.team == str(root.get("player_team")):
+            return true
+        var was_alive := not target.dead
+        target.health = maxi(0, target.health - damage)
+        if target.health <= 0:
+            target.mark_eliminated()
+        if events != null:
+            events.emit_hit("player", str(target.peer_id), weapon_id_value, damage, target.global_position, true)
+        if was_alive and target.dead:
+            root.set("credits", mini(16000, int(root.get("credits")) + KILL_REWARD))
+            if events != null:
+                events.emit_elimination("player", str(target.peer_id), weapon_id_value, true)
+        return true
+
+    var target_team := str(best_target.get("team"))
+    if best_target.has_method("take_damage") and target_team != str(root.get("player_team")):
+        best_target.take_damage(damage)
+        if events != null:
+            events.emit_hit("player", str(best_target.get_instance_id()), weapon_id_value, damage, best_target.global_position, true)
+        return true
+    return true
+
+
 func _snapshot_server_players(delta: float) -> void:
 	var root := _root()
 	var current_round_state := str(root.get("round_state")) if root != null else "BUY"
