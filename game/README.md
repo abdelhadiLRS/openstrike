@@ -193,3 +193,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - SUPPORT uses a dedicated `SUPPRESS` movement state and holds its engagement lane instead of blindly joining the pressure bot's chase.
 - The director exposes a revision and phase to each bot, so contact changes can invalidate stale coordination without replacing the existing bomb-objective priorities.
 - When contact is lost, the director falls back through SEARCH/LOST phases while the existing tactical-memory and re-engagement systems continue to control movement.
+
+
+### Combat command bus and flank execution
+- The combat director now publishes an explicit command per bot: `PUSH`, `SUPPRESS`, `FLANK`, or `HOLD`.
+- FLANK has its own movement state and uses the existing attack-position selector to seek a separated angle instead of following the pressure lane.
+- SUPPORT remains in `SUPPRESS` and receives its own delayed firing authority.
+- The command is refreshed from the shared contact revision, so a new contact or reassignment can immediately replace stale squad orders.
