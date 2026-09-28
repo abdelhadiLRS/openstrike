@@ -204,6 +204,7 @@ func _ready() -> void:
     _world()
     _player()
     _hud()
+    _create_network_debug_hud()
     _start_round()
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -995,6 +996,15 @@ func _set_crouch(value: bool) -> void:
     crouched = value
     player_capsule.height = CROUCH_HEIGHT if crouched else STAND_HEIGHT
     camera.position.y = CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y
+
+func _create_network_debug_hud() -> void:
+    network_debug_hud = Label.new()
+    network_debug_hud.position = Vector2(18, 18)
+    network_debug_hud.size = Vector2(520, 120)
+    network_debug_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    network_debug_hud.add_theme_font_size_override("font_size", 14)
+    network_debug_hud.visible = network_debug_visible
+    add_child(network_debug_hud)
 
 func _update_hud() -> void:
     var weapon := _current_weapon()
