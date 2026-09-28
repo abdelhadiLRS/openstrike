@@ -532,6 +532,10 @@ func _update_goal() -> void:
             if retreat_cover is Vector3 and retreat_cover != Vector3.ZERO:
                 current_goal = retreat_cover
                 cover_index = -1
+                if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+                    route.clear()
+                    route_index = 0
+                    return
                 _ensure_route(current_goal)
                 return
         _select_cover_point()
