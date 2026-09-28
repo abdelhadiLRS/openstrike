@@ -113,6 +113,9 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 ### Visual polish
 
+- Arena lighting now uses a slightly brighter cool ambient fill, subtle distance haze, and restrained contrast/saturation grading to separate concrete, team colors, and objective accents.
+- Thin emissive cyan and amber strips accent the upper perimeter walls; they are unlit mesh effects with shadows disabled and add no collision, navigation, or dynamic-light cost.
+
 - Both bomb sites now have four low-cost emissive corner beacons and a matching center marker: cool cyan for Site A and amber for Site B.
 - First-person AR-17/PX-9 viewmodels now emit a brief, unlit emissive muzzle flash on accepted shots; the effect uses a single visual mesh and a short timer, with no particles or extra dynamic lights.
 - The beacons are visual-only meshes with shadows disabled; they do not add collision, navigation obstacles, or gameplay effects.
