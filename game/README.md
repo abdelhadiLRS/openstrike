@@ -82,6 +82,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F: hold to plant/defuse the bomb at an objective site
 - ESC: release mouse
 - F3: toggle the network diagnostics overlay (NetGraph)
+- Dynamic center reticle: expands with movement and recoil, tightens while crouched
 
 This prototype uses original code and procedurally generated geometry. It does not use Counter-Strike proprietary code or assets.
 
