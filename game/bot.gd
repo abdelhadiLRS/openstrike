@@ -539,13 +539,24 @@ func _update_goal() -> void:
     if role == "ROAMER":
         defend_site = "B" if int(Time.get_ticks_msec() / 5000.0) % 2 == 0 else "A"
     var site_position: Vector3 = main.get("bomb_site_a") if defend_site == "A" else main.get("bomb_site_b")
-    var tactical_cover = main.call("_select_bot_site_cover", self, site_position, target.global_position, role)
-    if tactical_cover is Vector3 and tactical_cover != Vector3.ZERO:
-        current_goal = tactical_cover
-    else:
-        current_goal = site_position
-    _ensure_route(current_goal)
 
+    var keep_current_defend_goal := current_goal != Vector3.ZERO
+    keep_current_defend_goal = keep_current_defend_goal and global_position.distance_to(current_goal) <= 18.0
+    keep_current_defend_goal = keep_current_defend_goal and current_goal.distance_to(site_position) <= 10.0
+    keep_current_defend_goal = keep_current_defend_goal and current_goal.distance_to(target.global_position) >= 5.0
+    keep_current_defend_goal = keep_current_defend_goal and main.call("_bot_has_navigation_path", self, current_goal)
+    keep_current_defend_goal = keep_current_defend_goal and main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), current_goal)
+
+    if not keep_current_defend_goal:
+        var tactical_cover = main.call("_select_bot_site_cover", self, site_position, target.global_position, role)
+        if tactical_cover is Vector3 and tactical_cover != Vector3.ZERO:
+            current_goal = tactical_cover
+        else:
+            current_goal = site_position
+        route.clear()
+        route_index = 0
+
+    _ensure_route(current_goal)
 func _select_cover_point() -> void:
     var points: Array = main.get("cover_points")
     if points.is_empty():
