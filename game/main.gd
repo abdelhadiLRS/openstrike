@@ -36,6 +36,9 @@ const SQUAD_SEARCH_DURATION := 6.0
 const SQUAD_SEARCH_UPDATE_INTERVAL := 0.75
 const SQUAD_SEARCH_SECTOR_RADIUS := 5.5
 const SQUAD_SEARCH_FORWARD_STEP := 3.5
+const COMBAT_DIRECTOR_UPDATE_INTERVAL := 0.20
+const COMBAT_SUPPORT_DELAY := 0.35
+const COMBAT_FLANK_DELAY := 0.70
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
@@ -113,6 +116,11 @@ var squad_search_timer := 0.0
 var squad_search_update_timer := 0.0
 var squad_search_revision := 0
 var squad_search_cycle := 0
+var combat_director_phase := "IDLE"
+var combat_director_timer := 0.0
+var combat_director_revision := 0
+var combat_director_contact_revision := -1
+var combat_contact_started_at := 0
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -173,8 +181,9 @@ func _physics_process(delta: float) -> void:
         _update_hud()
         return
 
-    _update_bots(delta)
     _update_tactical_memory(delta)
+    _update_combat_director(delta)
+    _update_bots(delta)
     _update_objective(delta)
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
@@ -539,6 +548,11 @@ func _start_round() -> void:
     squad_search_update_timer = 0.0
     squad_search_revision += 1
     squad_search_cycle = 0
+    combat_director_phase = "IDLE"
+    combat_director_timer = 0.0
+    combat_director_revision += 1
+    combat_director_contact_revision = -1
+    combat_contact_started_at = Time.get_ticks_msec()
 
 func _finish_round(won: bool) -> void:
     if round_state != "LIVE":
@@ -683,6 +697,60 @@ func _get_bot_squad_contact(bot: Node) -> Dictionary:
     if not _is_squad_contact_active():
         return {"position": Vector3.ZERO, "time_left": 0.0, "revision": squad_contact_revision, "source": null}
     return {"position": squad_contact_position, "time_left": squad_contact_timer, "revision": squad_contact_revision, "source": squad_contact_source}
+
+func _update_combat_director(delta: float) -> void:
+    combat_director_timer = maxf(0.0, combat_director_timer - delta)
+    if combat_director_timer > 0.0 and combat_director_contact_revision == squad_contact_revision:
+        return
+
+    combat_director_timer = COMBAT_DIRECTOR_UPDATE_INTERVAL
+    var next_phase := "IDLE"
+    if _is_squad_contact_active():
+        var contact_age := maxf(0.0, (Time.get_ticks_msec() - combat_contact_started_at) / 1000.0)
+        if contact_age >= COMBAT_FLANK_DELAY:
+            next_phase = "FLANK"
+        elif contact_age >= COMBAT_SUPPORT_DELAY:
+            next_phase = "SUPPRESS"
+        else:
+            next_phase = "CONTACT"
+    elif _is_squad_search_active():
+        next_phase = "SEARCH"
+    elif last_known_player_timer > 0.0:
+        next_phase = "LOST"
+
+    if next_phase != combat_director_phase or combat_director_contact_revision != squad_contact_revision:
+        combat_director_phase = next_phase
+        combat_director_revision += 1
+    combat_director_contact_revision = squad_contact_revision
+
+func _get_bot_combat_director(bot: Node) -> Dictionary:
+    var assignment := str(bot.get("combat_assignment"))
+    var phase := combat_director_phase
+    var fire_ready := false
+
+    if _is_squad_contact_active():
+        var contact_age := maxf(0.0, (Time.get_ticks_msec() - combat_contact_started_at) / 1000.0)
+        if assignment == "PRESSURE":
+            phase = "CONTACT"
+            fire_ready = true
+        elif assignment == "SUPPORT":
+            phase = "SUPPRESS"
+            fire_ready = contact_age >= COMBAT_SUPPORT_DELAY
+        elif assignment == "FLANK":
+            phase = "FLANK"
+            fire_ready = contact_age >= COMBAT_FLANK_DELAY
+    elif _is_squad_search_active():
+        phase = "SEARCH"
+    elif last_known_player_timer > 0.0:
+        phase = "LOST"
+
+    return {
+        "phase": phase,
+        "fire_ready": fire_ready,
+        "revision": combat_director_revision,
+        "contact_revision": squad_contact_revision,
+        "contact_source": squad_contact_source
+    }
 
 func _player_has_bot_los() -> bool:
     if not is_instance_valid(player):
