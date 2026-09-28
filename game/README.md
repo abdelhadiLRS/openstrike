@@ -272,3 +272,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - A bot burst is now cancelled immediately when squad threat is no longer CONTACT, line of sight is lost, or the current state is not a firing state.
 - A later re-acquisition therefore starts a fresh burst instead of resuming fire from a stale visual contact.
 - This complements the existing threat-revision reset and FIRE_RANGE gate.
+
+
+### Combat Director cleanup
+- The Combat Director threat fallback now has a single TRACKED branch, removing a redundant state path while preserving the existing command behavior.
