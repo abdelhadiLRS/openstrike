@@ -35,7 +35,9 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Reload
 - Hitscan shooting
 - Per-weapon damage, fire delay, and recoil
-- Three RED combat bots with health, detection, line-of-sight, shooting, and death states
+- Three RED combat bots with role-based defense, detection, line-of-sight, shooting, and death states
+- RED bot combat roles: Defender A, Defender B, and Roamer
+- Combat standoff range, retreat behavior, strafing, burst fire, and accuracy spread
 - Waypoint-based bot navigation between defensive objective sites
 - RED bots switch to planted-site defense and attack the BLUE player when detected
 - Damageable combat units
