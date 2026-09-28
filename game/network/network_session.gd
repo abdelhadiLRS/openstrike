@@ -346,7 +346,7 @@ func process_host_fire(origin: Vector3, direction: Vector3, weapon_id_value: Str
             events.emit_hit("player", str(target.peer_id), weapon_id_value, damage, target.global_position, true)
         if was_alive and target.dead:
             if events != null:
-                            events.emit_elimination("player", str(target.peer_id), weapon_id_value, true)
+                events.emit_elimination("player", str(target.peer_id), weapon_id_value, true)
         return true
 
     var target_team := str(best_target.get("team"))
