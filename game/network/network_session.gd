@@ -688,7 +688,6 @@ func _apply_remote_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if player == null:
 		return
 	player.apply_snapshot(snapshot)
-	_apply_bot_snapshots(snapshot.bot_states)
 
 func _refresh_network_bot_cache() -> void:
 	var root := _root()
