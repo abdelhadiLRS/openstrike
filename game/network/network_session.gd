@@ -272,18 +272,16 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 		if events != null:
 			events.emit_hit(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, damage, target.global_position, true)
 		if was_alive and target.dead:
-			shooter.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, shooter.credits + KILL_REWARD)
 			if events != null:
-				events.emit_elimination(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, true)
+							events.emit_elimination(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, true)
 	elif root.has_method("apply_authoritative_network_damage") and best_target == root.get("player"):
 		var was_alive := not bool(root.get("dead"))
 		if root.apply_authoritative_network_damage(damage):
 			if events != null:
 				events.emit_hit(str(shooter.peer_id), "host", shooter.weapon_id, damage, root.get("player").global_position, true)
 			if was_alive and bool(root.get("dead")):
-				shooter.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, shooter.credits + KILL_REWARD)
 				if events != null:
-					events.emit_elimination(str(shooter.peer_id), "host", shooter.weapon_id, true)
+									events.emit_elimination(str(shooter.peer_id), "host", shooter.weapon_id, true)
 	elif best_target.has_method("take_damage") and target_team != "BLUE":
 		best_target.take_damage(damage)
 		if events != null:
@@ -347,9 +345,8 @@ func process_host_fire(origin: Vector3, direction: Vector3, weapon_id_value: Str
         if events != null:
             events.emit_hit("player", str(target.peer_id), weapon_id_value, damage, target.global_position, true)
         if was_alive and target.dead:
-            root.set("credits", mini(16000, int(root.get("credits")) + KILL_REWARD))
             if events != null:
-                events.emit_elimination("player", str(target.peer_id), weapon_id_value, true)
+                            events.emit_elimination("player", str(target.peer_id), weapon_id_value, true)
         return true
 
     var target_team := str(best_target.get("team"))
