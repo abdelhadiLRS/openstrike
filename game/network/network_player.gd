@@ -11,6 +11,7 @@ const MAX_CREDITS := 16000
 const RESPAWN_DELAY := 2.0
 
 var peer_id: int = 0
+var team: String = "BLUE"
 var health: int = 100
 var dead: bool = false
 var crouched: bool = false
@@ -32,6 +33,7 @@ var mesh: MeshInstance3D
 
 func setup(id: int, start_position: Vector3, catalog: Array = []) -> void:
 	peer_id = id
+	team = "BLUE"
 	global_position = start_position
 	yaw = rotation.y
 	_initialize_weapon_states(catalog)
