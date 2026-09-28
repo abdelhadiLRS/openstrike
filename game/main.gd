@@ -71,6 +71,7 @@ var prediction_replay_position := Vector3.ZERO
 var prediction_replay_velocity := Vector3.ZERO
 var prediction_replay_yaw := 0.0
 var prediction_replay_pitch := 0.0
+var prediction_replay_tick := 0
 var prediction_replay_commands: Array[OpenStrikeInputCommand] = []
 
 var weapon_index := 0
@@ -411,6 +412,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         prediction_replay_velocity = snapshot.velocity
         prediction_replay_yaw = snapshot.yaw
         prediction_replay_pitch = snapshot.pitch
+        prediction_replay_tick = snapshot.tick
         prediction_replay_commands = prediction.buffer.pending_commands_snapshot()
         pending_prediction_replay = not prediction_replay_commands.is_empty()
         if pending_prediction_replay:
@@ -437,16 +439,19 @@ func _replay_pending_prediction(delta: float) -> void:
     for command in prediction_replay_commands:
         if command == null:
             continue
+        var tick_delta := maxi(1, command.tick - prediction_replay_tick)
+        var replay_delta := delta * minf(float(tick_delta), 4.0)
+        prediction_replay_tick = command.tick
         player.rotate_y(-command.look_delta.x * SENS)
         pitch = clamp(pitch - command.look_delta.y * SENS, -1.45, 1.45)
 
         var direction := (player.transform.basis * Vector3(command.move.x, 0.0, command.move.y)).normalized()
         var move_speed := 3.4 if command.crouch else 5.6
-        player.velocity.x = move_toward(player.velocity.x, direction.x * move_speed, 25.0 * delta)
-        player.velocity.z = move_toward(player.velocity.z, direction.z * move_speed, 25.0 * delta)
+        player.velocity.x = move_toward(player.velocity.x, direction.x * move_speed, 25.0 * replay_delta)
+        player.velocity.z = move_toward(player.velocity.z, direction.z * move_speed, 25.0 * replay_delta)
 
         if not player.is_on_floor():
-            player.velocity.y -= GRAVITY * delta
+            player.velocity.y -= GRAVITY * replay_delta
         elif command.jump and not command.crouch:
             player.velocity.y = 5.0
 
@@ -455,6 +460,7 @@ func _replay_pending_prediction(delta: float) -> void:
         player.move_and_slide()
 
     pending_prediction_replay = false
+    prediction_replay_tick = 0
     prediction_replay_commands.clear()
 
 
