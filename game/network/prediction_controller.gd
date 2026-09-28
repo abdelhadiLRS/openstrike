@@ -7,7 +7,7 @@ var buffer := OpenStrikePredictionBuffer.new()
 var next_sequence: int = 0
 var last_acknowledged_sequence: int = 0
 
-func build_command(tick: int, move: Vector2, look_delta: Vector2, fire: bool, reload: bool, crouch: bool, jump: bool) -> OpenStrikeInputCommand:
+func build_command(tick: int, move: Vector2, look_delta: Vector2, fire: bool, reload: bool, crouch: bool, jump: bool, weapon_id: String = "px_9") -> OpenStrikeInputCommand:
 	next_sequence += 1
 	var command := OpenStrikeInputCommand.new()
 	command.sequence = next_sequence
