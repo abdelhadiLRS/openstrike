@@ -8,7 +8,12 @@ signal connected
 signal disconnected
 signal connection_failed
 signal input_received(command: OpenStrikeInputCommand)
+signal peer_input_received(peer_id: int, command: OpenStrikeInputCommand)
 signal snapshot_received(snapshot: OpenStrikeSnapshot)
+
+var server_input_buffer := OpenStrikeServerInputBuffer.new()
+var server_tick := 0
+
 
 const DEFAULT_PORT := 27015
 const MAX_CLIENTS := 16
@@ -59,6 +64,9 @@ func shutdown() -> void:
 	is_server = false
 	disconnected.emit()
 
+func set_server_tick(tick: int) -> void:
+	server_tick = maxi(0, tick)
+
 func send_input(command: OpenStrikeInputCommand) -> void:
 	if not is_online or is_server:
 		return
@@ -94,6 +102,8 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 	snapshot_received.emit(snapshot)
 
 func _shutdown_peer() -> void:
+\tserver_input_buffer.clear()
+
 	if peer != null:
 		peer.close()
 	peer = null
