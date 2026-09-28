@@ -18,6 +18,7 @@ func build_command(tick: int, move: Vector2, look_delta: Vector2, fire: bool, re
 	command.reload = reload
 	command.crouch = crouch
 	command.jump = jump
+	command.weapon_id = weapon_id
 	return command
 
 func record_predicted(command: OpenStrikeInputCommand, position: Vector3, velocity: Vector3, yaw: float, pitch: float) -> void:
