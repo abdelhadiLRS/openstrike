@@ -808,6 +808,10 @@ func _valid_bot_roster_payload(snapshot: OpenStrikeSnapshot) -> bool:
 			return false
 		if not state_value.has("assignment") or not state_value.assignment is String:
 			return false
+		# Keep replicated bot metadata bounded just like player snapshot strings.
+		# These fields are labels/state identifiers, never free-form text.
+		if state_value.state.length() > 64 or state_value.assignment.length() > 64:
+			return false
 		var bot_id: int = state_value.id
 		if bot_id <= 0 or bot_id > snapshot.bot_count or seen_ids.has(bot_id):
 			return false
