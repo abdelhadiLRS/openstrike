@@ -1,10 +1,13 @@
 class_name OpenStrikeLagCompensation
 extends RefCounted
 
-static func rewind_position(history: OpenStrikeSnapshotHistory, requested_tick: int) -> Vector3:
+static func rewind_snapshot(history: OpenStrikeSnapshotHistory, requested_tick: int) -> OpenStrikeSnapshotHistory.Snapshot:
 	if history == null:
-		return Vector3.ZERO
-	var snapshot := history.at_or_before(requested_tick)
+		return null
+	return history.at_or_before(requested_tick)
+
+static func rewind_position(history: OpenStrikeSnapshotHistory, requested_tick: int) -> Vector3:
+	var snapshot := rewind_snapshot(history, requested_tick)
 	if snapshot == null:
 		return Vector3.ZERO
 	return snapshot.position
