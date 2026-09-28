@@ -95,6 +95,8 @@ func _sync_active_weapon() -> void:
 
 func begin_round(start_position: Vector3) -> void:
 	global_position = start_position
+	snapshot_target_position = start_position
+	has_snapshot_target = false
 	velocity = Vector3.ZERO
 	health = 100
 	dead = false
@@ -112,6 +114,8 @@ func begin_round(start_position: Vector3) -> void:
 
 func begin_respawn(start_position: Vector3) -> void:
 	global_position = start_position
+	snapshot_target_position = start_position
+	has_snapshot_target = false
 	velocity = Vector3.ZERO
 	health = 100
 	dead = false
@@ -231,34 +235,19 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if snapshot == null:
 		return
 	var snap_distance := global_position.distance_to(snapshot.position)
-	if not has_snapshot_target or snap_distance > 3.0:
+	var hard_snap := not has_snapshot_target or snap_distance > 3.0 or snapshot.dead
+	if hard_snap:
 		global_position = snapshot.position
 		rotation.y = snapshot.yaw
 		pitch = snapshot.pitch
-	has_snapshot_target = true
 	snapshot_target_position = snapshot.position
 	snapshot_target_yaw = snapshot.yaw
 	snapshot_target_pitch = snapshot.pitch
+	has_snapshot_target = true
 	velocity = snapshot.velocity
-	yaw = snapshot.yaw
-	pitch = snapshot.pitch
-	rotation.y = snapshot.yaw
-	health = snapshot.health
-	dead = snapshot.dead
-	crouched = snapshot.crouched
-	last_processed_sequence = snapshot.acknowledged_input_sequence
-	for weapon_value in weapon_states.keys():
-		var state = weapon_states.get(weapon_value)
-		if state is OpenStrikeWeaponRuntimeState:
-			state.owned = snapshot.owned_weapons.has(str(weapon_value))
-	if snapshot.weapon_id != "":
-		_select_weapon(snapshot.weapon_id)
-	var state := _weapon_state()
-	if state != null:
-		state.set_loaded_state(snapshot.ammo, snapshot.reserve)
-	_sync_active_weapon()
-	_update_collider()
-
+	if hard_snap:
+		yaw = snapshot.yaw
+		pitch = snapshot.pitch
 func make_snapshot(tick: int, round_state: String, round_number: int, objective_state: String, planted_site: String, bomb_time_left: float, carrier_peer_id_value: int = 0, dropped_bomb_position_value: Vector3 = Vector3.ZERO, round_won_value: bool = false, round_outcome_reason_value: String = "", objective_action_value: String = "", objective_action_peer_id_value: int = -1, objective_action_time_left_value: float = 0.0) -> OpenStrikeSnapshot:
 	_sync_active_weapon()
 	var snapshot := OpenStrikeSnapshot.new()
