@@ -261,7 +261,8 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 	var target_team := str(best_target.get("team"))
 	if best_target is OpenStrikeNetworkPlayer:
 		best_target.health = maxi(0, best_target.health - damage)
-		best_target.dead = best_target.health <= 0
+		if best_target.health <= 0:
+			best_target.mark_eliminated()
 		if events != null:
 			events.emit_hit(str(shooter.peer_id), str(best_target.peer_id), shooter.weapon_id, damage, best_target.global_position, true)
 		if best_target.dead:
@@ -274,7 +275,12 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 			events.emit_hit(str(shooter.peer_id), str(best_target.get_instance_id()), shooter.weapon_id, damage, best_target.global_position, true)
 
 func _snapshot_server_players(delta: float) -> void:
+	var root := _root()
+	var current_round_state := str(root.get("round_state")) if root != null else "BUY"
 	for peer_id in network_players.keys():
+		var respawn_player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
+		if is_instance_valid(respawn_player):
+			respawn_player.tick_respawn(delta, current_round_state, _spawn_position_for_peer(int(peer_id)))
 		var player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
 		if is_instance_valid(player):
 			player.record_snapshot(server_tick)
