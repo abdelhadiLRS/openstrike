@@ -80,6 +80,7 @@ var active_defuser: Node = null
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
 var cover_points: Array[Dictionary] = []
+var bomb_cover_anchors: Array[Dictionary] = []
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -738,22 +739,27 @@ func _has_obstacle_between(from: Vector3, to: Vector3) -> bool:
 func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bot: Node) -> Vector3:
     var best := Vector3.ZERO
     var best_score := INF
+    var candidates: Array = []
+
+    for data in bomb_cover_anchors:
+        if str(data["site"]) == str(planted_site):
+            candidates.append(data)
 
     for data in cover_points:
+        candidates.append({"site": "", "cover": data["cover"], "peek": data["peek"]})
+
+    for data in candidates:
         var cover_position: Vector3 = data["cover"]
         var peek_position: Vector3 = data["peek"]
         var site_distance := cover_position.distance_to(site_position)
         if site_distance > 10.0:
             continue
-
         var player_distance := cover_position.distance_to(player_position)
         if player_distance < 6.0:
             continue
-
-        if _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
-            if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
-                continue
-        else:
+        if not _has_obstacle_between(player_position + Vector3(0, 1.0, 0), cover_position):
+            continue
+        if _has_obstacle_between(peek_position, player_position + Vector3(0, 1.0, 0)):
             continue
 
         var occupied := false
@@ -770,7 +776,8 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
             continue
 
         var bot_distance := bot.global_position.distance_to(cover_position)
-        var score := site_distance * 1.15 + absf(player_distance - 14.0) * 0.22 + bot_distance * 0.18
+        var anchor_bonus := -1.0 if str(data["site"]) == str(planted_site) else 0.0
+        var score := site_distance * 1.15 + absf(player_distance - 14.0) * 0.22 + bot_distance * 0.18 + anchor_bonus
         if score < best_score:
             best_score = score
             best = cover_position
@@ -808,6 +815,12 @@ func _setup_cover_points() -> void:
         {"cover": Vector3(4.0, 1.0, -3.0), "peek": Vector3(5.8, 1.0, -1.7)},
         {"cover": Vector3(-5.0, 1.0, 6.0), "peek": Vector3(-3.2, 1.0, 7.4)},
         {"cover": Vector3(8.0, 1.0, 8.0), "peek": Vector3(9.8, 1.0, 9.2)}
+    ]
+    bomb_cover_anchors = [
+        {"site": "A", "cover": Vector3(-9.0, 1.0, -5.0), "peek": Vector3(-7.2, 1.0, -3.6)},
+        {"site": "A", "cover": Vector3(-5.0, 1.0, 6.0), "peek": Vector3(-3.2, 1.0, 7.4)},
+        {"site": "B", "cover": Vector3(4.0, 1.0, -3.0), "peek": Vector3(5.8, 1.0, -1.7)},
+        {"site": "B", "cover": Vector3(8.0, 1.0, 8.0), "peek": Vector3(9.8, 1.0, 9.2)}
     ]
 
 func _spawn_bots() -> void:
