@@ -807,6 +807,16 @@ func _move_toward_goal(delta: float) -> void:
             velocity.z = move_toward(velocity.z, strafe.z * 1.5, 10.0 * delta)
             look_at(global_position + Vector3(to_target.x, 0.0, to_target.z), Vector3.UP)
             return
+        if not attack_has_los and close_retreat_route_active:
+            # A lost line of sight ends the close-range retreat. Discard its
+            # short route so pursuit can resume toward the squad's tactical
+            # target instead of following an obsolete retreat waypoint.
+            close_retreat_route_active = false
+            route.clear()
+            route_index = 0
+            route_goal = Vector3.ZERO
+            route_failed_goal = Vector3.ZERO
+            route_replan_timer = 0.0
         if attack_has_los and distance < MIN_COMBAT_RANGE:
             var away := (global_position - target.global_position).normalized()
             var retreat_goal := global_position + away * 5.0
