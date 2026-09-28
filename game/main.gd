@@ -20,6 +20,7 @@ const PLANT_TIME := 2.5
 const DEFUSE_TIME := 4.0
 const BOMB_TIME := 30.0
 const BOMB_SITE_RADIUS := 2.8
+const BOMB_PICKUP_RADIUS := 1.6
 
 const BOMB_SITE_A := Vector3(-10, 0.15, -7)
 const BOMB_SITE_B := Vector3(10, 0.15, 7)
@@ -206,7 +207,7 @@ func _begin_objective_action() -> void:
             objective_action = "PLANT"
             objective_action_time_left = PLANT_TIME
     elif objective_state == "DROPPED":
-        if player.global_position.distance_to(dropped_bomb_position) <= BOMB_SITE_RADIUS:
+        if player.global_position.distance_to(dropped_bomb_position) <= BOMB_PICKUP_RADIUS:
             objective_state = "CARRIED"
             objective_site = ""
             dropped_bomb_position = Vector3.ZERO
