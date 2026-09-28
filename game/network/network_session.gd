@@ -105,7 +105,7 @@ func _spawn_network_player(peer_id: int) -> OpenStrikeNetworkPlayer:
 	var spawn := Vector3.ZERO
 	if not spawn_points.is_empty():
 		spawn = spawn_points[(peer_id - 1) % spawn_points.size()]
-	player.setup(peer_id, spawn)
+	player.setup(peer_id, spawn, root.get("weapons") if root.get("weapons") is Array else [])
 	root.add_child(player)
 	network_players[peer_id] = player
 	return player
@@ -124,12 +124,10 @@ func _process_server_input(peer_id: int, delta: float) -> void:
 	if command == null:
 		return
 	var root := _root()
-	if root != null and str(root.get("round_state")) != "LIVE":
-		player.last_processed_sequence = maxi(player.last_processed_sequence, command.sequence)
-		return
-	player.apply_input(command, delta)
+	var round_state := str(root.get("round_state")) if root != null else "BUY"
+	player.apply_input(command, delta, round_state)
 	player.record_snapshot(server_tick)
-	if command.fire:
+	if command.fire and round_state == "LIVE":
 		_process_server_fire(player, command)
 
 func _weapon_definition(weapon_id: String) -> Dictionary:
@@ -157,20 +155,17 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 	var root := _root()
 	if root == null or str(root.get("round_state")) != "LIVE":
 		return
-	var weapon := _weapon_definition(command.weapon_id)
+	var weapon := _weapon_definition(shooter.weapon_id)
 	if weapon.is_empty():
-		return
-	if shooter.weapon_id != command.weapon_id:
-		shooter.weapon_id = command.weapon_id
-	if shooter.fire_cooldown > 0.0 or shooter.ammo <= 0:
 		return
 	var delay := float(weapon.get("delay", 0.1))
 	var damage := int(weapon.get("damage", 0))
 	if delay <= 0.0 or damage <= 0:
 		return
-
-	shooter.fire_cooldown = delay
-	shooter.ammo -= 1
+	if not shooter.can_fire():
+		return
+	if not shooter.consume_shot(delay):
+		return
 	var origin := shooter.global_position + Vector3(0, 0.55, 0)
 	var yaw_basis := Basis(Vector3.UP, shooter.yaw)
 	var direction := (yaw_basis * Vector3(0, 0, -1)).normalized()
@@ -204,7 +199,7 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 
 	var events: OpenStrikeCombatEvents = root.get("combat_events")
 	if events != null:
-		events.emit_shot(str(shooter.peer_id), command.weapon_id, shooter.ammo, shooter.reserve)
+		events.emit_shot(str(shooter.peer_id), shooter.weapon_id, shooter.ammo, shooter.reserve)
 
 	if best_target == null:
 		return
@@ -213,13 +208,13 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 		best_target.health = maxi(0, best_target.health - damage)
 		best_target.dead = best_target.health <= 0
 		if events != null:
-			events.emit_hit(str(shooter.peer_id), str(best_target.peer_id), command.weapon_id, damage, best_target.global_position, true)
+			events.emit_hit(str(shooter.peer_id), str(best_target.peer_id), shooter.weapon_id, damage, best_target.global_position, true)
 			if best_target.dead:
-				events.emit_elimination(str(shooter.peer_id), str(best_target.peer_id), command.weapon_id, true)
+				events.emit_elimination(str(shooter.peer_id), str(best_target.peer_id), shooter.weapon_id, true)
 	elif best_target.has_method("take_damage") and target_team != "BLUE":
 		best_target.take_damage(damage)
 		if events != null:
-			events.emit_hit(str(shooter.peer_id), str(best_target.get_instance_id()), command.weapon_id, damage, best_target.global_position, true)
+			events.emit_hit(str(shooter.peer_id), str(best_target.get_instance_id()), shooter.weapon_id, damage, best_target.global_position, true)
 
 func _snapshot_server_players(delta: float) -> void:
 	for peer_id in network_players.keys():
