@@ -404,13 +404,23 @@ func _update_goal() -> void:
         var planted_site := str(main.get("planted_site"))
         var defense_revision := int(main.get("bomb_defense_revision"))
         var site_position: Vector3 = main.get("bomb_site_a") if planted_site == "A" else main.get("bomb_site_b")
-        if bomb_cover_site != planted_site or bomb_cover_goal == Vector3.ZERO or bomb_cover_revision != defense_revision:
+        var keep_bomb_cover := bomb_cover_goal != Vector3.ZERO
+        keep_bomb_cover = keep_bomb_cover and bomb_cover_site == planted_site
+        keep_bomb_cover = keep_bomb_cover and bomb_cover_revision == defense_revision
+        keep_bomb_cover = keep_bomb_cover and global_position.distance_to(bomb_cover_goal) <= 18.0
+        keep_bomb_cover = keep_bomb_cover and bomb_cover_goal.distance_to(site_position) <= 10.0
+        keep_bomb_cover = keep_bomb_cover and bomb_cover_goal.distance_to(target.global_position) >= 6.0
+        keep_bomb_cover = keep_bomb_cover and main.call("_bot_has_navigation_path", self, bomb_cover_goal)
+        keep_bomb_cover = keep_bomb_cover and main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), bomb_cover_goal)
+        if not keep_bomb_cover:
             var selected_cover = main.call("_select_bot_bomb_cover", site_position, target.global_position, self)
             bomb_cover_goal = selected_cover if selected_cover is Vector3 else Vector3.ZERO
             bomb_cover_site = planted_site
             bomb_cover_revision = defense_revision
             route.clear()
             route_index = 0
+            route_goal = Vector3.ZERO
+            route_replan_timer = 0.0
         current_goal = bomb_cover_goal if bomb_cover_goal != Vector3.ZERO else site_position
         if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
             route.clear()
