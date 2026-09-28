@@ -36,6 +36,13 @@ func acknowledge(sequence: int) -> void:
 func pending_count() -> int:
 	return pending_commands.size()
 
+func pending_commands_snapshot() -> Array[OpenStrikeInputCommand]:
+	var commands: Array[OpenStrikeInputCommand] = []
+	for command in pending_commands:
+		if command != null:
+			commands.append(command)
+	return commands
+
 func clear() -> void:
 	pending_commands.clear()
 	predicted_states.clear()
