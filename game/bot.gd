@@ -955,6 +955,11 @@ func _has_line_of_sight() -> bool:
 func _fire() -> void:
     if not is_instance_valid(target):
         return
+    var network_session = main.get("network_session") if main != null else null
+    if network_session != null and network_session.is_online and not network_session.is_server:
+        # Clients may animate/predict bot intent, but only the server may
+        # apply authoritative bot damage to the player.
+        return
     var distance_to_target := global_position.distance_to(target.global_position)
     if distance_to_target > FIRE_RANGE:
         burst_remaining = 0
