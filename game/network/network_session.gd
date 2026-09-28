@@ -614,6 +614,9 @@ func _notify_input_rejected(payload: Dictionary) -> void:
 func _broadcast_snapshot(payload: Dictionary) -> void:
 	if is_server:
 		return
+	if not _valid_snapshot_wire_types(payload):
+		_record_malformed_wire_snapshot()
+		return
 	var snapshot := OpenStrikeSnapshot.from_dict(payload)
 	if not _accept_snapshot(snapshot):
 		_record_snapshot_rejection(snapshot)
@@ -625,6 +628,43 @@ func _broadcast_snapshot(payload: Dictionary) -> void:
 		snapshot_received.emit(snapshot)
 	else:
 		_apply_remote_snapshot(snapshot)
+
+func _valid_snapshot_wire_types(payload: Dictionary) -> bool:
+	# Validate the raw Variant types before from_dict() performs coercions.
+	# Otherwise strings/numbers could be silently converted into trusted state.
+	var integer_fields := ["schema", "tick", "peer_id", "ack", "health", "round_number", "objective_action_peer_id", "carrier_peer_id", "ammo", "reserve", "credits", "bot_count"]
+	for field in integer_fields:
+		if not payload.has(field) or not payload[field] is int:
+			return false
+	var numeric_fields := ["yaw", "pitch", "objective_action_time_left", "bomb_time_left"]
+	for field in numeric_fields:
+		if not payload.has(field) or not (payload[field] is int or payload[field] is float):
+			return false
+	var vector_fields := ["position", "velocity", "dropped_bomb_position"]
+	for field in vector_fields:
+		if not payload.has(field) or not payload[field] is Vector3:
+			return false
+	var boolean_fields := ["dead", "crouched", "round_won"]
+	for field in boolean_fields:
+		if not payload.has(field) or not payload[field] is bool:
+			return false
+	var string_fields := ["round_state", "round_outcome_reason", "objective_state", "objective_action", "planted_site", "weapon_id"]
+	for field in string_fields:
+		if not payload.has(field) or not payload[field] is String:
+			return false
+	if not payload.has("owned_weapons") or not payload.owned_weapons is Array:
+		return false
+	if not payload.has("bot_states") or not payload.bot_states is Array:
+		return false
+	return true
+
+func _record_malformed_wire_snapshot() -> void:
+	var root := _root()
+	if root == null:
+		return
+	var diagnostics = root.get("network_diagnostics")
+	if diagnostics != null and diagnostics.has_method("record_rejected_snapshot"):
+		diagnostics.record_rejected_snapshot(false)
 
 func _record_snapshot_rejection(snapshot: OpenStrikeSnapshot) -> void:
 	var root := _root()
