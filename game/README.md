@@ -136,3 +136,11 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Near-but-not-identical positions receive a softer separation penalty instead of being discarded immediately, preserving fallback options when the map is constrained.
 - Attack-angle scoring now favors lateral separation around the player so bots are less likely to stack behind the same peek point.
 - Existing adaptive route replanning continues to rebuild the route when the selected combat position changes.
+
+### Dynamic combat assignment
+- Active RED bots now receive a tactical combat assignment independently from their geometric left/center/right slot.
+- One bot is selected as **PRESSURE** using current distance, health, and center-slot proximity; this bot is the primary aggressor when it has a viable engagement.
+- A second bot becomes **SUPPORT**, with lower-health units naturally tending toward this assignment instead of being forced into the first push.
+- The remaining bot becomes **FLANK**, using wider engagement conditions so pressure can come from a different angle rather than all bots chasing the same line.
+- Assignments refresh on a throttled interval and integrate with the existing combat-intent, repositioning, cover, and dynamic slot systems.
+- With one or two surviving bots, the assignment set degrades cleanly without requiring a full squad.
