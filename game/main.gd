@@ -364,6 +364,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     bomb_carrier_peer_id = snapshot.carrier_peer_id
     dropped_bomb_position = snapshot.dropped_bomb_position
     objective_action = snapshot.objective_action
+    objective_action_peer_id = snapshot.objective_action_peer_id
     objective_action_time_left = snapshot.objective_action_time_left
     credits = clampi(snapshot.credits, 0, MAX_CREDITS)
     primary_owned = snapshot.owned_weapons.has("ar_17")
