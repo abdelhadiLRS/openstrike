@@ -515,6 +515,8 @@ func _update_goal() -> void:
         var flank_revision := maxi(combat_director_revision, squad_threat_revision)
         if flank_goal_revision != flank_revision or current_goal == Vector3.ZERO:
             var flank_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
+            if flank_target == Vector3.ZERO:
+                flank_target = target.global_position
             var flank_position = main.call("_select_bot_attack_position", self, flank_target, combat_slot)
             if flank_position is Vector3 and flank_position != Vector3.ZERO:
                 current_goal = flank_position
