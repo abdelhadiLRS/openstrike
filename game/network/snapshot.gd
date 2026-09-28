@@ -20,6 +20,7 @@ var bomb_time_left: float = 0.0
 var weapon_id: String = ""
 var ammo: int = 0
 var reserve: int = 0
+var credits: int = 1200
 
 func to_dict() -> Dictionary:
 	return {
@@ -39,7 +40,8 @@ func to_dict() -> Dictionary:
 		"bomb_time_left": bomb_time_left,
 		"weapon_id": weapon_id,
 		"ammo": ammo,
-		"reserve": reserve
+		"reserve": reserve,
+		"credits": credits
 	}
 
 static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
@@ -61,4 +63,5 @@ static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	snapshot.weapon_id = str(data.get("weapon_id", ""))
 	snapshot.ammo = int(data.get("ammo", 0))
 	snapshot.reserve = int(data.get("reserve", 0))
+	snapshot.credits = int(data.get("credits", 1200))
 	return snapshot
