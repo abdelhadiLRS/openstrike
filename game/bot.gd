@@ -219,8 +219,14 @@ func _update_state() -> void:
             state = "BOMB_COVER"
         return
     if objective_state == "DROPPED":
-        combat_intent = "HOLD"
-        state = "DEFEND"
+        # The RED team cannot recover the BLUE bomb. The assigned objective
+        # defender instead denies the pickup while the remaining bots keep
+        # their normal defensive/combat responsibilities.
+        if combat_assignment == "SUPPORT":
+            combat_intent = "HOLD"
+            state = "BOMB_COVER"
+        else:
+            state = "DEFEND"
         return
 
     var squad_contact_active := bool(main.call("_is_squad_contact_active"))
@@ -424,6 +430,30 @@ func _decide_combat_intent() -> void:
 func _update_goal() -> void:
     var objective_state := str(main.get("objective_state"))
 
+    if state == "BOMB_COVER" and objective_state == "DROPPED":
+        var dropped_position: Vector3 = main.get("dropped_bomb_position")
+        if dropped_position == Vector3.ZERO:
+            current_goal = Vector3.ZERO
+            route.clear()
+            route_index = 0
+            return
+        var keep_dropped_guard := current_goal != Vector3.ZERO
+        keep_dropped_guard = keep_dropped_guard and current_goal.distance_to(dropped_position) <= 8.0
+        keep_dropped_guard = keep_dropped_guard and global_position.distance_to(current_goal) <= 18.0
+        keep_dropped_guard = keep_dropped_guard and main.call("_bot_has_navigation_path", self, current_goal)
+        if not keep_dropped_guard:
+            current_goal = dropped_position
+            route.clear()
+            route_index = 0
+            route_goal = Vector3.ZERO
+            route_failed_goal = Vector3.ZERO
+            route_replan_timer = 0.0
+        if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
+            route.clear()
+            route_index = 0
+            return
+        _ensure_route(current_goal)
+        return
     if state == "BOMB_COVER" and objective_state == "PLANTED":
         var planted_site := str(main.get("planted_site"))
         var defense_revision := int(main.get("bomb_defense_revision"))
