@@ -746,7 +746,12 @@ func _move_toward_goal(delta: float) -> void:
     if state == "ATTACK":
         var distance := global_position.distance_to(target.global_position)
         if distance <= OPTIMAL_RANGE and distance >= MIN_COMBAT_RANGE:
-            close_retreat_route_active = false
+            if close_retreat_route_active:
+                route.clear()
+                route_index = 0
+                route_goal = Vector3.ZERO
+                route_replan_timer = 0.0
+                close_retreat_route_active = false
             var to_target := (target.global_position - global_position).normalized()
             var strafe := Vector3(-to_target.z, 0.0, to_target.x) * strafe_sign
             velocity.x = move_toward(velocity.x, strafe.x * 1.5, 10.0 * delta)
