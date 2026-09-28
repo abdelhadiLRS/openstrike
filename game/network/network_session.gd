@@ -260,15 +260,19 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 		return
 	var target_team := str(best_target.get("team"))
 	if best_target is OpenStrikeNetworkPlayer:
-		best_target.health = maxi(0, best_target.health - damage)
-		if best_target.health <= 0:
-			best_target.mark_eliminated()
+		var target: OpenStrikeNetworkPlayer = best_target
+		if target.dead or target.team == shooter.team:
+			return
+		var was_alive := not target.dead
+		target.health = maxi(0, target.health - damage)
+		if target.health <= 0:
+			target.mark_eliminated()
 		if events != null:
-			events.emit_hit(str(shooter.peer_id), str(best_target.peer_id), shooter.weapon_id, damage, best_target.global_position, true)
-		if best_target.dead:
+			events.emit_hit(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, damage, target.global_position, true)
+		if was_alive and target.dead:
 			shooter.credits = mini(OpenStrikeNetworkPlayer.MAX_CREDITS, shooter.credits + KILL_REWARD)
 			if events != null:
-				events.emit_elimination(str(shooter.peer_id), str(best_target.peer_id), shooter.weapon_id, true)
+				events.emit_elimination(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, true)
 	elif root.has_method("apply_authoritative_network_damage") and best_target == root.get("player"):
 		var was_alive := not bool(root.get("dead"))
 		if root.apply_authoritative_network_damage(damage):
