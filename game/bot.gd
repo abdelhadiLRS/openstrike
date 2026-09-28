@@ -26,6 +26,8 @@ const PUSH_DISTANCE := 11.0
 const HOLD_DISTANCE := 20.0
 const RETREAT_HEALTH_THRESHOLD := 35
 const PUSH_HEALTH_THRESHOLD := 70
+const RECENT_HIT_REACTION_TIME := 1.2
+const COMBAT_REPOSITION_INTERVAL := 3.5
 
 var team := "RED"
 var max_health := 100
@@ -52,6 +54,8 @@ var peek_timer := 0.0
 var peek_hold_timer := 0.0
 var combat_intent := "HOLD"
 var combat_decision_timer := 0.0
+var recently_hit_timer := 0.0
+var combat_reposition_timer := 0.0
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -68,6 +72,8 @@ func _physics_process(delta: float) -> void:
     peek_timer = maxf(0.0, peek_timer - delta)
     peek_hold_timer = maxf(0.0, peek_hold_timer - delta)
     combat_decision_timer = maxf(0.0, combat_decision_timer - delta)
+    recently_hit_timer = maxf(0.0, recently_hit_timer - delta)
+    combat_reposition_timer = maxf(0.0, combat_reposition_timer - delta)
     burst_pause = maxf(0.0, burst_pause - delta)
     strafe_time = maxf(0.0, strafe_time - delta)
     if strafe_time <= 0.0:
@@ -148,6 +154,10 @@ func _decide_combat_intent() -> void:
         combat_intent = "RETREAT"
         return
 
+    if recently_hit_timer > 0.0 and health <= 60:
+        combat_intent = "RETREAT"
+        return
+
     if distance > DETECTION_RANGE:
         combat_intent = "HOLD"
         return
@@ -203,6 +213,13 @@ func _update_goal() -> void:
         return
 
     if state == "COVER" or state == "PEEK":
+        if combat_intent == "RETREAT":
+            var retreat_cover = main.call("_select_bot_combat_cover", self, target.global_position, 12.0)
+            if retreat_cover is Vector3 and retreat_cover != Vector3.ZERO:
+                current_goal = retreat_cover
+                cover_index = -1
+                _ensure_route(current_goal)
+                return
         _select_cover_point()
         if cover_index >= 0:
             var cover_data: Dictionary = main.get("cover_points")[cover_index]
@@ -311,6 +328,8 @@ func _move_toward_goal(delta: float) -> void:
             var look_direction := (target.global_position - global_position).normalized()
             look_at(global_position + Vector3(look_direction.x, 0.0, look_direction.z), Vector3.UP)
             if state == "COVER":
+                if combat_intent == "RETREAT":
+                    return
                 peek_timer = PEEK_TIME
                 peek_hold_timer = PEEK_HOLD
                 state = "PEEK"
@@ -382,6 +401,10 @@ func take_damage(amount: int) -> void:
     if dead:
         return
     health = maxi(0, health - amount)
+    recently_hit_timer = RECENT_HIT_REACTION_TIME
+    combat_reposition_timer = 0.0
+    route.clear()
+    route_index = 0
     if health == 0:
         _die()
 
@@ -405,6 +428,8 @@ func reset_target() -> void:
     peek_hold_timer = 0.0
     combat_intent = "HOLD"
     combat_decision_timer = 0.0
+    recently_hit_timer = 0.0
+    combat_reposition_timer = 0.0
     fire_cooldown = 0.0
     burst_remaining = 0
     burst_pause = 0.0
