@@ -786,6 +786,8 @@ func _move_toward_goal(delta: float) -> void:
             destination = retreat_cover_goal
         else:
             if cover_index < 0:
+                velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+                velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
                 return
             var cover_data: Dictionary = main.get("cover_points")[cover_index]
             destination = cover_data["cover"] if state == "COVER" else cover_data["peek"]
