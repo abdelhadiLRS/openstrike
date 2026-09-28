@@ -21,6 +21,7 @@ var weapon_id: String = ""
 var ammo: int = 0
 var reserve: int = 0
 var credits: int = 1200
+var owned_weapons: Array[String] = []
 
 func to_dict() -> Dictionary:
 	return {
@@ -41,7 +42,8 @@ func to_dict() -> Dictionary:
 		"weapon_id": weapon_id,
 		"ammo": ammo,
 		"reserve": reserve,
-		"credits": credits
+		"credits": credits,
+		"owned_weapons": owned_weapons
 	}
 
 static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
@@ -64,4 +66,10 @@ static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	snapshot.ammo = int(data.get("ammo", 0))
 	snapshot.reserve = int(data.get("reserve", 0))
 	snapshot.credits = int(data.get("credits", 1200))
+	var owned_value = data.get("owned_weapons", [])
+	if owned_value is Array:
+		for weapon_value in owned_value:
+			var weapon_name := str(weapon_value)
+			if not weapon_name.is_empty() and not snapshot.owned_weapons.has(weapon_name):
+				snapshot.owned_weapons.append(weapon_name)
 	return snapshot
