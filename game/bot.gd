@@ -610,6 +610,7 @@ func _update_goal() -> void:
                 route.clear()
                 route_index = 0
                 route_goal = Vector3.ZERO
+                route_failed_goal = Vector3.ZERO
                 route_replan_timer = 0.0
             var cover_data: Dictionary = main.get("cover_points")[cover_index]
             current_goal = cover_data["cover"] if state == "COVER" else cover_data["peek"]
