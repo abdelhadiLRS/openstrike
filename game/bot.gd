@@ -42,6 +42,7 @@ var last_state := "DEFEND"
 var cover_index := -1
 var bomb_cover_goal := Vector3.ZERO
 var bomb_cover_site := ""
+var bomb_cover_revision := -1
 var peek_timer := 0.0
 var peek_hold_timer := 0.0
 var collision_shape: CollisionShape3D
@@ -75,6 +76,7 @@ func _physics_process(delta: float) -> void:
         if state != "BOMB_COVER":
             bomb_cover_goal = Vector3.ZERO
             bomb_cover_site = ""
+            bomb_cover_revision = -1
         last_state = state
     _update_goal()
     _move_toward_goal(delta)
@@ -124,11 +126,13 @@ func _update_goal() -> void:
 
     if state == "BOMB_COVER" and objective_state == "PLANTED":
         var planted_site := str(main.get("planted_site"))
+        var defense_revision := int(main.get("bomb_defense_revision"))
         var site_position: Vector3 = main.get("bomb_site_a") if planted_site == "A" else main.get("bomb_site_b")
-        if bomb_cover_site != planted_site or bomb_cover_goal == Vector3.ZERO:
+        if bomb_cover_site != planted_site or bomb_cover_goal == Vector3.ZERO or bomb_cover_revision != defense_revision:
             var selected_cover = main.call("_select_bot_bomb_cover", site_position, target.global_position, self)
             bomb_cover_goal = selected_cover if selected_cover is Vector3 else Vector3.ZERO
             bomb_cover_site = planted_site
+            bomb_cover_revision = defense_revision
             route.clear()
             route_index = 0
         current_goal = bomb_cover_goal if bomb_cover_goal != Vector3.ZERO else site_position
@@ -349,6 +353,7 @@ func reset_target() -> void:
     cover_index = -1
     bomb_cover_goal = Vector3.ZERO
     bomb_cover_site = ""
+    bomb_cover_revision = -1
     peek_timer = 0.0
     peek_hold_timer = 0.0
     fire_cooldown = 0.0
