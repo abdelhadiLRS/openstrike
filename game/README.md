@@ -109,6 +109,11 @@ The server validates input packet field types before parsing, rejects malformed 
 
 The flags are parsed only at startup; without them the existing offline flow is unchanged.
 
+### Visual polish
+
+- Both bomb sites now have four low-cost emissive corner beacons and a matching center marker: cool cyan for Site A and amber for Site B.
+- The beacons are visual-only meshes with shadows disabled; they do not add collision, navigation obstacles, or gameplay effects.
+
 ### Network diagnostics
 
 Press `F3` during play to show an opt-in NetGraph overlay. It reports the current offline/server/client mode, sent input commands, received snapshots, acknowledged input sequence, pending predicted commands, rejected inputs, snapshot tick gaps, prediction corrections, latest snapshot tick, rejected snapshot count, malformed bot-roster count, and the most frequent input rejection reasons. The overlay is diagnostic only and does not alter gameplay state.
