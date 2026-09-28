@@ -78,6 +78,9 @@ var combat_director_command := "HOLD"
 var combat_director_revision := -1
 var combat_role_revision := -1
 var combat_director_fire_ready := false
+var squad_threat_state := "LOST"
+var squad_threat_position := Vector3.ZERO
+var squad_threat_revision := -1
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -119,6 +122,9 @@ func _physics_process(delta: float) -> void:
         combat_director_command = str(director.get("command", "HOLD"))
         combat_director_revision = int(director.get("revision", -1))
         combat_director_fire_ready = bool(director.get("fire_ready", false))
+        squad_threat_state = str(director.get("threat", "LOST"))
+        squad_threat_position = director.get("threat_position", Vector3.ZERO)
+        squad_threat_revision = int(director.get("threat_revision", -1))
         var next_role_revision := int(director.get("role_revision", -1))
         if next_role_revision != combat_role_revision:
             combat_role_revision = next_role_revision
@@ -165,6 +171,20 @@ func _update_state() -> void:
         return
 
     var squad_contact_active := bool(main.call("_is_squad_contact_active"))
+    if squad_threat_state == "LOST" and not squad_contact_active and combat_intent != "RETREAT":
+        state = "DEFEND"
+        route.clear()
+        route_index = 0
+        return
+
+    if squad_threat_state == "SEARCHING" and not squad_contact_active and combat_intent == "HOLD" and not _has_line_of_sight():
+        state = "SEARCH"
+        return
+
+    if squad_threat_state == "TRACKED" and not squad_contact_active and combat_intent != "RETREAT" and not _has_line_of_sight():
+        state = "REENGAGE"
+        return
+
     if squad_contact_active and combat_intent != "RETREAT":
         if combat_assignment == "SUPPORT":
             state = "SUPPRESS"
@@ -718,6 +738,9 @@ func reset_target() -> void:
     squad_contact_revision = -1
     combat_director_phase = "IDLE"
     combat_director_command = "HOLD"
+    squad_threat_state = "LOST"
+    squad_threat_position = Vector3.ZERO
+    squad_threat_revision = -1
     combat_director_revision = -1
     combat_role_revision = -1
     combat_director_fire_ready = false
