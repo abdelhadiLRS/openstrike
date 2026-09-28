@@ -857,10 +857,14 @@ func _move_toward_goal(delta: float) -> void:
             var next_waypoint: Vector3 = route[1]
             can_advance_waypoint = bool(main.call("_navigation_visible", global_position, next_waypoint))
         if not can_advance_waypoint:
+            # The next waypoint is no longer visible from the bot. Keep the
+            # route goal and throttle replanning instead of retrying A* every
+            # frame against the same blocked route.
             route.clear()
             route_index = 0
-            route_goal = Vector3.ZERO
-            route_replan_timer = 0.0
+            route_goal = current_goal
+            route_failed_goal = current_goal
+            route_replan_timer = ROUTE_REPLAN_INTERVAL
             velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
             velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
             return
