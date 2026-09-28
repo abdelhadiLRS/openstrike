@@ -17,6 +17,10 @@ const BURST_PAUSE := 0.65
 const STRAFE_INTERVAL := 0.9
 const WAYPOINT_REACHED := 1.1
 const SITE_RADIUS := 2.8
+const LOW_HEALTH_THRESHOLD := 40
+const COVER_REACHED := 1.2
+const PEEK_TIME := 1.2
+const PEEK_HOLD := 0.8
 
 var team := "RED"
 var max_health := 100
@@ -35,6 +39,9 @@ var route := []
 var route_index := 0
 var current_goal := Vector3.ZERO
 var last_state := "DEFEND"
+var cover_index := -1
+var peek_timer := 0.0
+var peek_hold_timer := 0.0
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -48,6 +55,8 @@ func _physics_process(delta: float) -> void:
         return
 
     fire_cooldown = maxf(0.0, fire_cooldown - delta)
+    peek_timer = maxf(0.0, peek_timer - delta)
+    peek_hold_timer = maxf(0.0, peek_hold_timer - delta)
     burst_pause = maxf(0.0, burst_pause - delta)
     strafe_time = maxf(0.0, strafe_time - delta)
     if strafe_time <= 0.0:
@@ -65,7 +74,7 @@ func _physics_process(delta: float) -> void:
     _update_goal()
     _move_toward_goal(delta)
 
-    if state == "ATTACK" and _has_line_of_sight():
+    if (state == "ATTACK" or state == "PEEK") and _has_line_of_sight():
         _fire()
 
     if not is_on_floor():
@@ -81,7 +90,12 @@ func _update_state() -> void:
 
     var distance := global_position.distance_to(target.global_position)
     if distance <= DETECTION_RANGE:
-        state = "ATTACK"
+        if health <= LOW_HEALTH_THRESHOLD:
+            state = "COVER"
+        elif state == "COVER" or state == "PEEK":
+            state = "PEEK"
+        else:
+            state = "ATTACK"
     else:
         state = "DEFEND"
 
@@ -104,11 +118,47 @@ func _update_goal() -> void:
         route_index = 0
         return
 
+    if state == "COVER" or state == "PEEK":
+        _select_cover_point()
+        if cover_index >= 0:
+            var cover_data: Dictionary = main.get("cover_points")[cover_index]
+            current_goal = cover_data["cover"] if state == "COVER" else cover_data["peek"]
+            _ensure_route(current_goal)
+        return
+
     var defend_site := "A" if role == "DEFENDER_A" else "B"
     if role == "ROAMER":
         defend_site = "B" if int(Time.get_ticks_msec() / 5000.0) % 2 == 0 else "A"
     current_goal = main.get("bomb_site_a") if defend_site == "A" else main.get("bomb_site_b")
     _ensure_route(current_goal)
+
+func _select_cover_point() -> void:
+    var points: Array = main.get("cover_points")
+    if points.is_empty():
+        cover_index = -1
+        return
+    if cover_index >= 0 and cover_index < points.size():
+        var current: Dictionary = points[cover_index]
+        var current_cover: Vector3 = current["cover"]
+        if global_position.distance_to(current_cover) <= COVER_REACHED * 2.5:
+            return
+
+    var best := -1
+    var best_score := INF
+    for i in points.size():
+        var data: Dictionary = points[i]
+        var cover_position: Vector3 = data["cover"]
+        var distance := global_position.distance_to(cover_position)
+        if distance > 18.0:
+            continue
+        var player_distance := cover_position.distance_to(target.global_position)
+        if player_distance < 5.0:
+            continue
+        var score := distance + absf(player_distance - OPTIMAL_RANGE) * 0.25
+        if score < best_score:
+            best_score = score
+            best = i
+    cover_index = best
 
 func _ensure_route(goal: Vector3) -> void:
     if route.size() > 0 and route_index < route.size():
@@ -163,6 +213,28 @@ func _move_toward_goal(delta: float) -> void:
             velocity.x = move_toward(velocity.x, chase.x * MOVE_SPEED, 12.0 * delta)
             velocity.z = move_toward(velocity.z, chase.z * MOVE_SPEED, 12.0 * delta)
             look_at(global_position + Vector3(chase.x, 0.0, chase.z), Vector3.UP)
+            return
+
+    if state == "COVER" or state == "PEEK":
+        if cover_index < 0:
+            return
+        var cover_data: Dictionary = main.get("cover_points")[cover_index]
+        var destination: Vector3 = cover_data["cover"] if state == "COVER" else cover_data["peek"]
+        var cover_offset := destination - global_position
+        cover_offset.y = 0.0
+        if cover_offset.length() <= COVER_REACHED:
+            velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+            var look_direction := (target.global_position - global_position).normalized()
+            look_at(global_position + Vector3(look_direction.x, 0.0, look_direction.z), Vector3.UP)
+            if state == "COVER":
+                if peek_timer <= 0.0:
+                    peek_timer = PEEK_TIME
+                    state = "PEEK"
+                    route.clear()
+                    route_index = 0
+            elif peek_hold_timer <= 0.0:
+                peek_hold_timer = PEEK_HOLD
             return
 
     if route.size() == 0:
@@ -239,6 +311,9 @@ func reset_target() -> void:
     route.clear()
     route_index = 0
     last_state = "DEFEND"
+    cover_index = -1
+    peek_timer = 0.0
+    peek_hold_timer = 0.0
     fire_cooldown = 0.0
     burst_remaining = 0
     burst_pause = 0.0
