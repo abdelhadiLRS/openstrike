@@ -298,3 +298,9 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Candidate positions receive a spacing penalty when they are too close to another defender's current position or reserved bomb-cover position.
 - The selector adds a combat-slot-aware angle bias around the planted site, helping cover bots distribute across different approach directions instead of choosing only the nearest anchor.
 - Existing line-of-sight, distance, site-radius, and occupancy checks remain in place; if no valid candidate remains, the bot retains the existing site-position fallback.
+
+
+### Immediate combat-role refresh on objective changes
+- Bot combat assignments now refresh immediately when the bomb objective changes state or planted site, rather than waiting for the periodic assignment interval.
+- A dropped-bomb position change of at least 0.5 world units also triggers a refresh, keeping the designated recovery/guard role aligned with a newly dropped objective.
+- Contact and threat revision triggers remain unchanged, and the cached objective signature is reset at round start.
