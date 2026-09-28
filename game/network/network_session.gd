@@ -226,7 +226,17 @@ func _validate_network_command(command: OpenStrikeInputCommand, round_state: Str
 		# UI input to mutate authoritative state after the round has ended.
 		if command.fire or command.reload or command.objective or command.buy_weapon_id != "" or command.switch_weapon:
 			return false
-	if command.buy_weapon_id != "" and _weapon_definition(command.buy_weapon_id).is_empty():
+	# Reject contradictory weapon intents before they reach the authoritative
+	# player state. A buy request may select the purchased weapon, or a switch
+	# may request the alternate owned weapon, but never both semantics at once.
+	if command.buy_weapon_id != "":
+		if command.switch_weapon:
+			return false
+		if command.weapon_id != "" and command.weapon_id != command.buy_weapon_id:
+			return false
+		if _weapon_definition(command.buy_weapon_id).is_empty():
+			return false
+	elif command.switch_weapon and command.weapon_id != "":
 		return false
 	if command.weapon_id != "" and _weapon_definition(command.weapon_id).is_empty():
 		return false
