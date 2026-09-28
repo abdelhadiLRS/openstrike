@@ -227,6 +227,32 @@ func _physics_process(delta: float) -> void:
 
     _update_round_state(delta)
     if round_state != "LIVE":
+        var network_client := network_session != null and network_session.is_online and not network_session.is_server
+        if network_client and (pending_buy_weapon_id != "" or pending_switch_weapon or pending_reload):
+            var buy_command := prediction.build_command(
+                combat_events.tick,
+                Vector2.ZERO,
+                pending_look_delta,
+                false,
+                pending_reload,
+                false,
+                false,
+                str(_current_weapon()["id"])
+            )
+            buy_command.buy_weapon_id = pending_buy_weapon_id
+            buy_command.switch_weapon = pending_switch_weapon
+            if pending_buy_weapon_id != "":
+                buy_command.weapon_id = pending_buy_weapon_id
+            elif pending_switch_weapon:
+                buy_command.weapon_id = ""
+            pending_look_delta = Vector2.ZERO
+            pending_buy_weapon_id = ""
+            pending_switch_weapon = false
+            pending_reload = false
+            prediction.record_predicted(buy_command, player.global_position, player.velocity, player.rotation.y, pitch)
+            input_sequence = buy_command.sequence
+            network_diagnostics.record_command()
+            network_session.send_input(buy_command)
         player.velocity.x = move_toward(player.velocity.x, 0.0, 25.0 * delta)
         player.velocity.z = move_toward(player.velocity.z, 0.0, 25.0 * delta)
         player.move_and_slide()
