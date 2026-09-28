@@ -223,6 +223,9 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 
 func _snapshot_server_players(delta: float) -> void:
 	for peer_id in network_players.keys():
+		var player: OpenStrikeNetworkPlayer = network_players.get(peer_id)
+		if is_instance_valid(player):
+			player.record_snapshot(server_tick)
 		_process_server_input(int(peer_id), delta)
 
 	snapshot_accumulator += delta
