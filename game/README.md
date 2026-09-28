@@ -86,7 +86,7 @@ The prototype remains offline by default. Optional user arguments can start the 
 - `--port=27015`: choose the ENet port
 - `--max-clients=16`: cap connected clients
 - `--bots=3`: choose the number of AI bots (0..15)
-  When connected to an authoritative server, the client's bot roster is synchronized from the server snapshot automatically; the snapshot also carries an explicit bot count so partial state arrays cannot silently collapse the roster to zero. Snapshot payloads are versioned, and clients reject incompatible or internally inconsistent bot-roster payloads before changing the local roster.
+  When connected to an authoritative server, the client's bot roster is synchronized from the server snapshot automatically; the snapshot also carries an explicit bot count so partial state arrays cannot silently collapse the roster to zero. Snapshot payloads are versioned. Clients reject incompatible schemas, non-finite positions/velocities/angles/timers, invalid health/ammo/credit ranges, and internally inconsistent bot rosters before applying authoritative state.
 - `--connect=127.0.0.1`: connect as a client to a host
 - `--help`: print the OpenStrike network launch options
 
