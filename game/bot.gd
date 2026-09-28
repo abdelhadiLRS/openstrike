@@ -493,10 +493,12 @@ func _update_goal() -> void:
         var distance := global_position.distance_to(tactical_target)
         if distance > OPTIMAL_RANGE:
             current_goal = tactical_target
+            _ensure_route(current_goal)
         else:
             current_goal = global_position
-        route.clear()
-        route_index = 0
+            route.clear()
+            route_index = 0
+            route_goal = Vector3.ZERO
         return
 
     if state == "COVER" or state == "PEEK":
