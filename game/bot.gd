@@ -896,6 +896,7 @@ func reset_target() -> void:
     combat_role_revision = -1
     combat_director_fire_ready = false
     applied_threat_revision = -1
+    flank_goal_revision = -1
     fire_cooldown = 0.0
     burst_remaining = 0
     burst_pause = 0.0
