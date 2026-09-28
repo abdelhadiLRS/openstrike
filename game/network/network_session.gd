@@ -714,7 +714,22 @@ func _valid_snapshot_payload(snapshot: OpenStrikeSnapshot) -> bool:
 		return false
 	if snapshot.credits < 0 or snapshot.credits > OpenStrikeNetworkPlayer.MAX_CREDITS:
 		return false
-	return _valid_bot_roster_payload(snapshot)
+	return _valid_owned_weapons_payload(snapshot) and _valid_bot_roster_payload(snapshot)
+
+func _valid_owned_weapons_payload(snapshot: OpenStrikeSnapshot) -> bool:
+	# Weapon ownership is authoritative inventory data. Reject coercible values,
+	# duplicate IDs, and oversized lists before the snapshot reaches gameplay.
+	if snapshot.owned_weapons.size() > 16:
+		return false
+	var seen_weapons := {}
+	for weapon_value in snapshot.owned_weapons:
+		if not weapon_value is String:
+			return false
+		var weapon_id: String = weapon_value
+		if weapon_id.is_empty() or weapon_id.length() > 64 or seen_weapons.has(weapon_id):
+			return false
+		seen_weapons[weapon_id] = true
+	return true
 
 func _valid_bot_roster_payload(snapshot: OpenStrikeSnapshot) -> bool:
 	if snapshot.bot_count < 0 or snapshot.bot_count > 15:
