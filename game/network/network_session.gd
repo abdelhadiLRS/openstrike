@@ -719,6 +719,12 @@ func _apply_bot_snapshots(states: Array[Dictionary]) -> void:
 			if state_bot_id <= 0 or state_bot_id > authoritative_count or seen_bot_ids.has(state_bot_id):
 				return
 			seen_bot_ids[state_bot_id] = true
+		# The server assigns stable IDs from 1..bot_count. Requiring the full
+		# contiguous set prevents a malformed payload from silently leaving a
+		# locally-created bot without an authoritative state.
+		for expected_bot_id in range(1, authoritative_count + 1):
+			if not seen_bot_ids.has(expected_bot_id):
+				return
 		roster_changed = bool(root.configure_network_bot_count(authoritative_count))
 	if roster_changed:
 		_refresh_network_bot_cache()
