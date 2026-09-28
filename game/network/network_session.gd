@@ -112,7 +112,11 @@ func _submit_input(payload: Dictionary) -> void:
 	command.reload = bool(payload.get("reload", false))
 	command.crouch = bool(payload.get("crouch", false))
 	command.jump = bool(payload.get("jump", false))
+	var peer_id := multiplayer.get_remote_sender_id()
+	if peer_id <= 0 or not server_input_buffer.submit(peer_id, command, server_tick):
+		return
 	input_received.emit(command)
+	peer_input_received.emit(peer_id, command)
 
 @rpc("authority", "unreliable_ordered", SNAPSHOT_CHANNEL)
 func _broadcast_snapshot(payload: Dictionary) -> void:
