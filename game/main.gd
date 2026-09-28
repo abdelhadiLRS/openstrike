@@ -826,9 +826,6 @@ func _get_bot_combat_director(bot: Node) -> Dictionary:
     elif squad_search_active:
         phase = "SEARCH"
         command = "HOLD"
-    elif threat == "TRACKED":
-        phase = "TRACKED"
-        command = "HOLD"
     elif threat == "SEARCHING":
         phase = "SEARCH"
         command = "HOLD"
