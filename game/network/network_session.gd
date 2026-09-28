@@ -401,7 +401,10 @@ func _snapshot_server_players(delta: float) -> void:
 			int(root.get("bomb_carrier_peer_id")),
 			root.get("dropped_bomb_position") if root.get("dropped_bomb_position") is Vector3 else Vector3.ZERO,
 			bool(root.get("round_won")),
-			str(root.get("round_outcome_reason"))
+			str(root.get("round_outcome_reason")),
+			str(root.get("objective_action")),
+			int(root.get("network_objective_peer_id")),
+			float(root.get("objective_action_time_left"))
 		)
 		broadcast_snapshot(snapshot)
 
