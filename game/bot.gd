@@ -73,6 +73,9 @@ var search_revision := -1
 var squad_contact_position := Vector3.ZERO
 var squad_contact_timer := 0.0
 var squad_contact_revision := -1
+var combat_director_phase := "IDLE"
+var combat_director_revision := -1
+var combat_director_fire_ready := false
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -108,6 +111,12 @@ func _physics_process(delta: float) -> void:
         tactical_memory_timer = float(memory.get("time_left", 0.0))
         tactical_memory_revision = int(memory.get("revision", -1))
 
+    var director = main.call("_get_bot_combat_director", self)
+    if director is Dictionary:
+        combat_director_phase = str(director.get("phase", "IDLE"))
+        combat_director_revision = int(director.get("revision", -1))
+        combat_director_fire_ready = bool(director.get("fire_ready", false))
+
     _update_state()
     if state != last_state:
         route.clear()
@@ -120,7 +129,8 @@ func _physics_process(delta: float) -> void:
     _update_goal()
     _move_toward_goal(delta)
 
-    if (state == "ATTACK" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION") and _has_line_of_sight():
+    var director_can_fire := combat_director_fire_ready or combat_assignment == "PRESSURE"
+    if (state == "ATTACK" or state == "SUPPRESS" or state == "PEEK" or state == "BOMB_COVER" or state == "REPOSITION") and _has_line_of_sight() and director_can_fire:
         _fire()
 
     if not is_on_floor():
@@ -144,11 +154,31 @@ func _update_state() -> void:
 
     var squad_contact_active := bool(main.call("_is_squad_contact_active"))
     if squad_contact_active and not _has_line_of_sight() and combat_intent != "RETREAT":
+        if combat_assignment == "SUPPORT":
+            state = "SUPPRESS"
+            return
         state = "ATTACK" if combat_intent == "PUSH" else "REENGAGE"
         return
 
     if bool(main.call("_is_squad_search_active")) and combat_intent == "HOLD" and not _has_line_of_sight():
         state = "SEARCH"
+        return
+
+    if state == "SUPPRESS":
+        if combat_intent == "RETREAT":
+            state = "COVER"
+            route.clear()
+            route_index = 0
+            return
+        if not bool(main.call("_is_squad_contact_active")):
+            state = "SEARCH" if bool(main.call("_is_squad_search_active")) else "DEFEND"
+            route.clear()
+            route_index = 0
+            return
+        if not _has_line_of_sight() and combat_director_phase == "LOST":
+            state = "REENGAGE"
+            route.clear()
+            route_index = 0
         return
 
     if state == "REENGAGE":
@@ -324,6 +354,18 @@ func _update_goal() -> void:
             route_index = 0
         current_goal = search_goal
         _ensure_route(current_goal)
+        return
+
+    if state == "SUPPRESS":
+        var suppress_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
+        var suppress_distance := global_position.distance_to(suppress_target)
+        if suppress_distance > OPTIMAL_RANGE + 2.0:
+            current_goal = suppress_target
+            _ensure_route(current_goal)
+        else:
+            current_goal = global_position
+            route.clear()
+            route_index = 0
         return
 
     if state == "ATTACK":
@@ -620,6 +662,9 @@ func reset_target() -> void:
     squad_contact_position = Vector3.ZERO
     squad_contact_timer = 0.0
     squad_contact_revision = -1
+    combat_director_phase = "IDLE"
+    combat_director_revision = -1
+    combat_director_fire_ready = false
     fire_cooldown = 0.0
     burst_remaining = 0
     burst_pause = 0.0
