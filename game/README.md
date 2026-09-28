@@ -102,7 +102,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 ### Network diagnostics
 
-Press `F3` during play to show an opt-in NetGraph overlay. It reports the current offline/server/client mode, sent input commands, received snapshots, acknowledged input sequence, pending predicted commands, rejected inputs, snapshot tick gaps, prediction corrections, latest snapshot tick, and the most frequent rejection reasons. The overlay is diagnostic only and does not alter gameplay state.
+Press `F3` during play to show an opt-in NetGraph overlay. It reports the current offline/server/client mode, sent input commands, received snapshots, acknowledged input sequence, pending predicted commands, rejected inputs, snapshot tick gaps, prediction corrections, latest snapshot tick, rejected snapshot count, malformed bot-roster count, and the most frequent input rejection reasons. The overlay is diagnostic only and does not alter gameplay state.
 
 ## Architecture direction
 
