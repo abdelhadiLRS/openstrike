@@ -338,6 +338,14 @@ func _bot_has_navigation_path(bot: Node, goal: Vector3) -> bool:
     var goal_index := _find_nearest_navigation_point(goal)
     if start_index < 0 or goal_index < 0:
         return false
+
+    # Keep reachability checks consistent with actual route construction.
+    # A connected nav graph is not sufficient if either endpoint cannot
+    # visibly connect to its nearest navigation node.
+    if not _navigation_visible(bot.global_position, navigation_points[start_index]):
+        return false
+    if not _navigation_visible(navigation_points[goal_index], goal):
+        return false
     if start_index == goal_index:
         return true
 
