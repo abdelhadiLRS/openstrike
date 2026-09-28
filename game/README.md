@@ -60,6 +60,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
 - Industrial perimeter wall panels, hazard accents on cover, and concentric objective-site floor rings (visual-only; no collision or navigation changes)
 - RED combatants use a layered low-poly silhouette with vest, head, helmet, and a readable team-color band
+- RED combatants now include lightweight shoulder armor, forearm and thigh plates, a chest rig, and a backpack for a more readable tactical silhouette; details are visual-only and share the existing capsule collider
 - First-person AR-17/PX-9 geometric viewmodels that follow weapon selection and authoritative network weapon state
 - First-person weapon motion adds restrained movement bob, lateral counter-sway, and a short recoil kick; the animation is visual-only and uses no extra physics or lights
 - First-person weapon silhouettes now include low-poly barrel tubes, muzzle collars, top rails, and contrasting iron sights; all viewmodel parts are visual-only and cast no shadows
