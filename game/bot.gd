@@ -36,6 +36,7 @@ var team := "RED"
 var max_health := 100
 var health := 100
 var dead := false
+var last_damage_source_id := ""
 var fire_cooldown := 0.0
 var burst_remaining := 0
 var burst_pause := 0.0
@@ -981,8 +982,10 @@ func _fire() -> void:
     if burst_remaining <= 0:
         burst_pause = BURST_PAUSE
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, source_id: String = "player") -> void:
     if dead:
+        return
+    last_damage_source_id = source_id
         return
     health = maxi(0, health - amount)
     recently_hit_timer = RECENT_HIT_REACTION_TIME
@@ -999,6 +1002,7 @@ func take_damage(amount: int) -> void:
 func reset_target() -> void:
     health = max_health
     dead = false
+    last_damage_source_id = ""
     visible = true
     collision_layer = 1
     collision_mask = 1
