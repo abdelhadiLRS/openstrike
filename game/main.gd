@@ -602,10 +602,10 @@ func _get_bot_squad_engagement_target(bot: Node) -> Vector3:
     var memory_position := tactical_memory_position
     var memory_active := memory_position != Vector3.ZERO and tactical_memory_timer > 0.0
 
-    if not bot._has_line_of_sight() and memory_active:
+    if not bool(bot.call("_has_line_of_sight")) and memory_active:
         target_position = memory_position
 
-    if not memory_active or bot._has_line_of_sight():
+    if not memory_active or bool(bot.call("_has_line_of_sight")):
         return target_position
 
     var from_memory := bot.global_position - memory_position
