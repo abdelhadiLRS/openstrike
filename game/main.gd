@@ -27,6 +27,9 @@ const BOMB_SITE_B := Vector3(10, 0.15, 7)
 const BOT_COUNT := 3
 const COMBAT_SLOT_UPDATE_INTERVAL := 0.75
 const COMBAT_ASSIGNMENT_UPDATE_INTERVAL := 1.25
+const TACTICAL_MEMORY_TIMEOUT := 4.5
+const TACTICAL_MEMORY_MIN_UPDATE := 0.35
+const TACTICAL_MEMORY_MAX_DISTANCE := 34.0
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
@@ -88,6 +91,9 @@ var bomb_cover_anchors: Array[Dictionary] = []
 var combat_slot_update_timer := 0.0
 var combat_assignment_update_timer := 0.0
 var combat_engagement_revision := 0
+var tactical_memory_position := Vector3.ZERO
+var tactical_memory_timer := 0.0
+var tactical_memory_revision := 0
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -149,6 +155,7 @@ func _physics_process(delta: float) -> void:
         return
 
     _update_bots(delta)
+    _update_tactical_memory(delta)
     _update_objective(delta)
     cooldown = maxf(0.0, cooldown - delta)
     recoil_kick = move_toward(recoil_kick, 0.0, delta * 0.20)
@@ -536,6 +543,55 @@ func _update_bots(delta: float) -> void:
     for bot in bots:
         if is_instance_valid(bot) and not bot.dead:
             bot.process_mode = Node.PROCESS_MODE_INHERIT
+
+func _update_tactical_memory(delta: float) -> void:
+    tactical_memory_timer = maxf(0.0, tactical_memory_timer - delta)
+    if not is_instance_valid(player) or dead:
+        return
+
+    if not _player_has_bot_los():
+        return
+
+    if tactical_memory_timer > 0.0 and tactical_memory_position != Vector3.ZERO:
+        return
+
+    var memory_position := player.global_position
+    var valid_position := true
+    for bot in bots:
+        if is_instance_valid(bot) and not bot.dead:
+            if bot.global_position.distance_to(memory_position) > TACTICAL_MEMORY_MAX_DISTANCE:
+                valid_position = false
+                break
+    if not valid_position:
+        return
+
+    tactical_memory_position = memory_position
+    tactical_memory_timer = TACTICAL_MEMORY_TIMEOUT
+    tactical_memory_revision += 1
+
+func _player_has_bot_los() -> bool:
+    if not is_instance_valid(player):
+        return false
+    for bot in bots:
+        if is_instance_valid(bot) and not bot.dead:
+            var origin := bot.global_position + Vector3(0, 1.0, 0)
+            var target_position := player.global_position + Vector3(0, 0.5, 0)
+            var query := PhysicsRayQueryParameters3D.create(origin, target_position)
+            query.exclude = [bot]
+            var hit := get_world_3d().direct_space_state.intersect_ray(query)
+            if hit.is_empty() or hit.collider == player:
+                return true
+    return false
+
+func _get_bot_tactical_memory(bot: Node) -> Dictionary:
+    if tactical_memory_position == Vector3.ZERO or tactical_memory_timer <= 0.0:
+        return {"position": Vector3.ZERO, "time_left": 0.0, "revision": tactical_memory_revision}
+
+    return {
+        "position": tactical_memory_position,
+        "time_left": tactical_memory_timer,
+        "revision": tactical_memory_revision
+    }
 
 func _update_combat_assignments() -> void:
     if not is_instance_valid(player):
