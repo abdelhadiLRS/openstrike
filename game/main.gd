@@ -68,10 +68,12 @@ var primary_owned := false
 var objective_state := "CARRIED"
 var objective_site := ""
 var planted_site := ""
+var dropped_bomb_position := Vector3.ZERO
 var bomb_time_left := 0.0
 var objective_action := ""
 var objective_action_time_left := 0.0
 var bot_defuse_time_left := 0.0
+var active_defuser: Node = null
 var bots: Array[CharacterBody3D] = []
 var navigation_points: Array[Vector3] = []
 var cover_points: Array[Dictionary] = []
@@ -200,6 +202,11 @@ func _begin_objective_action() -> void:
             objective_site = site
             objective_action = "PLANT"
             objective_action_time_left = PLANT_TIME
+    elif objective_state == "DROPPED":
+        if player.global_position.distance_to(dropped_bomb_position) <= BOMB_SITE_RADIUS:
+            objective_state = "CARRIED"
+            objective_site = ""
+            dropped_bomb_position = Vector3.ZERO
     elif objective_state == "PLANTED":
         var site := _current_bomb_site()
         if site == planted_site:
@@ -229,6 +236,11 @@ func _update_objective(delta: float) -> void:
                     bomb_time_left = BOMB_TIME
                     objective_action = ""
                     objective_action_time_left = 0.0
+    elif objective_state == "DROPPED":
+        if player.global_position.distance_to(dropped_bomb_position) <= BOMB_SITE_RADIUS:
+            objective_site = "NEAR"
+        else:
+            objective_site = ""
     elif objective_state == "PLANTED":
         objective_site = planted_site
         bomb_time_left = maxf(0.0, bomb_time_left - delta)
@@ -254,29 +266,30 @@ func _update_objective(delta: float) -> void:
 func _update_bot_defuse(delta: float) -> void:
     if objective_action == "DEFUSE":
         return
-    if bot_defuse_time_left <= 0.0:
+
+    var site_position := bomb_site_a if planted_site == "A" else bomb_site_b
+    if not is_instance_valid(active_defuser) or active_defuser.dead:
+        active_defuser = null
+        bot_defuse_time_left = 0.0
+
+    if active_defuser == null:
         for bot in bots:
             if not is_instance_valid(bot) or bot.dead:
                 continue
-            var site_position := bomb_site_a if planted_site == "A" else bomb_site_b
             if bot.global_position.distance_to(site_position) <= BOMB_SITE_RADIUS:
+                active_defuser = bot
                 bot_defuse_time_left = DEFUSE_TIME
                 break
 
-    if bot_defuse_time_left > 0.0:
-        var defender_near_site := false
-        var site_position := bomb_site_a if planted_site == "A" else bomb_site_b
-        for bot in bots:
-            if is_instance_valid(bot) and not bot.dead and bot.global_position.distance_to(site_position) <= BOMB_SITE_RADIUS:
-                defender_near_site = true
-                break
-        if defender_near_site:
-            bot_defuse_time_left = maxf(0.0, bot_defuse_time_left - delta)
-            if bot_defuse_time_left <= 0.0:
-                objective_state = "DEFUSED"
-                _finish_round(false)
-        else:
+    if active_defuser != null:
+        if active_defuser.global_position.distance_to(site_position) > BOMB_SITE_RADIUS:
+            active_defuser = null
             bot_defuse_time_left = 0.0
+            return
+        bot_defuse_time_left = maxf(0.0, bot_defuse_time_left - delta)
+        if bot_defuse_time_left <= 0.0:
+            objective_state = "DEFUSED"
+            _finish_round(false)
 
 
 func _objective_label() -> String:
@@ -286,6 +299,10 @@ func _objective_label() -> String:
         if objective_site != "":
             return "BOMB: CARRIED — SITE %s — HOLD F" % objective_site
         return "BOMB: CARRIED — MOVE TO A/B"
+    if objective_state == "DROPPED":
+        if objective_site == "NEAR":
+            return "BOMB: DROPPED — HOLD F TO RECOVER"
+        return "BOMB: DROPPED — RECOVER AT %0.1f, %0.1f" % [dropped_bomb_position.x, dropped_bomb_position.z]
     if objective_state == "PLANTED":
         if objective_action == "DEFUSE":
             return "BOMB: PLANTED %s — DEFUSING %0.1fs" % [planted_site, objective_action_time_left]
@@ -433,6 +450,8 @@ func _start_round() -> void:
     objective_action = ""
     objective_action_time_left = 0.0
     bot_defuse_time_left = 0.0
+    active_defuser = null
+    dropped_bomb_position = Vector3.ZERO
 
 func _finish_round(won: bool) -> void:
     if round_state != "LIVE":
@@ -486,6 +505,12 @@ func _apply_damage(amount: int) -> void:
         _kill_player()
 
 func _kill_player() -> void:
+    if objective_state == "CARRIED":
+        objective_state = "DROPPED"
+        dropped_bomb_position = player.global_position + Vector3(0, 0.15, 0)
+        objective_site = ""
+        objective_action = ""
+        objective_action_time_left = 0.0
     dead = true
     respawn_timer = RESPAWN_DELAY
     player.visible = false
