@@ -85,6 +85,9 @@ The prototype remains offline by default. Optional user arguments can start the 
 - `--port=27015`: choose the ENet port
 - `--max-clients=16`: cap connected clients
 - `--connect=127.0.0.1`: connect as a client to a host
+- `--help`: print the OpenStrike network launch options
+
+`--server` and `--connect` are mutually exclusive. Invalid combinations are rejected at startup.
 
 Examples:
 
