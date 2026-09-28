@@ -546,6 +546,11 @@ func _select_cover_point() -> void:
         var distance := global_position.distance_to(cover_position)
         if distance > 18.0:
             continue
+        var peek_position: Vector3 = data["peek"]
+        if not main.call("_bot_has_navigation_path", self, cover_position):
+            continue
+        if not main.call("_bot_has_navigation_path", self, peek_position):
+            continue
         var player_distance := cover_position.distance_to(target.global_position)
         if player_distance < 5.0:
             continue
