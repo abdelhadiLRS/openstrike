@@ -82,6 +82,7 @@ var squad_threat_state := "LOST"
 var squad_threat_position := Vector3.ZERO
 var squad_threat_revision := -1
 var applied_threat_revision := -1
+var flank_goal_revision := -1
 var collision_shape: CollisionShape3D
 
 func _ready() -> void:
@@ -160,6 +161,8 @@ func _physics_process(delta: float) -> void:
             bomb_cover_goal = Vector3.ZERO
             bomb_cover_site = ""
             bomb_cover_revision = -1
+        if state != "FLANK":
+            flank_goal_revision = -1
         last_state = state
     _update_goal()
     _move_toward_goal(delta)
@@ -462,12 +465,17 @@ func _update_goal() -> void:
         return
 
     if state == "FLANK":
-        var flank_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
-        var flank_position = main.call("_select_bot_attack_position", self, flank_target, combat_slot)
-        if flank_position is Vector3 and flank_position != Vector3.ZERO:
-            current_goal = flank_position
-        else:
-            current_goal = flank_target
+        var flank_revision := maxi(combat_director_revision, squad_threat_revision)
+        if flank_goal_revision != flank_revision or current_goal == Vector3.ZERO:
+            var flank_target: Vector3 = main.call("_get_bot_squad_engagement_target", self)
+            var flank_position = main.call("_select_bot_attack_position", self, flank_target, combat_slot)
+            if flank_position is Vector3 and flank_position != Vector3.ZERO:
+                current_goal = flank_position
+            else:
+                current_goal = flank_target
+            flank_goal_revision = flank_revision
+            route.clear()
+            route_index = 0
         if global_position.distance_to(current_goal) <= WAYPOINT_REACHED:
             route.clear()
             route_index = 0
