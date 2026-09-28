@@ -2467,6 +2467,9 @@ func configure_network_bot_count(target_count: int) -> void:
     if network_session == null or not network_session.is_online or network_session.is_server:
         return
     var target := clampi(target_count, 0, MAX_BOT_COUNT)
+    if bots.size() == target:
+        bot_count = target
+        return
     bot_count = target
     while bots.size() > target:
         var bot := bots.pop_back()
