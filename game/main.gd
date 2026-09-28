@@ -39,6 +39,9 @@ const SQUAD_SEARCH_FORWARD_STEP := 3.5
 const COMBAT_DIRECTOR_UPDATE_INTERVAL := 0.20
 const COMBAT_SUPPORT_DELAY := 0.35
 const COMBAT_FLANK_DELAY := 0.70
+const THREAT_CONTACT_TIMEOUT := 0.9
+const THREAT_TRACKED_TIMEOUT := 4.5
+const THREAT_SEARCH_TIMEOUT := 6.0
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
@@ -122,6 +125,10 @@ var combat_director_timer := 0.0
 var combat_director_revision := 0
 var combat_director_contact_revision := -1
 var combat_contact_started_at := 0
+var squad_threat_state := "LOST"
+var squad_threat_position := Vector3.ZERO
+var squad_threat_timer := 0.0
+var squad_threat_revision := 0
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -183,6 +190,7 @@ func _physics_process(delta: float) -> void:
         return
 
     _update_tactical_memory(delta)
+    _update_squad_threat(delta)
     _update_combat_director(delta)
     _update_bots(delta)
     _update_objective(delta)
@@ -550,6 +558,10 @@ func _start_round() -> void:
     squad_search_update_timer = 0.0
     squad_search_revision += 1
     squad_search_cycle = 0
+    squad_threat_state = "LOST"
+    squad_threat_position = Vector3.ZERO
+    squad_threat_timer = 0.0
+    squad_threat_revision += 1
     combat_director_phase = "IDLE"
     combat_director_timer = 0.0
     combat_director_revision += 1
@@ -723,6 +735,42 @@ func _get_bot_squad_contact(bot: Node) -> Dictionary:
         return {"position": Vector3.ZERO, "time_left": 0.0, "revision": squad_contact_revision, "source": null}
     return {"position": squad_contact_position, "time_left": squad_contact_timer, "revision": squad_contact_revision, "source": squad_contact_source}
 
+func _update_squad_threat(delta: float) -> void:
+    var next_state := "LOST"
+    var next_position := Vector3.ZERO
+    var next_timer := 0.0
+
+    if _is_squad_contact_active():
+        next_state = "CONTACT"
+        next_position = squad_contact_position
+        next_timer = squad_contact_timer
+    elif tactical_memory_position != Vector3.ZERO and tactical_memory_timer > 0.0:
+        next_state = "TRACKED"
+        next_position = tactical_memory_position
+        next_timer = tactical_memory_timer
+    elif squad_search_active and squad_search_timer > 0.0:
+        next_state = "SEARCHING"
+        next_position = last_known_player_position
+        next_timer = squad_search_timer
+
+    var state_changed := next_state != squad_threat_state
+    var position_changed := squad_threat_position.distance_to(next_position) >= 1.5
+    if state_changed or position_changed:
+        squad_threat_state = next_state
+        squad_threat_position = next_position
+        squad_threat_timer = next_timer
+        squad_threat_revision += 1
+    else:
+        squad_threat_timer = next_timer
+
+func _get_squad_threat() -> Dictionary:
+    return {
+        "state": squad_threat_state,
+        "position": squad_threat_position,
+        "time_left": squad_threat_timer,
+        "revision": squad_threat_revision
+    }
+
 func _update_combat_director(delta: float) -> void:
     combat_director_timer = maxf(0.0, combat_director_timer - delta)
     if combat_director_timer > 0.0 and combat_director_contact_revision == squad_contact_revision:
@@ -750,6 +798,7 @@ func _update_combat_director(delta: float) -> void:
 
 func _get_bot_combat_director(bot: Node) -> Dictionary:
     var assignment := str(bot.get("combat_assignment"))
+    var threat := squad_threat_state
     var phase := combat_director_phase
     var command := "HOLD"
     var fire_ready := false
@@ -770,6 +819,12 @@ func _get_bot_combat_director(bot: Node) -> Dictionary:
             fire_ready = contact_age >= COMBAT_FLANK_DELAY
     elif _is_squad_search_active():
         phase = "SEARCH"
+    elif squad_search_active:
+        phase = "SEARCH"
+        command = "HOLD"
+    elif threat == "TRACKED":
+        phase = "TRACKED"
+        command = "HOLD"
     elif last_known_player_timer > 0.0:
         phase = "LOST"
         command = "HOLD"
@@ -781,7 +836,10 @@ func _get_bot_combat_director(bot: Node) -> Dictionary:
         "revision": combat_director_revision,
         "contact_revision": squad_contact_revision,
         "role_revision": combat_role_revision,
-        "contact_source": squad_contact_source
+        "contact_source": squad_contact_source,
+        "threat": threat,
+        "threat_position": squad_threat_position,
+        "threat_revision": squad_threat_revision
     }
 
 func _player_has_bot_los() -> bool:
