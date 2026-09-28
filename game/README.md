@@ -46,6 +46,8 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Bomb drops at the player's death position and can be recovered after respawn with a dedicated pickup radius
 - Visible original bomb entity with dropped/planted world states and planted-state blinking light
 - Planted-bomb defense distributes RED bots between one active defuser and separate tactical cover positions
+- Bomb-cover assignments persist for the planted site instead of being recalculated every frame
+- Each bomb site has dedicated tactical cover anchors, with LOS and occupancy validation before assignment
 - Bomb-cover defenders hold their assigned angle, face the BLUE player, and apply controlled lateral movement while maintaining the defensive position
 - Bomb recovery uses a tighter pickup radius than the plant/defuse site radius
 - Damageable combat units
