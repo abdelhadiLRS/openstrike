@@ -292,6 +292,10 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 		var target: OpenStrikeNetworkPlayer = network_players.get(peer_value)
 		if not is_instance_valid(target) or target == shooter or target.dead:
 			continue
+		# Friendly players must never become the selected historical hit candidate;
+		# otherwise they can incorrectly block an enemy behind them.
+		if target.team == shooter.team:
+			continue
 		var historical_snapshot := OpenStrikeLagCompensation.rewind_snapshot(target.snapshot_history, requested_tick)
 		if historical_snapshot == null:
 			continue
