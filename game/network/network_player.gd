@@ -230,7 +230,7 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	crouched = false
 	_update_collider()
 
-func make_snapshot(tick: int, round_state: String, round_number: int, objective_state: String, planted_site: String, bomb_time_left: float) -> OpenStrikeSnapshot:
+func make_snapshot(tick: int, round_state: String, round_number: int, objective_state: String, planted_site: String, bomb_time_left: float, round_won_value: bool = false, round_outcome_reason_value: String = "") -> OpenStrikeSnapshot:
 	_sync_active_weapon()
 	var snapshot := OpenStrikeSnapshot.new()
 	snapshot.tick = tick
@@ -253,6 +253,8 @@ func make_snapshot(tick: int, round_state: String, round_number: int, objective_
 	snapshot.dead = dead
 	snapshot.round_state = round_state
 	snapshot.round_number = round_number
+	snapshot.round_won = round_won_value
+	snapshot.round_outcome_reason = round_outcome_reason_value
 	snapshot.objective_state = objective_state
 	snapshot.planted_site = planted_site
 	snapshot.bomb_time_left = bomb_time_left
