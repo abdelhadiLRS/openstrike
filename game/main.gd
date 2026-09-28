@@ -30,6 +30,10 @@ const COMBAT_ASSIGNMENT_UPDATE_INTERVAL := 1.25
 const TACTICAL_MEMORY_TIMEOUT := 4.5
 const TACTICAL_MEMORY_MIN_UPDATE := 0.35
 const TACTICAL_MEMORY_MAX_DISTANCE := 34.0
+const SQUAD_SEARCH_DURATION := 6.0
+const SQUAD_SEARCH_UPDATE_INTERVAL := 0.75
+const SQUAD_SEARCH_SECTOR_RADIUS := 5.5
+const SQUAD_SEARCH_FORWARD_STEP := 3.5
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
@@ -94,6 +98,13 @@ var combat_engagement_revision := 0
 var tactical_memory_position := Vector3.ZERO
 var tactical_memory_timer := 0.0
 var tactical_memory_revision := 0
+var last_known_player_position := Vector3.ZERO
+var last_known_player_timer := 0.0
+var squad_search_active := false
+var squad_search_timer := 0.0
+var squad_search_update_timer := 0.0
+var squad_search_revision := 0
+var squad_search_cycle := 0
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -504,6 +515,16 @@ func _start_round() -> void:
     combat_assignment_update_timer = 0.0
     combat_engagement_revision += 1
     dropped_bomb_position = Vector3.ZERO
+    tactical_memory_position = Vector3.ZERO
+    tactical_memory_timer = 0.0
+    tactical_memory_revision += 1
+    last_known_player_position = Vector3.ZERO
+    last_known_player_timer = 0.0
+    squad_search_active = false
+    squad_search_timer = 0.0
+    squad_search_update_timer = 0.0
+    squad_search_revision += 1
+    squad_search_cycle = 0
 
 func _finish_round(won: bool) -> void:
     if round_state != "LIVE":
@@ -546,13 +567,32 @@ func _update_bots(delta: float) -> void:
 
 func _update_tactical_memory(delta: float) -> void:
     tactical_memory_timer = maxf(0.0, tactical_memory_timer - delta)
+    last_known_player_timer = maxf(0.0, last_known_player_timer - delta)
+    squad_search_update_timer = maxf(0.0, squad_search_update_timer - delta)
+
+    if squad_search_active:
+        squad_search_timer = maxf(0.0, squad_search_timer - delta)
+        if _player_has_bot_los():
+            squad_search_active = false
+            squad_search_timer = 0.0
+            squad_search_update_timer = 0.0
+        elif squad_search_timer <= 0.0:
+            squad_search_active = false
+            squad_search_update_timer = 0.0
+        elif squad_search_update_timer <= 0.0:
+            squad_search_cycle += 1
+            squad_search_revision += 1
+            squad_search_update_timer = SQUAD_SEARCH_UPDATE_INTERVAL
+
     if not is_instance_valid(player) or dead:
         return
 
     if not _player_has_bot_los():
-        return
-
-    if tactical_memory_timer > 0.0 and tactical_memory_position != Vector3.ZERO:
+        if not squad_search_active and last_known_player_position != Vector3.ZERO and last_known_player_timer > 0.0 and tactical_memory_timer <= 0.0:
+            squad_search_active = true
+            squad_search_timer = SQUAD_SEARCH_DURATION
+            squad_search_update_timer = 0.0
+            squad_search_revision += 1
         return
 
     var memory_position := player.global_position
@@ -565,9 +605,17 @@ func _update_tactical_memory(delta: float) -> void:
     if not valid_position:
         return
 
+    last_known_player_position = memory_position
+    last_known_player_timer = TACTICAL_MEMORY_TIMEOUT
+    if tactical_memory_timer > 0.0 and tactical_memory_position != Vector3.ZERO:
+        return
+
     tactical_memory_position = memory_position
     tactical_memory_timer = TACTICAL_MEMORY_TIMEOUT
     tactical_memory_revision += 1
+    squad_search_active = false
+    squad_search_timer = 0.0
+    squad_search_update_timer = 0.0
 
 func _player_has_bot_los() -> bool:
     if not is_instance_valid(player):
@@ -622,6 +670,40 @@ func _get_bot_squad_engagement_target(bot: Node) -> Vector3:
         target_position -= side * 2.5
 
     return target_position
+
+func _is_squad_search_active() -> bool:
+    return squad_search_active and last_known_player_position != Vector3.ZERO and squad_search_timer > 0.0
+
+func _get_bot_squad_search_goal(bot: Node) -> Vector3:
+    if not _is_squad_search_active():
+        return Vector3.ZERO
+
+    var center := last_known_player_position
+    var assignment := str(bot.get("combat_assignment"))
+    var slot := int(bot.get("combat_slot"))
+
+    var forward := Vector3(0, 0, 1)
+    var from_center := bot.global_position - center
+    from_center.y = 0.0
+    if from_center.length() >= 0.1:
+        forward = from_center.normalized()
+    var side := Vector3(-forward.z, 0.0, forward.x)
+
+    var cycle_offset := float(squad_search_cycle % 3) * SQUAD_SEARCH_FORWARD_STEP
+    var sector := Vector3.ZERO
+    if assignment == "PRESSURE":
+        sector = forward * cycle_offset
+    elif assignment == "SUPPORT":
+        sector = side * SQUAD_SEARCH_SECTOR_RADIUS + forward * cycle_offset
+    elif assignment == "FLANK":
+        var flank_side := -1.0 if slot == 0 else 1.0
+        sector = -side * flank_side * SQUAD_SEARCH_SECTOR_RADIUS + forward * cycle_offset
+    else:
+        sector = side * (float(slot) - 1.0) * SQUAD_SEARCH_SECTOR_RADIUS
+
+    var goal := center + sector
+    goal.y = center.y
+    return goal
 
 func _update_combat_assignments() -> void:
     if not is_instance_valid(player):
