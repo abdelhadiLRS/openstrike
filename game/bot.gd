@@ -899,6 +899,18 @@ func _move_toward_goal(delta: float) -> void:
         waypoint.y = global_position.y
         offset = waypoint - global_position
 
+    if not bool(main.call("_navigation_visible", global_position, waypoint)):
+        # The current route segment is no longer traversable from the bot's
+        # actual position. Replan from here instead of pushing through geometry.
+        route.clear()
+        route_index = 0
+        route_goal = current_goal
+        route_failed_goal = current_goal
+        route_replan_timer = ROUTE_REPLAN_INTERVAL
+        velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+        velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+        return
+
     var direction := offset.normalized()
     var speed := SPRINT_SPEED if state == "DEFUSE" else MOVE_SPEED
     velocity.x = move_toward(velocity.x, direction.x * speed, 12.0 * delta)
