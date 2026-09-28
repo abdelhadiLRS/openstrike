@@ -75,6 +75,9 @@ func apply_input(command: OpenStrikeInputCommand, delta: float) -> void:
 	_update_collider()
 	move_and_slide()
 
+func record_snapshot(tick: int) -> void:
+	snapshot_history.push(tick, global_position, yaw, health)
+
 func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	if snapshot == null:
 		return
