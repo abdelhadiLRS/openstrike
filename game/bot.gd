@@ -199,8 +199,6 @@ func _update_state() -> void:
     var squad_contact_active := bool(main.call("_is_squad_contact_active"))
     if squad_threat_state == "LOST" and not squad_contact_active and combat_intent != "RETREAT":
         state = "DEFEND"
-        route.clear()
-        route_index = 0
         return
 
     if squad_threat_state == "SEARCHING" and not squad_contact_active and combat_intent == "HOLD" and not _has_line_of_sight():
