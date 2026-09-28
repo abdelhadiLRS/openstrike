@@ -155,6 +155,7 @@ var squad_threat_state := "LOST"
 var squad_threat_position := Vector3.ZERO
 var squad_threat_timer := 0.0
 var squad_threat_revision := 0
+var processed_elimination_ids := {}
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -362,6 +363,8 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     bomb_time_left = snapshot.bomb_time_left
     bomb_carrier_peer_id = snapshot.carrier_peer_id
     dropped_bomb_position = snapshot.dropped_bomb_position
+    objective_action = snapshot.objective_action
+    objective_action_time_left = snapshot.objective_action_time_left
     credits = clampi(snapshot.credits, 0, MAX_CREDITS)
     primary_owned = snapshot.owned_weapons.has("ar_17")
     var authoritative_index := -1
@@ -424,10 +427,12 @@ func set_network_objective_input(peer_id: int, active: bool) -> void:
         return
     if network_objective_latched_peer_id == peer_id:
         return
-    if network_objective_peer_id == -1 or network_objective_peer_id == peer_id:
-        network_objective_peer_id = peer_id
-    elif objective_action == "":
-        network_objective_peer_id = peer_id
+    # The server owns the interaction lock. A second client cannot replace
+    # an active claimant between pickup/plant/defuse ticks; it must wait for
+    # the current claimant to release F or disconnect.
+    if network_objective_peer_id != -1 and network_objective_peer_id != peer_id:
+        return
+    network_objective_peer_id = peer_id
 
 func _network_objective_actor() -> Node:
     if network_objective_peer_id <= 0 or network_session == null:
@@ -865,6 +870,7 @@ func _start_round() -> void:
     round_won = false
     round_outcome_resolved = false
     round_outcome_reason = ""
+    processed_elimination_ids.clear()
     objective_state = "CARRIED"
     bomb_carrier_peer_id = 0
     objective_site = ""
@@ -1585,6 +1591,11 @@ func _on_enemy_eliminated(bot: Node) -> void:
 func _on_combat_event(event: OpenStrikeCombatEvent) -> void:
     if event == null or event.type != OpenStrikeCombatEvent.Type.ELIMINATION:
         return
+
+    var elimination_key := event.shooter_id + ":" + event.target_id
+    if processed_elimination_ids.has(elimination_key):
+        return
+    processed_elimination_ids[elimination_key] = true
 
     if event.shooter_id == "player":
         credits = mini(MAX_CREDITS, credits + KILL_REWARD)
