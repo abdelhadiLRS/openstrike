@@ -78,6 +78,27 @@ func broadcast_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 		return
 	_broadcast_snapshot.rpc(snapshot.to_dict())
 
+func broadcast_snapshot_to_peer(peer_id: int, snapshot: OpenStrikeSnapshot) -> void:
+	if not is_online or not is_server or peer_id <= 0 or snapshot == null:
+		return
+	snapshot.peer_id = peer_id
+	_broadcast_snapshot.rpc_id(peer_id, snapshot.to_dict())
+
+func pop_server_input(peer_id: int) -> OpenStrikeInputCommand:
+	if not is_server:
+		return null
+	return server_input_buffer.pop_next(peer_id)
+
+func pending_server_input(peer_id: int) -> int:
+	if not is_server:
+		return 0
+	return server_input_buffer.pending(peer_id)
+
+func last_server_input_sequence(peer_id: int) -> int:
+	if not is_server:
+		return 0
+	return server_input_buffer.last_sequence(peer_id)
+
 @rpc("any_peer", "unreliable_ordered", INPUT_CHANNEL)
 func _submit_input(payload: Dictionary) -> void:
 	if not is_server:
