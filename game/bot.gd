@@ -644,11 +644,13 @@ func _move_toward_goal(delta: float) -> void:
             look_at(global_position + Vector3(-away.x, 0.0, -away.z), Vector3.UP)
             return
         if distance > OPTIMAL_RANGE:
-            var chase := (target.global_position - global_position).normalized()
-            velocity.x = move_toward(velocity.x, chase.x * MOVE_SPEED, 12.0 * delta)
-            velocity.z = move_toward(velocity.z, chase.z * MOVE_SPEED, 12.0 * delta)
-            look_at(global_position + Vector3(chase.x, 0.0, chase.z), Vector3.UP)
-            return
+            # Long-range pursuit must use the navigation graph rather than
+            # steering directly through map geometry.
+            _ensure_route(target.global_position)
+            if route.size() == 0:
+                velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+                velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
+                return
 
     if state == "COVER" or state == "PEEK":
         if cover_index < 0:
@@ -798,17 +800,3 @@ func reset_target() -> void:
     combat_director_fire_ready = false
     applied_threat_revision = -1
     fire_cooldown = 0.0
-    burst_remaining = 0
-    burst_pause = 0.0
-    strafe_time = STRAFE_INTERVAL
-    strafe_sign = 1.0
-
-func _die() -> void:
-    dead = true
-    visible = false
-    if collision_shape:
-        collision_shape.disabled = true
-    collision_layer = 0
-    collision_mask = 0
-    velocity = Vector3.ZERO
-    eliminated.emit(self)
