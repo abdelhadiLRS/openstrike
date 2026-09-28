@@ -762,6 +762,9 @@ func _select_bot_bomb_cover(site_position: Vector3, player_position: Vector3, bo
             if other.global_position.distance_to(cover_position) < 2.5:
                 occupied = true
                 break
+            if str(other.state) == "BOMB_COVER" and other.current_goal.distance_to(cover_position) < 2.5:
+                occupied = true
+                break
         if occupied:
             continue
 
