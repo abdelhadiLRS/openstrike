@@ -176,3 +176,11 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Search goals advance through short forward sweeps on a throttled revision interval, creating a simple three-sector sweep rather than a static waypoint.
 - A fresh visual contact immediately cancels the search and returns normal combat intent to the squad.
 - Search state never overrides planted-bomb defuse or bomb-cover priority.
+
+### Search → contact → re-engage
+- During a squad search, any bot that regains a direct line of sight publishes a short-lived shared contact report with the observed player position.
+- The contact report immediately cancels the search and refreshes the squad's tactical memory and last-known position.
+- Bots without direct vision enter a bounded REENGAGE state and move toward the shared contact target instead of returning to an obsolete search point.
+- PRESSURE, SUPPORT, and FLANK keep using the shared engagement-target offsets, so re-engagement preserves squad separation rather than collapsing every bot onto the reporter.
+- Combat assignments are refreshed when the contact revision changes, allowing the squad to redistribute roles as soon as a new contact is reported.
+- The contact memory expires after 4 seconds without a fresh report; planted-bomb defuse and bomb-cover states retain priority over contact behavior.
