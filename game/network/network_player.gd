@@ -6,6 +6,8 @@ const STAND_HEIGHT := 1.8
 const CROUCH_HEIGHT := 1.15
 const STAND_SPEED := 5.6
 const CROUCH_SPEED := 3.4
+const STARTING_CREDITS := 1200
+const MAX_CREDITS := 16000
 
 var peer_id: int = 0
 var health: int = 100
@@ -19,46 +21,117 @@ var ammo: int = 12
 var reserve: int = 48
 var fire_cooldown: float = 0.0
 var primary_owned: bool = false
+var credits: int = STARTING_CREDITS
+var weapon_states: Dictionary = {}
 var snapshot_history := OpenStrikeSnapshotHistory.new()
 
 var collision_shape: CollisionShape3D
 var mesh: MeshInstance3D
 
-func setup(id: int, start_position: Vector3) -> void:
+func setup(id: int, start_position: Vector3, catalog: Array = []) -> void:
 	peer_id = id
 	global_position = start_position
 	yaw = rotation.y
+	_initialize_weapon_states(catalog)
 	_build_visual()
 
-func _build_visual() -> void:
-	if collision_shape != null:
+func _initialize_weapon_states(catalog: Array) -> void:
+	weapon_states.clear()
+	for definition in catalog:
+		if not definition is Dictionary:
+			continue
+		var id := str(definition.get("id", ""))
+		if id.is_empty():
+			continue
+		var state := OpenStrikeWeaponRuntimeState.from_definition(definition, id == "px_9")
+		weapon_states[id] = state
+	primary_owned = false
+	_select_weapon("px_9")
+
+func _weapon_state(id: String = weapon_id) -> OpenStrikeWeaponRuntimeState:
+	var state = weapon_states.get(id)
+	return state if state is OpenStrikeWeaponRuntimeState else null
+
+func _select_weapon(requested_id: String) -> bool:
+	var state := _weapon_state(requested_id)
+	if state == null or not state.owned:
+		return false
+	weapon_id = requested_id
+	_sync_active_weapon()
+	return true
+
+func _sync_active_weapon() -> void:
+	var state := _weapon_state()
+	if state == null:
 		return
+	ammo = state.ammo
+	reserve = state.reserve_ammo
+	fire_cooldown = state.cooldown_remaining
 
-	collision_shape = CollisionShape3D.new()
-	var capsule_shape := CapsuleShape3D.new()
-	capsule_shape.height = STAND_HEIGHT
-	capsule_shape.radius = 0.35
-	collision_shape.shape = capsule_shape
-	add_child(collision_shape)
+func purchase_weapon(requested_id: String, round_state: String) -> bool:
+	if dead or round_state != "BUY":
+		return false
+	var state := _weapon_state(requested_id)
+	if state == null:
+		return false
+	if state.owned:
+		return _select_weapon(requested_id)
+	var root_cost := 0
+	var definition_cost := 0
+	var root := get_parent()
+	if root != null:
+		var catalog = root.get("weapons")
+		if catalog is Array:
+			for definition in catalog:
+				if definition is Dictionary and str(definition.get("id", "")) == requested_id:
+					definition_cost = int(definition.get("cost", 0))
+					break
+	root_cost = definition_cost
+	if root_cost <= 0 or credits < root_cost:
+		return false
+	credits -= root_cost
+	state.owned = true
+	state.set_loaded_state(state.magazine_size, int(state.reserve_ammo))
+	if requested_id == "ar_17":
+		primary_owned = true
+	_select_weapon(requested_id)
+	return true
 
-	mesh = MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.height = STAND_HEIGHT
-	capsule.radius = 0.35
-	mesh.mesh = capsule
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.20, 0.45, 0.82)
-	mesh.material_override = material
-	add_child(mesh)
+func reload_weapon(round_state: String) -> int:
+	if dead or round_state != "LIVE":
+		return 0
+	var state := _weapon_state()
+	if state == null:
+		return 0
+	var loaded := state.reload()
+	_sync_active_weapon()
+	return loaded
 
-func apply_input(command: OpenStrikeInputCommand, delta: float) -> void:
+func apply_input(command: OpenStrikeInputCommand, delta: float, round_state: String = "LIVE") -> void:
 	if command == null or dead:
 		return
 
 	last_processed_sequence = maxi(last_processed_sequence, command.sequence)
-	weapon_id = command.weapon_id if command.weapon_id != "" else weapon_id
-	fire_cooldown = maxf(0.0, fire_cooldown - delta)
+	for state in weapon_states.values():
+		if state is OpenStrikeWeaponRuntimeState:
+			state.tick(delta)
+
+	if command.buy_weapon_id != "":
+		purchase_weapon(command.buy_weapon_id, round_state)
+
+	if command.switch_weapon:
+		var requested := "ar_17" if weapon_id == "px_9" else "px_9"
+		_select_weapon(requested)
+
+	if command.weapon_id != "":
+		_select_weapon(command.weapon_id)
+
+	if command.reload:
+		reload_weapon(round_state)
+
+	_sync_active_weapon()
 	yaw += command.look_delta.x * -0.0022
+	pitch = clampf(pitch - command.look_delta.y * 0.0022, -1.45, 1.45)
 	rotation.y = yaw
 
 	var direction := (global_transform.basis * Vector3(command.move.x, 0.0, command.move.y)).normalized()
@@ -75,6 +148,17 @@ func apply_input(command: OpenStrikeInputCommand, delta: float) -> void:
 	_update_collider()
 	move_and_slide()
 
+func can_fire() -> bool:
+	var state := _weapon_state()
+	return state != null and state.can_fire()
+
+func consume_shot(fire_interval: float) -> bool:
+	var state := _weapon_state()
+	if state == null or not state.consume_shot(fire_interval):
+		return false
+	_sync_active_weapon()
+	return true
+
 func record_snapshot(tick: int) -> void:
 	snapshot_history.push(tick, global_position, yaw, health)
 
@@ -89,10 +173,17 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	health = snapshot.health
 	dead = snapshot.dead
 	last_processed_sequence = snapshot.acknowledged_input_sequence
+	if snapshot.weapon_id != "":
+		_select_weapon(snapshot.weapon_id)
+	var state := _weapon_state()
+	if state != null:
+		state.set_loaded_state(snapshot.ammo, snapshot.reserve)
+	_sync_active_weapon()
 	crouched = false
 	_update_collider()
 
-func make_snapshot(tick: int, round_state: String, round_number: int, objective_state: String, planted_site: String, bomb_time_left: float, weapon_id: String = "", ammo: int = 0, reserve: int = 0) -> OpenStrikeSnapshot:
+func make_snapshot(tick: int, round_state: String, round_number: int, objective_state: String, planted_site: String, bomb_time_left: float) -> OpenStrikeSnapshot:
+	_sync_active_weapon()
 	var snapshot := OpenStrikeSnapshot.new()
 	snapshot.tick = tick
 	snapshot.peer_id = peer_id
@@ -111,10 +202,27 @@ func make_snapshot(tick: int, round_state: String, round_number: int, objective_
 	snapshot.objective_state = objective_state
 	snapshot.planted_site = planted_site
 	snapshot.bomb_time_left = bomb_time_left
-	snapshot.weapon_id = weapon_id
-	snapshot.ammo = ammo
-	snapshot.reserve = reserve
 	return snapshot
+
+func _build_visual() -> void:
+	if collision_shape != null:
+		return
+	collision_shape = CollisionShape3D.new()
+	var capsule_shape := CapsuleShape3D.new()
+	capsule_shape.height = STAND_HEIGHT
+	capsule_shape.radius = 0.35
+	collision_shape.shape = capsule_shape
+	add_child(collision_shape)
+
+	mesh = MeshInstance3D.new()
+	var capsule := CapsuleMesh.new()
+	capsule.height = STAND_HEIGHT
+	capsule.radius = 0.35
+	mesh.mesh = capsule
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.20, 0.45, 0.82)
+	mesh.material_override = material
+	add_child(mesh)
 
 func _update_collider() -> void:
 	if collision_shape == null:
