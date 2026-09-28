@@ -8,16 +8,21 @@ const STAND_CAMERA_Y := 0.55
 const CROUCH_CAMERA_Y := 0.30
 const MAX_HEALTH := 100
 const ROUND_TIME := 120.0
-const FREEZE_TIME := 3.0
+const BUY_TIME := 10.0
 const POST_ROUND_TIME := 2.5
+const STARTING_CREDITS := 1200
+const ROUND_WIN_REWARD := 2200
+const ROUND_LOSS_REWARD := 1200
+const KILL_REWARD := 300
+const MAX_CREDITS := 16000
 const RESPAWN_DELAY := 2.0
 
 const TEAM_BLUE := "BLUE"
 const TEAM_RED := "RED"
 
 var weapons := [
-    {"name":"AR-17", "mag":30, "reserve":90, "damage":34, "delay":0.095, "recoil":0.018},
-    {"name":"PX-9", "mag":12, "reserve":48, "damage":55, "delay":0.22, "recoil":0.028}
+    {"name":"AR-17", "mag":30, "reserve":90, "damage":34, "delay":0.095, "recoil":0.018, "cost":2400},
+    {"name":"PX-9", "mag":12, "reserve":48, "damage":55, "delay":0.22, "recoil":0.028, "cost":700}
 ]
 
 var weapon_index := 0
@@ -40,13 +45,15 @@ var dead := false
 var respawn_timer := 0.0
 
 var round_number := 1
-var round_state := "FREEZE"
-var round_state_time_left := FREEZE_TIME
+var round_state := "BUY"
+var round_state_time_left := BUY_TIME
 var round_time_left := ROUND_TIME
 var enemies_alive := 0
 var team_score := 0
 var enemy_score := 0
 var round_won := false
+var credits := STARTING_CREDITS
+var primary_owned := false
 
 var blue_spawn_points := [
     Vector3(-6, 1.2, 14),
@@ -74,6 +81,10 @@ func _unhandled_input(event: InputEvent) -> void:
     elif event is InputEventKey and event.pressed and not event.echo:
         if event.keycode == KEY_ESCAPE:
             Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+        elif event.keycode == KEY_1 and not dead:
+            _buy_weapon(0)
+        elif event.keycode == KEY_2 and not dead:
+            _buy_weapon(1)
         elif event.keycode == KEY_E and not dead:
             _switch_weapon()
         elif event.keycode == KEY_R and not dead:
@@ -129,7 +140,7 @@ func _physics_process(delta: float) -> void:
 func _update_round_state(delta: float) -> void:
     round_state_time_left = maxf(0.0, round_state_time_left - delta)
 
-    if round_state == "FREEZE":
+    if round_state == "BUY":
         if round_state_time_left <= 0.0:
             round_state = "LIVE"
             round_state_time_left = ROUND_TIME
@@ -176,6 +187,7 @@ func _fire() -> void:
             hit.collider.take_damage(int(weapon["damage"]))
             if int(hit.collider.get("health")) <= 0:
                 enemies_alive = maxi(0, enemies_alive - 1)
+                credits = mini(MAX_CREDITS, credits + KILL_REWARD)
                 if enemies_alive == 0:
                     _finish_round(true)
 
@@ -188,9 +200,37 @@ func _reload() -> void:
     reserve -= amount
 
 func _switch_weapon() -> void:
+    if not primary_owned:
+        weapon_index = 1
+        _load_weapon_ammo()
+        return
     _store_weapon_ammo()
     weapon_index = (weapon_index + 1) % weapons.size()
     _load_weapon_ammo()
+
+func _buy_weapon(index: int) -> void:
+    if dead or round_state != "BUY":
+        return
+    if index == 0:
+        if primary_owned:
+            weapon_index = 0
+            _load_weapon_ammo()
+            return
+        var primary := weapons[0]
+        var cost := int(primary["cost"])
+        if credits < cost:
+            return
+        credits -= cost
+        primary_owned = true
+        weapon_index = 0
+        ammo = int(primary["mag"])
+        reserve = int(primary["reserve"])
+        cooldown = 0.0
+    elif index == 1:
+        weapon_index = 1
+        ammo = int(weapons[1]["mag"])
+        reserve = int(weapons[1]["reserve"])
+        cooldown = 0.0
 
 func _store_weapon_ammo() -> void:
     weapons[weapon_index]["loaded"] = ammo
@@ -218,16 +258,27 @@ func _update_hud() -> void:
         hud.text = "ROUND %02d  %s\nYOU ARE DOWN — RESPAWNING %0.1fs" % [round_number, phase, respawn_timer]
         return
 
-    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d  %s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   ESC mouse" % [
+    var buy_line := ""
+    if round_state == "BUY":
+        buy_line = "BUY: [1] %s $%d   [2] %s $%d" % [
+            weapons[0]["name"], weapons[0]["cost"], weapons[1]["name"], weapons[1]["cost"]
+        ]
+
+    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   ESC mouse" % [
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
-        weapon["name"], state, ammo, reserve, health, enemies_alive
+        credits, buy_line, weapon["name"], state, ammo, reserve, health, enemies_alive
     ]
 
 func _start_round() -> void:
     _reset_targets()
+    primary_owned = false
+    weapon_index = 1
+    ammo = int(weapons[1]["mag"])
+    reserve = int(weapons[1]["reserve"])
+    cooldown = 0.0
     _spawn_player()
-    round_state = "FREEZE"
-    round_state_time_left = FREEZE_TIME
+    round_state = "BUY"
+    round_state_time_left = BUY_TIME
     round_time_left = ROUND_TIME
     health = MAX_HEALTH
     dead = false
@@ -242,8 +293,10 @@ func _finish_round(won: bool) -> void:
     round_won = won
     if won:
         team_score += 1
+        credits = mini(MAX_CREDITS, credits + ROUND_WIN_REWARD)
     else:
         enemy_score += 1
+        credits = mini(MAX_CREDITS, credits + ROUND_LOSS_REWARD)
 
 func _reset_targets() -> void:
     var count := 0
