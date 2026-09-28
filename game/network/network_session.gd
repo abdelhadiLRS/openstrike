@@ -275,6 +275,8 @@ func _process_server_fire(shooter: OpenStrikeNetworkPlayer, command: OpenStrikeI
 		target.health = maxi(0, target.health - damage)
 		if target.health <= 0:
 			target.mark_eliminated()
+			if root.has_method("on_network_player_eliminated"):
+				root.on_network_player_eliminated(target.peer_id)
 		if events != null:
 			events.emit_hit(str(shooter.peer_id), str(target.peer_id), shooter.weapon_id, damage, target.global_position, true)
 		if was_alive and target.dead:
