@@ -381,24 +381,20 @@ func _update_bot_defuse(delta: float) -> void:
             bomb_defense_revision += 1
 
     if active_defuser == null:
-        var nearest_bot: Node = null
-        var nearest_distance := INF
         var reachable_bot: Node = null
         var reachable_distance := INF
         for bot in bots:
             if not is_instance_valid(bot) or bot.dead:
                 continue
             var distance := bot.global_position.distance_to(site_position)
-            if distance < nearest_distance:
-                nearest_distance = distance
-                nearest_bot = bot
             if _bot_has_navigation_path(bot, site_position) and distance < reachable_distance:
                 reachable_distance = distance
                 reachable_bot = bot
 
-        var selected_defuser := reachable_bot if reachable_bot != null else nearest_bot
-        if selected_defuser != null:
-            active_defuser = selected_defuser
+        # Never lock the defuse objective to a bot that cannot reach the site.
+        # Leave it unassigned until a reachable defender is available.
+        if reachable_bot != null:
+            active_defuser = reachable_bot
             bot_defuse_time_left = DEFUSE_TIME
             bomb_defense_revision += 1
 
