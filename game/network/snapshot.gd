@@ -18,6 +18,7 @@ var round_won: bool = false
 var round_outcome_reason: String = ""
 var objective_state: String = "CARRIED"
 var carrier_peer_id: int = 0
+var dropped_bomb_position := Vector3.ZERO
 var planted_site: String = ""
 var bomb_time_left: float = 0.0
 var weapon_id: String = ""
@@ -43,6 +44,7 @@ func to_dict() -> Dictionary:
 		"round_outcome_reason": round_outcome_reason,
 		"objective_state": objective_state,
 		"carrier_peer_id": carrier_peer_id,
+		"dropped_bomb_position": dropped_bomb_position,
 		"planted_site": planted_site,
 		"bomb_time_left": bomb_time_left,
 		"weapon_id": weapon_id,
@@ -69,6 +71,7 @@ static func from_dict(data: Dictionary) -> OpenStrikeSnapshot:
 	snapshot.round_outcome_reason = str(data.get("round_outcome_reason", ""))
 	snapshot.objective_state = str(data.get("objective_state", "CARRIED"))
 	snapshot.carrier_peer_id = int(data.get("carrier_peer_id", 0))
+	snapshot.dropped_bomb_position = data.get("dropped_bomb_position", Vector3.ZERO)
 	snapshot.planted_site = str(data.get("planted_site", ""))
 	snapshot.bomb_time_left = float(data.get("bomb_time_left", 0.0))
 	snapshot.weapon_id = str(data.get("weapon_id", ""))
