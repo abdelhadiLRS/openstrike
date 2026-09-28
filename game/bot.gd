@@ -153,12 +153,13 @@ func _update_state() -> void:
         return
 
     var squad_contact_active := bool(main.call("_is_squad_contact_active"))
-    if squad_contact_active and not _has_line_of_sight() and combat_intent != "RETREAT":
+    if squad_contact_active and combat_intent != "RETREAT":
         if combat_assignment == "SUPPORT":
             state = "SUPPRESS"
             return
-        state = "ATTACK" if combat_intent == "PUSH" else "REENGAGE"
-        return
+        if not _has_line_of_sight():
+            state = "ATTACK" if combat_intent == "PUSH" else "REENGAGE"
+            return
 
     if bool(main.call("_is_squad_search_active")) and combat_intent == "HOLD" and not _has_line_of_sight():
         state = "SEARCH"
