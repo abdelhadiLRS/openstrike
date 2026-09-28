@@ -9,6 +9,7 @@ const CROUCH_SPEED := 3.4
 const STARTING_CREDITS := 1200
 const MAX_CREDITS := 16000
 const RESPAWN_DELAY := 2.0
+const RESPAWN_DELAY := 2.0
 
 var peer_id: int = 0
 var health: int = 100
@@ -24,6 +25,7 @@ var fire_cooldown: float = 0.0
 var primary_owned: bool = false
 var credits: int = STARTING_CREDITS
 var weapon_states: Dictionary = {}
+var respawn_timer: float = 0.0
 var respawn_timer: float = 0.0
 var snapshot_history := OpenStrikeSnapshotHistory.new()
 
@@ -86,6 +88,29 @@ func begin_round(start_position: Vector3) -> void:
 			state.cooldown_remaining = 0.0
 	_select_weapon("px_9")
 	_sync_active_weapon()
+
+func begin_respawn(start_position: Vector3) -> void:
+	global_position = start_position
+	velocity = Vector3.ZERO
+	health = 100
+	dead = false
+	respawn_timer = 0.0
+	crouched = false
+	_select_weapon("px_9")
+	_sync_active_weapon()
+
+func mark_eliminated() -> void:
+	dead = true
+	health = 0
+	velocity = Vector3.ZERO
+	respawn_timer = RESPAWN_DELAY
+
+func tick_respawn(delta: float, round_state: String, start_position: Vector3) -> void:
+	if not dead or round_state != "LIVE":
+		return
+	respawn_timer = maxf(0.0, respawn_timer - maxf(delta, 0.0))
+	if respawn_timer <= 0.0:
+		begin_respawn(start_position)
 
 func begin_respawn(start_position: Vector3) -> void:
 	global_position = start_position
