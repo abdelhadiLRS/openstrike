@@ -433,12 +433,9 @@ func _fire() -> void:
     if hit and hit.collider.has_method("take_damage"):
         var target_team := str(hit.collider.get("team"))
         if target_team != player_team:
+            # Bot eliminations are scored by the bot's `eliminated` signal.
+            # Keep this path limited to applying damage to avoid double rewards.
             hit.collider.take_damage(int(weapon["damage"]))
-            if int(hit.collider.get("health")) <= 0:
-                enemies_alive = maxi(0, enemies_alive - 1)
-                credits = mini(MAX_CREDITS, credits + KILL_REWARD)
-                if enemies_alive == 0:
-                    _finish_round(true)
 
 func _reload() -> void:
     if ammo >= int(_current_weapon()["mag"]) or reserve <= 0:
