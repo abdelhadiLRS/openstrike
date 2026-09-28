@@ -161,3 +161,11 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Attack repositioning can use the remembered position when the player has moved behind cover, allowing the squad to pressure the last known area rather than instantly treating the target as continuously visible.
 - The memory is shared across bots and carries a revision number so later tactical systems can react to meaningful updates.
 - The system remains bounded by a maximum tactical distance and does not create persistent map-wide player tracking.
+
+
+### Last-known-position squad coordination
+- Engagement targeting now distinguishes the three squad assignments when the player is temporarily hidden.
+- PRESSURE works from the remembered player position directly.
+- SUPPORT receives a small offset to avoid collapsing onto the pressure lane.
+- FLANK receives a wider lateral offset based on its combat slot, creating a separate approach lane around the last-known position.
+- When a bot has fresh line of sight, the real player position remains authoritative and the memory offsets are not applied.
