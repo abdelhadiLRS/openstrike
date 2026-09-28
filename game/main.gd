@@ -95,6 +95,8 @@ var enemies_alive := 0
 var team_score := 0
 var enemy_score := 0
 var round_won := false
+var round_outcome_resolved := false
+var round_outcome_reason := ""
 var credits := STARTING_CREDITS
 var primary_owned := false
 
@@ -374,7 +376,7 @@ func _update_round_state(delta: float) -> void:
         round_time_left = maxf(0.0, round_time_left - delta)
         round_state_time_left = round_time_left
         if round_time_left <= 0.0 and objective_state != "PLANTED":
-            _finish_round(false)
+            _request_round_outcome(false, "TIMEOUT")
     elif round_state == "POST":
         if round_state_time_left <= 0.0:
             round_number += 1
@@ -444,7 +446,7 @@ func _update_objective(delta: float) -> void:
 
         if bomb_time_left <= 0.0:
             objective_state = "EXPLODED"
-            _finish_round(true)
+            _request_round_outcome(true, "BOMB_EXPLODED")
             return
 
         if objective_action == "DEFUSE":
@@ -457,7 +459,7 @@ func _update_objective(delta: float) -> void:
                     objective_state = "DEFUSED"
                     objective_action = ""
                     objective_action_time_left = 0.0
-                    _finish_round(false)
+                    _request_round_outcome(false, "PLAYER_DEFUSED")
 
 func _bot_has_navigation_path(bot: Node, goal: Vector3) -> bool:
     if not is_instance_valid(bot) or bot.dead:
@@ -549,7 +551,7 @@ func _update_bot_defuse(delta: float) -> void:
             bot_defuse_time_left = maxf(0.0, bot_defuse_time_left - delta)
             if bot_defuse_time_left <= 0.0:
                 objective_state = "DEFUSED"
-                _finish_round(false)
+                _request_round_outcome(false, "BOT_DEFUSED")
 
 
 func _update_bomb_visual() -> void:
@@ -766,6 +768,8 @@ func _start_round() -> void:
     dead = false
     respawn_timer = 0.0
     round_won = false
+    round_outcome_resolved = false
+    round_outcome_reason = ""
     objective_state = "CARRIED"
     objective_site = ""
     planted_site = ""
@@ -811,8 +815,21 @@ func _start_round() -> void:
     combat_director_threat_revision = -1
     combat_contact_started_at = Time.get_ticks_msec()
 
+func _request_round_outcome(won: bool, reason: String) -> bool:
+    # Only the authoritative simulation may resolve a round. Online clients
+    # consume the server's round_state/round_won through snapshots.
+    if network_session != null and network_session.is_online and not network_session.is_server:
+        return false
+    if round_state != "LIVE" or round_outcome_resolved:
+        return false
+
+    round_outcome_resolved = true
+    round_outcome_reason = reason
+    _finish_round(won)
+    return true
+
 func _finish_round(won: bool) -> void:
-    if round_state != "LIVE":
+    if round_state != "LIVE" or not round_outcome_resolved:
         return
     round_state = "POST"
     round_state_time_left = POST_ROUND_TIME
@@ -1487,7 +1504,7 @@ func _on_combat_event(event: OpenStrikeCombatEvent) -> void:
         if is_instance_valid(bot) and str(bot.get_instance_id()) == event.target_id:
             enemies_alive = maxi(0, enemies_alive - 1)
             if enemies_alive == 0 and round_state == "LIVE":
-                _finish_round(true)
+                _request_round_outcome(true, "ALL_BOTS_ELIMINATED")
             break
 
 func _spawn_player() -> void:
