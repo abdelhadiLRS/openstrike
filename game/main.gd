@@ -2111,7 +2111,7 @@ func _update_hud() -> void:
             weapons[0]["name"], weapons[0]["cost"], weapons[1]["name"], weapons[1]["cost"]
         ]
 
-    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse   F3 netgraph   F4 visuals %s   F5 motion %s" % [
+    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse   F3 netgraph   F4 visuals %s   F5 motion %s   F6 compact HUD %s" % [
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
         credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive,
         "LOW" if low_spec_mode else "HIGH",
