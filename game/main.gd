@@ -3133,6 +3133,24 @@ func _create_bot(index: int) -> CharacterBody3D:
     var backpack := _bot_detail(Vector3(0.42, 0.52, 0.20), Vector3(0.0, 0.02, 0.25), dark_material)
     var chest_rig := _bot_detail(Vector3(0.48, 0.12, 0.36), Vector3(0.0, 0.16, -0.205), armor_material)
 
+    # Compact, render-only rifle silhouette and utility details make enemy
+    # units read as armed combatants instead of capsule-shaped targets.
+    var weapon_material := StandardMaterial3D.new()
+    weapon_material.albedo_color = Color(0.045, 0.055, 0.065)
+    weapon_material.metallic = 0.38
+    weapon_material.roughness = 0.62
+    var weapon_accent := StandardMaterial3D.new()
+    weapon_accent.albedo_color = Color(0.76, 0.28, 0.12)
+    weapon_accent.roughness = 0.72
+    var bot_rifle_body := _bot_detail(Vector3(0.16, 0.14, 0.68), Vector3(0.18, -0.03, -0.34), weapon_material)
+    var bot_rifle_barrel := _bot_detail(Vector3(0.065, 0.065, 0.42), Vector3(0.18, 0.0, -0.84), weapon_material)
+    var bot_rifle_stock := _bot_detail(Vector3(0.13, 0.13, 0.25), Vector3(0.18, -0.06, 0.12), weapon_material)
+    var bot_rifle_magazine := _bot_detail(Vector3(0.095, 0.23, 0.13), Vector3(0.18, -0.21, -0.30), weapon_material)
+    var bot_rifle_sight := _bot_detail(Vector3(0.075, 0.065, 0.12), Vector3(0.18, 0.105, -0.36), weapon_accent)
+    var left_pouch := _bot_detail(Vector3(0.16, 0.19, 0.11), Vector3(-0.20, -0.02, -0.25), dark_material)
+    var right_pouch := _bot_detail(Vector3(0.16, 0.19, 0.11), Vector3(0.20, -0.02, -0.25), dark_material)
+    var shoulder_mark := _bot_detail(Vector3(0.07, 0.15, 0.18), Vector3(-0.47, 0.24, -0.02), weapon_accent)
+
     bot.add_child(mesh)
     bot.add_child(vest)
     bot.add_child(head)
@@ -3146,6 +3164,14 @@ func _create_bot(index: int) -> CharacterBody3D:
     bot.add_child(right_leg)
     bot.add_child(backpack)
     bot.add_child(chest_rig)
+    bot.add_child(bot_rifle_body)
+    bot.add_child(bot_rifle_barrel)
+    bot.add_child(bot_rifle_stock)
+    bot.add_child(bot_rifle_magazine)
+    bot.add_child(bot_rifle_sight)
+    bot.add_child(left_pouch)
+    bot.add_child(right_pouch)
+    bot.add_child(shoulder_mark)
     bot.add_child(shape)
     bot.add_to_group("bots")
     add_child(bot)
