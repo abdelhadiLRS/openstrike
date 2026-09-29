@@ -3496,6 +3496,29 @@ func _refresh_view_weapon() -> void:
     grip_material.albedo_color = Color(0.055, 0.065, 0.075)
     grip_material.roughness = 0.94
 
+    # First-person sleeves and gloves ground the weapon in the player's view.
+    # These are low-poly render-only meshes with shadows disabled.
+    var sleeve_material := StandardMaterial3D.new()
+    sleeve_material.albedo_color = Color(0.12, 0.17, 0.16) if is_rifle else Color(0.16, 0.17, 0.15)
+    sleeve_material.roughness = 0.96
+    var cuff_material := StandardMaterial3D.new()
+    cuff_material.albedo_color = Color(0.075, 0.09, 0.085)
+    cuff_material.roughness = 0.98
+    var glove_material := StandardMaterial3D.new()
+    glove_material.albedo_color = Color(0.055, 0.065, 0.06)
+    glove_material.roughness = 0.98
+
+    # Support arm reaches forward under the fore-end; trigger arm sits lower
+    # and behind the grip so the silhouette does not cover the sights.
+    _view_box(Vector3(-0.22, -0.23, 0.19), Vector3(0.22, 0.23, 0.46), sleeve_material)
+    _view_box(Vector3(-0.17, -0.14, -0.035), Vector3(0.19, 0.18, 0.38), sleeve_material)
+    _view_box(Vector3(-0.12, -0.075, -0.205), Vector3(0.20, 0.13, 0.22), glove_material)
+    _view_box(Vector3(-0.12, -0.075, -0.095), Vector3(0.22, 0.045, 0.07), cuff_material)
+    _view_box(Vector3(0.25, -0.27, 0.22), Vector3(0.22, 0.24, 0.42), sleeve_material)
+    _view_box(Vector3(0.20, -0.16, 0.015), Vector3(0.19, 0.18, 0.35), sleeve_material)
+    _view_box(Vector3(0.12, -0.075, -0.105), Vector3(0.18, 0.15, 0.20), glove_material)
+    _view_box(Vector3(0.20, -0.075, 0.005), Vector3(0.20, 0.045, 0.07), cuff_material)
+
     _view_box(Vector3(0.0, 0.0, 0.0), Vector3(0.16, 0.13, 0.40 if is_rifle else 0.25), body_material)
     _view_box(Vector3(0.0, 0.015, -0.26 if is_rifle else -0.17), Vector3(0.085, 0.085, 0.34 if is_rifle else 0.19), body_material)
     _view_box(Vector3(0.0, 0.09, -0.045), Vector3(0.09, 0.055, 0.19 if is_rifle else 0.10), accent_material)
