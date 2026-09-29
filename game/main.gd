@@ -2399,6 +2399,7 @@ func _world() -> void:
     _setup_navigation_points()
     _setup_cover_points()
     _create_map_dressing()
+    _create_spawn_wayfinding()
     _create_wall_ribs()
     _create_floor_grates()
     _create_cover_visual_details()
@@ -2409,6 +2410,54 @@ func _world() -> void:
     _create_bomb_visual()
 
 
+
+func _create_spawn_wayfinding() -> void:
+    # Large, color-coded deployment signs and floor-edge guides make each
+    # team's starting side readable at a glance. All pieces are visual-only.
+    var blue := Color(0.12, 0.62, 0.98)
+    var red := Color(0.96, 0.24, 0.16)
+    var panel_material := StandardMaterial3D.new()
+    panel_material.albedo_color = Color(0.025, 0.045, 0.065)
+    panel_material.metallic = 0.28
+    panel_material.roughness = 0.72
+    var blue_trim := StandardMaterial3D.new()
+    blue_trim.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    blue_trim.albedo_color = blue
+    blue_trim.emission_enabled = true
+    blue_trim.emission = blue * 0.55
+    blue_trim.emission_energy_multiplier = 1.15
+    var red_trim := StandardMaterial3D.new()
+    red_trim.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    red_trim.albedo_color = red
+    red_trim.emission_enabled = true
+    red_trim.emission = red * 0.55
+    red_trim.emission_energy_multiplier = 1.15
+
+    var signs := [
+        {"z": 17.38, "text": "BLUE  /  DEPLOYMENT", "color": blue, "trim": blue_trim, "rotation": PI},
+        {"z": -17.38, "text": "RED  /  DEPLOYMENT", "color": red, "trim": red_trim, "rotation": 0.0}
+    ]
+    for spec in signs:
+        var z := float(spec["z"])
+        _visual_box(Vector3(0.0, 2.65, z), Vector3(7.2, 1.15, 0.10), panel_material)
+        _visual_box(Vector3(0.0, 3.25, z - 0.065 if z > 0.0 else z + 0.065), Vector3(7.25, 0.055, 0.035), spec["trim"])
+        var label := Label3D.new()
+        label.name = str(spec["text"]).replace(" ", "")
+        label.text = str(spec["text"])
+        label.position = Vector3(0.0, 2.62, z - 0.09 if z > 0.0 else z + 0.09)
+        label.rotation.y = float(spec["rotation"])
+        label.font_size = 64
+        label.pixel_size = 0.012
+        label.modulate = spec["color"]
+        label.outline_size = 10
+        label.outline_modulate = Color(0.01, 0.02, 0.03, 0.98)
+        label.shaded = false
+        add_child(label)
+
+    # Short colored floor bars point inward from the two starting edges.
+    for side in [-1.0, 1.0]:
+        _visual_box(Vector3(side * 3.8, 0.018, 14.8), Vector3(0.12, 0.025, 4.8), blue_trim)
+        _visual_box(Vector3(side * 3.8, 0.018, -14.8), Vector3(0.12, 0.025, 4.8), red_trim)
 
 func _create_wall_ribs() -> void:
     # Vertical steel ribs add depth to the perimeter walls without changing
