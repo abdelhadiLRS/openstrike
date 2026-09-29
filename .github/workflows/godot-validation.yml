@@ -1,0 +1,36 @@
+name: Godot validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "game/**"
+      - ".github/workflows/godot-validation.yml"
+  pull_request:
+    paths:
+      - "game/**"
+      - ".github/workflows/godot-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Import and headless startup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+
+      - name: Import project resources
+        run: godot --headless --editor --path game --quit
+
+      - name: Validate headless startup
+        run: godot --headless --path game --quit-after 3
