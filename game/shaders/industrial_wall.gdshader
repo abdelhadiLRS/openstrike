@@ -28,7 +28,7 @@ void fragment() {
     float broad = value_noise(wall_uv * vec2(7.0, 3.0));
     float grain = value_noise(wall_uv * vec2(88.0, 42.0));
     float speckle = hash2(floor(wall_uv * vec2(230.0, 120.0)));
-    float variation = broad * 0.58 + grain * 0.30 + speckle * 0.12;
+    float variation = broad * 0.54 + grain * 0.30 + speckle * 0.16;
 
     vec3 concrete_dark = vec3(0.075, 0.095, 0.115);
     vec3 concrete_light = vec3(0.145, 0.165, 0.185);
@@ -42,7 +42,15 @@ void fragment() {
     float horizontal_seam = 1.0 - smoothstep(0.008, 0.026, y_edge);
     float seam = max(vertical_seam, horizontal_seam);
 
-    ALBEDO = panel_color * (1.0 - seam * 0.30);
+    // Subtle vertical grime and lower-wall dirt break up the perfectly clean
+    // procedural panels without texture maps or additional geometry.
+    float streaks = value_noise(vec2(floor(wall_uv.x * 74.0) * 0.17, wall_uv.y * 11.0));
+    float lower_grime = 1.0 - smoothstep(0.10, 0.78, wall_uv.y);
+    float grime = clamp((0.5 - streaks) * 0.11 + lower_grime * 0.07, 0.0, 0.13);
+    float panel_edge = 1.0 - smoothstep(0.0, 0.045, min(min(x_phase, 1.0 - x_phase), min(y_phase, 1.0 - y_phase)));
+    float edge_lift = panel_edge * 0.025;
+
+    ALBEDO = panel_color * (1.0 - seam * 0.30 - grime) + vec3(edge_lift);
     ROUGHNESS = 0.88;
     METALLIC = 0.035;
 }
