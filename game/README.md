@@ -157,7 +157,7 @@ The prototype remains offline by default. Optional user arguments can start the 
 - `--connect=127.0.0.1`: connect as a client to a host
 - `--low-spec`: disable environment fog and directional-light shadows and skip decorative shell-casing/impact-spark effects for lower-end integrated graphics; shot tracers and impact marks remain enabled.
 - `--balanced-visual`: legacy alias for the BALANCED profile; starts with atmospheric fog and ambient dust enabled, but disables glow and directional-light shadow maps.
-- `--visual=high|balanced|low`: select the rendering profile at startup. HIGH enables the full lighting presentation, BALANCED keeps haze/dust but disables glow and shadow maps, and LOW disables fog, shadows, glow, and ambient dust. This explicit option takes precedence over the legacy `--low-spec` and `--balanced-visual` flags.
+- `--visual=high|balanced|low`: select the rendering profile at startup. HIGH enables the full lighting presentation with 4x MSAA, BALANCED keeps haze/dust with 2x MSAA while disabling glow and shadow maps, and LOW disables fog, shadows, glow, ambient dust, and MSAA. This explicit option takes precedence over the legacy `--low-spec` and `--balanced-visual` flags.
 - `--help`: print the OpenStrike launch options
 
 `--server` and `--connect` are mutually exclusive. Invalid combinations are rejected at startup.
