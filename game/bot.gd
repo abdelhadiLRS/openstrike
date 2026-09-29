@@ -1260,6 +1260,7 @@ func apply_network_snapshot(snapshot: Dictionary) -> void:
 	state = str(snapshot.get("state", state))
 	combat_assignment = str(snapshot.get("assignment", combat_assignment))
 	if snapshot_dead and not dead:
+		_spawn_elimination_effect()
 		dead = true
 		velocity = Vector3.ZERO
 		visible = false
@@ -1422,6 +1423,7 @@ func reset_target() -> void:
     strafe_sign = 1.0
 
 func _die() -> void:
+    _spawn_elimination_effect()
     dead = true
     visible = false
     if collision_shape:
@@ -1430,3 +1432,50 @@ func _die() -> void:
     collision_mask = 0
     velocity = Vector3.ZERO
     eliminated.emit(self)
+
+
+func _spawn_elimination_effect() -> void:
+    # A short amber-red pulse marks an elimination while keeping the bot
+    # itself hidden and the original hitbox/gameplay state untouched.
+    if not is_instance_valid(main):
+        return
+    var effect := Node3D.new()
+    effect.name = "BotEliminationPulse"
+    main.add_child(effect)
+    effect.global_position = global_position + Vector3(0.0, 0.12, 0.0)
+
+    var pulse := MeshInstance3D.new()
+    pulse.name = "EliminationRing"
+    var ring_mesh := TorusMesh.new()
+    ring_mesh.inner_radius = 0.42
+    ring_mesh.outer_radius = 0.56
+    ring_mesh.ring_segments = 12
+    ring_mesh.radial_segments = 4
+    pulse.mesh = ring_mesh
+    pulse.rotation.x = PI * 0.5
+    pulse.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    var pulse_material := StandardMaterial3D.new()
+    pulse_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    pulse_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    pulse_material.albedo_color = Color(1.0, 0.24, 0.07, 0.88)
+    pulse_material.emission_enabled = true
+    pulse_material.emission = Color(1.0, 0.12, 0.025)
+    pulse_material.emission_energy_multiplier = 2.0
+    pulse.material_override = pulse_material
+    effect.add_child(pulse)
+
+    var core := MeshInstance3D.new()
+    core.name = "EliminationCore"
+    var core_mesh := SphereMesh.new()
+    core_mesh.radius = 0.20
+    core_mesh.height = 0.40
+    core.mesh = core_mesh
+    core.material_override = pulse_material
+    core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    effect.add_child(core)
+
+    effect.scale = Vector3(0.35, 0.35, 0.35)
+    var tween := effect.create_tween().set_parallel(true)
+    tween.tween_property(effect, "scale", Vector3(1.8, 1.8, 1.8), 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+    tween.tween_property(pulse_material, "albedo_color:a", 0.0, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+    tween.finished.connect(effect.queue_free)
