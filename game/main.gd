@@ -286,8 +286,7 @@ var red_spawn_points := [
 
 func _ready() -> void:
     var launch_args := OS.get_cmdline_user_args()
-    low_spec_mode = launch_args.has("--low-spec")
-    balanced_visual_mode = launch_args.has("--balanced-visual") and not low_spec_mode
+    _configure_visual_quality_from_command_line(launch_args)
     _configure_bot_count_from_command_line()
     _load_weapon_catalog()
     combat_events = OpenStrikeCombatEvents.new()
@@ -4439,6 +4438,32 @@ func _apply_visual_quality_mode() -> void:
     for mote in ambient_dust_motes:
         if is_instance_valid(mote):
             mote.visible = not low_spec_mode
+
+
+func _configure_visual_quality_from_command_line(launch_args: PackedStringArray) -> void:
+    # The explicit --visual option takes precedence over legacy flags so
+    # launch scripts can select one predictable rendering profile.
+    var requested_mode := ""
+    for argument in launch_args:
+        if argument.begins_with("--visual="):
+            requested_mode = argument.trim_prefix("--visual=").to_lower()
+
+    if requested_mode == "low":
+        low_spec_mode = true
+        balanced_visual_mode = false
+    elif requested_mode == "balanced":
+        low_spec_mode = false
+        balanced_visual_mode = true
+    elif requested_mode == "high":
+        low_spec_mode = false
+        balanced_visual_mode = false
+    elif not requested_mode.is_empty():
+        push_warning("Unknown visual profile '%s'. Use --visual=low, balanced, or high." % requested_mode)
+        low_spec_mode = launch_args.has("--low-spec")
+        balanced_visual_mode = launch_args.has("--balanced-visual") and not low_spec_mode
+    else:
+        low_spec_mode = launch_args.has("--low-spec")
+        balanced_visual_mode = launch_args.has("--balanced-visual") and not low_spec_mode
 
 
 func _visual_quality_label() -> String:
