@@ -124,7 +124,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - CTRL: crouch
 - SPACE: jump
 - Left mouse: fire
-- Right mouse (hold): aim down sights with a smooth viewmodel transition and tighter camera FOV; presentation-only, does not alter hit registration
+- Right mouse (hold): aim down sights with a smooth viewmodel transition, tighter camera FOV, and weapon-specific rifle/pistol alignment; presentation-only, does not alter hit registration
 - R: reload
 - E: switch weapon
 - T: inspect the current weapon (visual-only animation)
