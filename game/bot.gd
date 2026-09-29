@@ -256,6 +256,14 @@ func _update_visual_motion(delta: float) -> void:
     if dead:
         visual_rig.position = Vector3.ZERO
         visual_rig.rotation = Vector3.ZERO
+        if is_instance_valid(visual_left_arm):
+            visual_left_arm.rotation = Vector3.ZERO
+        if is_instance_valid(visual_right_arm):
+            visual_right_arm.rotation = Vector3.ZERO
+        if is_instance_valid(visual_left_leg):
+            visual_left_leg.rotation = Vector3.ZERO
+        if is_instance_valid(visual_right_leg):
+            visual_right_leg.rotation = Vector3.ZERO
         return
 
     var horizontal_velocity := velocity
