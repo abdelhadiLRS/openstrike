@@ -519,6 +519,8 @@ func _physics_process(delta: float) -> void:
     player.move_and_slide()
     if not was_on_floor and player.is_on_floor():
         landing_camera_kick = clampf(absf(landing_speed) * 0.025, 0.045, 0.22)
+        if absf(landing_speed) >= 3.2:
+            _spawn_landing_dust(absf(landing_speed))
     camera.rotation.x = pitch + recoil_kick
     _update_hud()
 
@@ -1214,6 +1216,34 @@ func _spawn_shell_casing() -> void:
     tween.tween_property(casing, "rotation", casing.rotation + Vector3(5.2, 3.6, 7.0), 0.62)
     tween.tween_property(casing, "scale", Vector3.ZERO, 0.22).set_delay(0.40)
     tween.finished.connect(casing.queue_free)
+
+func _spawn_landing_dust(impact_speed: float) -> void:
+    # A brief floor ring sells a hard landing without particles, physics, or
+    # lights. It is cosmetic only and is disabled by low-spec/reduced-motion.
+    if low_spec_mode or reduced_motion_mode or not is_instance_valid(player):
+        return
+    var ring := MeshInstance3D.new()
+    ring.name = "LandingDustRing"
+    var ring_mesh := TorusMesh.new()
+    ring_mesh.inner_radius = 0.34
+    ring_mesh.outer_radius = 0.43
+    ring_mesh.ring_segments = 12
+    ring_mesh.radial_segments = 4
+    ring.mesh = ring_mesh
+    ring.global_position = Vector3(player.global_position.x, 0.035, player.global_position.z)
+    ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    var ring_material := StandardMaterial3D.new()
+    ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    ring_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    ring_material.albedo_color = Color(0.60, 0.72, 0.78, 0.30)
+    ring.material_override = ring_material
+    add_child(ring)
+    var spread := lerpf(1.25, 2.1, clampf((impact_speed - 3.2) / 7.0, 0.0, 1.0))
+    var tween := create_tween().set_parallel(true)
+    tween.tween_property(ring, "scale", Vector3(spread, 0.22, spread), 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+    tween.tween_property(ring, "modulate:a", 0.0, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+    tween.finished.connect(ring.queue_free)
+
 
 func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color) -> void:
     # A compact star-shaped flash makes impacts readable against dark concrete.
