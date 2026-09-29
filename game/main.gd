@@ -2067,11 +2067,60 @@ func _world() -> void:
     _setup_navigation_points()
     _setup_cover_points()
     _create_map_dressing()
+    _create_cover_visual_details()
     _create_site_beacons()
     _spawn_bots()
     _objective_site(BOMB_SITE_A, "A")
     _objective_site(BOMB_SITE_B, "B")
     _create_bomb_visual()
+
+
+func _create_cover_visual_details() -> void:
+    # Visual-only face plates make the existing cover read as modular arena
+    # equipment. They sit just outside the collision boxes and add no physics.
+    var plate_material := StandardMaterial3D.new()
+    plate_material.albedo_color = Color(0.065, 0.085, 0.105)
+    plate_material.metallic = 0.32
+    plate_material.roughness = 0.68
+
+    var trim_material := StandardMaterial3D.new()
+    trim_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    trim_material.albedo_color = Color(0.08, 0.48, 0.62)
+    trim_material.emission_enabled = true
+    trim_material.emission = Color(0.025, 0.22, 0.34)
+    trim_material.emission_energy_multiplier = 0.8
+
+    var cover_blocks := [
+        {"p": Vector3(-7.0, 1.0, -5.0), "s": Vector3(3.0, 2.0, 2.0)},
+        {"p": Vector3(6.0, 1.0, -2.0), "s": Vector3(3.0, 2.0, 2.0)},
+        {"p": Vector3(-3.0, 1.0, 7.0), "s": Vector3(3.0, 2.0, 2.0)},
+        {"p": Vector3(10.0, 1.0, 9.0), "s": Vector3(3.0, 2.0, 2.0)},
+        {"p": Vector3(-12.0, 0.65, -7.0), "s": Vector3(2.8, 1.3, 1.2)},
+        {"p": Vector3(-2.0, 0.65, -8.0), "s": Vector3(3.4, 1.3, 1.2)},
+        {"p": Vector3(7.0, 0.65, -7.0), "s": Vector3(2.6, 1.3, 1.2)},
+        {"p": Vector3(-9.0, 0.65, 4.0), "s": Vector3(2.4, 1.3, 1.4)},
+        {"p": Vector3(2.0, 0.65, 5.0), "s": Vector3(3.2, 1.3, 1.2)},
+        {"p": Vector3(11.0, 0.65, 4.0), "s": Vector3(2.4, 1.3, 1.4)}
+    ]
+
+    for data in cover_blocks:
+        var pos: Vector3 = data["p"]
+        var size: Vector3 = data["s"]
+        var panel_width := maxf(0.45, size.x * 0.52)
+        var panel_height := maxf(0.30, size.y * 0.38)
+        var panel_center := pos + Vector3(0.0, size.y * 0.06, size.z * 0.5 + 0.025)
+        _visual_box(panel_center, Vector3(panel_width, panel_height, 0.045), plate_material)
+        _visual_box(
+            panel_center + Vector3(0.0, panel_height * 0.5 - 0.025, 0.03),
+            Vector3(panel_width + 0.08, 0.035, 0.025),
+            trim_material
+        )
+        for side in [-1.0, 1.0]:
+            _visual_box(
+                panel_center + Vector3(side * (panel_width * 0.5 - 0.055), 0.0, 0.03),
+                Vector3(0.035, panel_height * 0.72, 0.025),
+                trim_material
+            )
 
 func _create_visual_environment() -> void:
     var environment_node := WorldEnvironment.new()
