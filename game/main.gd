@@ -104,6 +104,8 @@ var objective_compass_b: Label
 var network_debug_hud: Label
 var network_debug_visible := false
 var low_spec_mode := false
+var visual_environment: Environment
+var map_key_light: DirectionalLight3D
 var view_weapon_root: Node3D
 var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
@@ -270,6 +272,9 @@ func _unhandled_input(event: InputEvent) -> void:
             network_debug_visible = not network_debug_visible
             if network_debug_hud != null:
                 network_debug_hud.visible = network_debug_visible
+        elif event.keycode == KEY_F4:
+            low_spec_mode = not low_spec_mode
+            _apply_visual_quality_mode()
         elif event.keycode == KEY_1 and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_buy_weapon_id = str(weapons[0]["id"])
@@ -1692,9 +1697,10 @@ func _update_hud() -> void:
             weapons[0]["name"], weapons[0]["cost"], weapons[1]["name"], weapons[1]["cost"]
         ]
 
-    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse   F3 netgraph" % [
+    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse   F3 netgraph   F4 visuals %s" % [
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
-        credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive
+        credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive,
+        "LOW" if low_spec_mode else "HIGH"
     ]
     _update_network_debug_hud()
     _update_objective_progress_ui()
@@ -3180,6 +3186,7 @@ func _create_visual_environment() -> void:
     environment.adjustment_contrast = 1.04
     environment.adjustment_saturation = 1.08
     environment_node.environment = environment
+    visual_environment = environment
     add_child(environment_node)
 
     var sun := DirectionalLight3D.new()
@@ -3189,7 +3196,9 @@ func _create_visual_environment() -> void:
     sun.light_energy = 1.05
     sun.shadow_enabled = not low_spec_mode
     sun.directional_shadow_max_distance = 45.0
+    map_key_light = sun
     add_child(sun)
+    _apply_visual_quality_mode()
 
     # Emissive perimeter strips add a restrained industrial silhouette without
     # spawning extra dynamic lights or affecting collision/navigation.
@@ -3211,6 +3220,15 @@ func _create_visual_environment() -> void:
     for z in [-14.0, 0.0, 14.0]:
         _visual_box(Vector3(-17.40, 3.55, z), Vector3(0.055, 0.045, 3.0), perimeter_warning)
         _visual_box(Vector3(17.40, 3.55, z), Vector3(0.055, 0.045, 3.0), perimeter_warning)
+
+func _apply_visual_quality_mode() -> void:
+    # Runtime quality switching changes only two expensive rendering effects.
+    # Geometry, combat state, navigation, and network simulation remain intact.
+    if is_instance_valid(visual_environment):
+        visual_environment.fog_enabled = not low_spec_mode
+    if is_instance_valid(map_key_light):
+        map_key_light.shadow_enabled = not low_spec_mode
+
 
 func _create_map_dressing() -> void:
     # Low-cost, non-colliding markings improve map readability without
