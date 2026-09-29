@@ -273,11 +273,14 @@ func _update_visual_motion(delta: float) -> void:
     var local_velocity := global_transform.basis.inverse() * horizontal_velocity
     var stride := sin(visual_motion_time)
     var bob := absf(stride) * 0.035 * speed_ratio
+    # A very small idle breathing cycle keeps stationary combatants from looking
+    # frozen. It fades out as movement begins and only animates the visual rig.
+    var idle_breath := sin(visual_motion_time * 0.72 + float(combat_slot) * 0.83) * 0.012 * (1.0 - speed_ratio)
     # A restrained body bob and lateral lean add life to the low-poly model.
     # Only the visual child moves; the CharacterBody3D collider stays untouched.
-    var target_position := Vector3(0.0, bob, 0.0)
+    var target_position := Vector3(0.0, bob + idle_breath, 0.0)
     var target_rotation := Vector3(
-        -0.018 * speed_ratio,
+        -0.018 * speed_ratio + idle_breath * 0.35,
         0.0,
         clampf(-local_velocity.x * 0.025, -0.055, 0.055)
     )
