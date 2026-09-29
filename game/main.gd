@@ -6059,6 +6059,11 @@ func _trigger_muzzle_flash() -> void:
     var is_rifle := str(_current_weapon().get("id", "")) == "ar_17"
     muzzle_flash_timer = 0.060 if is_rifle else 0.042
     view_weapon_recoil = maxf(view_weapon_recoil, 0.075)
+    # Small per-shot variation prevents repeated bursts from looking like a static stamp.
+    # The viewmodel-only transform does not affect the camera ray or hit registration.
+    var flash_scale := randf_range(0.90, 1.12)
+    muzzle_flash.scale = (Vector3(0.72, 1.25, 1.7) if is_rifle else Vector3(0.62, 1.0, 1.25)) * flash_scale
+    muzzle_flash.rotation = Vector3(randf_range(-0.10, 0.10), randf_range(-0.08, 0.08), randf_range(-0.16, 0.16))
     muzzle_flash.visible = true
     _spawn_muzzle_smoke()
 
