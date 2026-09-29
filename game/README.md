@@ -97,6 +97,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Animated center-top round transition banner announces BUY, LIVE, VICTORY, and DEFEAT states with a brief fade/scale cue; screen-space only and does not affect gameplay.
 - Center reticle shifts to red when a damageable enemy is under the crosshair and cyan when a friendly is targeted; target checks are throttled to 12.5 Hz and do not affect hit registration or aim.
 - Player eliminations trigger a brief amber `ELIMINATION +$300` confirmation banner with a short scale/fade animation; it is HUD-only and does not affect combat or rewards.
+- A compact top-right elimination feed keeps the four most recent combat eliminations visible for 4.5 seconds, showing attacker, target, and weapon; it is a lightweight HUD-only cue.
 - Planting, defusing, and planted-bomb urgency now show a compact bottom-center progress bar with action-specific color; the HUD cue is screen-space only and adds no world geometry or lighting.
 - Hit confirmation now shows a brief centered marker that fades and scales down with a quick impact pulse; taking damage produces a short, restrained red screen flash. Both effects are screen-space UI only and use no particles or dynamic lights.
 - A soft red edge vignette fades in below 55 HP and gently pulses at 30 HP or less; it stays away from the center reticle and uses a tiny CanvasItem shader with no world geometry, particles, or lights.
