@@ -61,6 +61,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Industrial perimeter wall panels, hazard accents on cover, and concentric objective-site floor rings (visual-only; no collision or navigation changes)
 - New wall-mounted sector plaques with numbered wayfinding labels and restrained cyan/amber accents; render-only and non-colliding.
 - RED combatants use a layered low-poly silhouette with vest, head, helmet, and a readable team-color band
+- Remote network teammates now use a lightweight low-poly soldier silhouette with helmet, armor plates, blue identification trim, backpack, and a compact rifle; the original capsule remains the only collider, and added meshes cast no shadows.
 - RED combatants now include lightweight shoulder armor, forearm and thigh plates, a chest rig, and a backpack for a more readable tactical silhouette; details are visual-only and share the existing capsule collider
 - First-person AR-17/PX-9 geometric viewmodels that follow weapon selection and authoritative network weapon state
 - First-person weapon viewmodels now include low-poly tactical sleeves, cuffs, and gloves positioned around the grip and fore-end; they are visual-only, shadow-free, and add no collision or physics.
