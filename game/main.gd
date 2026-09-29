@@ -4827,7 +4827,8 @@ func _create_bot(index: int) -> CharacterBody3D:
     bot.position = red_spawn_points[index % red_spawn_points.size()]
     bot.set("team", enemy_team)
     bot.set("network_bot_id", index + 1)
-    bot.set("role", "DEFENDER_A" if index == 0 else ("DEFENDER_B" if index == 1 else "ROAMER"))
+    var bot_role := "DEFENDER_A" if index == 0 else ("DEFENDER_B" if index == 1 else "ROAMER")
+    bot.set("role", bot_role)
     bot.set("combat_slot", index)
 
     # Keep the visual model separate from the gameplay body so small procedural
@@ -4932,9 +4933,19 @@ func _create_bot(index: int) -> CharacterBody3D:
     weapon_material.albedo_color = Color(0.045, 0.055, 0.065)
     weapon_material.metallic = 0.38
     weapon_material.roughness = 0.62
+    # Small role-specific color accents help players distinguish enemy
+    # defenders from the roamer at a glance without changing team identity.
+    var role_accent := Color(0.98, 0.58, 0.18)
+    if bot_role == "DEFENDER_B":
+        role_accent = Color(0.92, 0.34, 0.16)
+    elif bot_role == "ROAMER":
+        role_accent = Color(0.72, 0.20, 0.10)
     var weapon_accent := StandardMaterial3D.new()
-    weapon_accent.albedo_color = Color(0.76, 0.28, 0.12)
+    weapon_accent.albedo_color = role_accent
     weapon_accent.roughness = 0.72
+    weapon_accent.emission_enabled = true
+    weapon_accent.emission = role_accent * 0.12
+    weapon_accent.emission_energy_multiplier = 0.35
     var bot_rifle_body := _bot_detail(Vector3(0.16, 0.14, 0.68), Vector3(0.18, -0.03, -0.34), weapon_material)
     var bot_rifle_barrel := _bot_detail(Vector3(0.065, 0.065, 0.42), Vector3(0.18, 0.0, -0.84), weapon_material)
     var bot_rifle_stock := _bot_detail(Vector3(0.13, 0.13, 0.25), Vector3(0.18, -0.06, 0.12), weapon_material)
