@@ -60,6 +60,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Damageable combat units
 - Procedural graybox training range with cool ambient lighting and directional shadows
 - Arena floor uses a subtle procedural concrete shader with broad slab mottling and fine grain; it is texture-free and adds no geometry, lights, or collision.
+- Perimeter walls now use a procedural modular-concrete shader with subtle panel seams and surface variation; it adds no texture files, geometry, collision, or navigation work.
 - Ambient GPU dust now fades smoothly across each particle's lifetime, softening the arena atmosphere without adding collision, lights, or shadow work; LOW visual quality disables the layer.
 - Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
 - Objective A/B now have low-profile ALPHA/BRAVO floor stencils, segmented corner paint, and approach chevrons to improve site recognition without adding collision, lights, or navigation work.
