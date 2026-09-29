@@ -187,12 +187,13 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 - Two wall-mounted ventilation fans rotate slowly as lightweight ambient animation; their meshes are visual-only, shadow-free, and add no collision, particles, or dynamic lights.
 
-- The `--low-spec` launch flag starts in LOW visual quality. Press F4 during play to cycle HIGH → LOW → BALANCED → HIGH without restarting. LOW disables fog, shadows, glow, and ambient dust while raising ambient fill; BALANCED keeps atmospheric haze and dust but disables glow and shadow maps; HIGH restores the full lighting presentation. The presets only change rendering and leave map geometry, gameplay, and network simulation unchanged.
+- The `--low-spec` launch flag starts in LOW visual quality. Press F4 during play to cycle HIGH → BALANCED → LOW → HIGH without restarting. LOW disables fog, shadows, glow, and ambient dust while raising ambient fill and using neutral color grading; BALANCED keeps atmospheric haze and dust but disables glow and shadow maps with moderate grading; HIGH restores the full lighting presentation with slightly stronger material contrast and saturation. The presets only change rendering and leave map geometry, gameplay, and network simulation unchanged.
 
 - A compact top-center objective compass displays the screen-space bearing and distance to Sites A and B, hides markers outside the camera's horizontal field of view, and uses cyan/amber labels; it is HUD-only and does not affect movement, navigation, or objective rules.
 
 - The arena now uses a procedural daylight sky with a blue-to-horizon gradient and matching ground haze; it is generated at runtime, needs no external texture assets, and keeps the Compatibility renderer path.
 - Arena lighting now uses a slightly brighter cool ambient fill, subtle distance haze, and restrained contrast/saturation grading to separate concrete, team colors, and objective accents.
+- Runtime quality profiles now tune color grading and key-light energy together: HIGH adds restrained contrast/saturation, BALANCED keeps a middle grade, and LOW uses neutral grading with a softer key light for integrated GPUs; all changes are presentation-only.
 - Thin emissive cyan and amber strips accent the upper perimeter walls; they are unlit mesh effects with shadows disabled and add no collision, navigation, or dynamic-light cost.
 - Existing high and low cover blocks now have inset-looking dark face plates with restrained cyan trim; the details are visual-only, cast no shadows, and do not change collision or bot navigation.
 - Perimeter walls now include slim dark steel ribs with small cyan edge accents, adding architectural depth while remaining non-colliding, shadow-free, and independent of bot navigation.
