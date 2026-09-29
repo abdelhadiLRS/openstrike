@@ -443,6 +443,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Player landings briefly expand a translucent ground ring at the feet for impact feedback; it reuses one shadow-free mesh, adds no particles or collision, and is suppressed by low-spec and reduced-motion modes.
 
 ### Objective-site visual readability
+- Added flat, color-coded `A / ALPHA` and `B / BRAVO` floor stencils inside the objective zones to improve close-range wayfinding. The labels are unlit and non-colliding.
 - Site A and Site B use distinct amber/cyan floor-zone tints and matching outlined 3D labels, making the two bomb locations easier to distinguish at a glance.
 - Objective markers are render-only, do not cast shadows, and do not change collision, movement, or bot navigation.
 
