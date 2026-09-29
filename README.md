@@ -38,3 +38,7 @@ Godot 4
 ## License
 
 MIT
+
+## Build and validation
+
+See [`game/BUILDING.md`](game/BUILDING.md) for local launch commands, visual quality presets, headless validation, and desktop export instructions. The [Godot validation workflow](.github/workflows/godot-validation.yml) runs resource import and a headless startup check for game changes.
