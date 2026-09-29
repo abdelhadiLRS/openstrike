@@ -99,6 +99,10 @@ var applied_threat_revision := -1
 var flank_goal_revision := -1
 var collision_shape: CollisionShape3D
 var visual_rig: Node3D
+var visual_left_arm: MeshInstance3D
+var visual_right_arm: MeshInstance3D
+var visual_left_leg: MeshInstance3D
+var visual_right_leg: MeshInstance3D
 var visual_motion_time := 0.0
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
@@ -116,6 +120,10 @@ func _ready() -> void:
     main = get_parent()
     health = max_health
     target = main.get("player")
+    visual_left_arm = visual_rig.get_node_or_null("LeftArm") as MeshInstance3D if is_instance_valid(visual_rig) else null
+    visual_right_arm = visual_rig.get_node_or_null("RightArm") as MeshInstance3D if is_instance_valid(visual_rig) else null
+    visual_left_leg = visual_rig.get_node_or_null("LeftLeg") as MeshInstance3D if is_instance_valid(visual_rig) else null
+    visual_right_leg = visual_rig.get_node_or_null("RightLeg") as MeshInstance3D if is_instance_valid(visual_rig) else null
     _create_bot_muzzle_flash()
     _create_damage_flash_ring()
     _create_damage_health_bar()
@@ -267,6 +275,21 @@ func _update_visual_motion(delta: float) -> void:
     )
     visual_rig.position = visual_rig.position.lerp(target_position, minf(delta * 12.0, 1.0))
     visual_rig.rotation = visual_rig.rotation.lerp(target_rotation, minf(delta * 10.0, 1.0))
+
+    # Alternating limb swing adds a readable walk/run cycle. These transforms
+    # affect only named render meshes; the body collider and weapon logic stay
+    # independent. Keep arm motion restrained so the rifle silhouette remains
+    # readable while moving.
+    var leg_swing := sin(visual_motion_time) * 0.34 * speed_ratio
+    var arm_swing := sin(visual_motion_time + PI) * 0.075 * speed_ratio
+    if is_instance_valid(visual_left_leg):
+        visual_left_leg.rotation.x = lerpf(visual_left_leg.rotation.x, leg_swing, minf(delta * 12.0, 1.0))
+    if is_instance_valid(visual_right_leg):
+        visual_right_leg.rotation.x = lerpf(visual_right_leg.rotation.x, -leg_swing, minf(delta * 12.0, 1.0))
+    if is_instance_valid(visual_left_arm):
+        visual_left_arm.rotation.x = lerpf(visual_left_arm.rotation.x, arm_swing, minf(delta * 10.0, 1.0))
+    if is_instance_valid(visual_right_arm):
+        visual_right_arm.rotation.x = lerpf(visual_right_arm.rotation.x, -arm_swing, minf(delta * 10.0, 1.0))
 
 
 func _create_bot_muzzle_flash() -> void:
