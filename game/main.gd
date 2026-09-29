@@ -107,6 +107,7 @@ var view_weapon_bob_time := 0.0
 var camera_bob_time := 0.0
 var camera_bob_offset := Vector2.ZERO
 var view_weapon_recoil := 0.0
+var view_weapon_shot_pitch := 0.0
 var view_weapon_reload_timer := 0.0
 var view_weapon_inspect_timer := 0.0
 const VIEW_WEAPON_RELOAD_DURATION := 0.62
@@ -297,7 +298,8 @@ func _update_view_weapon_motion(delta: float) -> void:
     local_velocity.y = 0.0
     var speed_ratio := clampf(local_velocity.length() / 5.6, 0.0, 1.0)
     view_weapon_bob_time += delta * (2.0 + speed_ratio * 7.5)
-    view_weapon_recoil = move_toward(view_weapon_recoil, 0.0, delta * 0.72)
+    view_weapon_recoil = move_toward(view_weapon_recoil, 0.0, delta * 1.35)
+    view_weapon_shot_pitch = move_toward(view_weapon_shot_pitch, 0.0, delta * 2.2)
     view_weapon_reload_timer = maxf(0.0, view_weapon_reload_timer - delta)
     view_weapon_inspect_timer = maxf(0.0, view_weapon_inspect_timer - delta)
     var reload_phase := 1.0 - view_weapon_reload_timer / VIEW_WEAPON_RELOAD_DURATION
@@ -327,7 +329,7 @@ func _update_view_weapon_motion(delta: float) -> void:
         view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount
     )
     var target_rotation := Vector3(
-        sin(view_weapon_bob_time) * bob_amount * 0.65 - 0.18 * reload_amount + 0.10 * inspect_amount,
+        sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount,
         0.38 * inspect_amount,
         -local_velocity.x * 0.006 + 0.22 * reload_amount - 0.48 * inspect_amount
     )
@@ -1031,6 +1033,10 @@ func _fire() -> void:
     _spawn_shell_casing()
     last_processed_input_sequence = input_sequence
     recoil_kick += float(weapon["recoil"])
+    # Local weapon kick adds a readable, lightweight firing response without
+    # changing the authoritative shot direction or player movement.
+    view_weapon_recoil = minf(view_weapon_recoil + 0.045 + float(weapon["recoil"]) * 0.16, 0.16)
+    view_weapon_shot_pitch = maxf(view_weapon_shot_pitch - 0.035 - float(weapon["recoil"]) * 0.08, -0.14)
     combat_events.advance_tick()
     combat_events.emit_shot("player", str(weapon["id"]), ammo, reserve)
 
