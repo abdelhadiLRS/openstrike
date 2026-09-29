@@ -480,3 +480,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Elimination visual feedback
 - RED bot eliminations now trigger a brief amber-red expanding ring and core pulse at the defeat position, visible in offline play and when a client receives the authoritative dead state.
 - The effect is a short-lived, unshaded mesh-only cue with no particles, dynamic lights, collision, hitbox, or gameplay/network changes.
+
+### Remote avatar visual pass
+- Remote player avatars now use team-colored chest and shoulder identifiers, reinforced shoulder details, a rear equipment pack, and a belt accent to improve silhouette and team recognition.
+- The additions are lightweight render-only meshes; the existing capsule remains the sole collider, and movement, hitboxes, and networking are unchanged.
