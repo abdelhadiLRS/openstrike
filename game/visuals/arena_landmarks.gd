@@ -35,6 +35,22 @@ func _ready() -> void:
         "SECTOR 03  /  TRANSIT",
         Color(0.98, 0.57, 0.19)
     )
+    _build_wall_marker(
+        "SiteAMarker",
+        Vector3(-17.40, 2.45, -8.5),
+        -PI / 2.0,
+        "SITE A",
+        "OBJECTIVE  /  ALPHA",
+        Color(0.18, 0.82, 1.0)
+    )
+    _build_wall_marker(
+        "SiteBMarker",
+        Vector3(17.40, 2.45, 8.5),
+        PI / 2.0,
+        "SITE B",
+        "OBJECTIVE  /  BRAVO",
+        Color(1.0, 0.62, 0.22)
+    )
 
 func _build_wall_marker(
     marker_name: String,
