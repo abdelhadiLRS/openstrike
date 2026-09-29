@@ -99,6 +99,7 @@ var view_weapon_bob_time := 0.0
 var view_weapon_recoil := 0.0
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
+var shell_casing_material: StandardMaterial3D
 var hit_marker: Label
 var damage_flash: ColorRect
 var objective_progress_bar: ProgressBar
@@ -964,6 +965,7 @@ func _fire() -> void:
     cooldown = float(weapon["delay"])
     ammo -= 1
     _trigger_muzzle_flash()
+    _spawn_shell_casing()
     last_processed_input_sequence = input_sequence
     recoil_kick += float(weapon["recoil"])
     combat_events.advance_tick()
@@ -1022,6 +1024,40 @@ func _spawn_shot_tracer(start_position: Vector3, end_position: Vector3, tint: Co
     tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(tracer)
     get_tree().create_timer(0.065).timeout.connect(tracer.queue_free)
+
+func _spawn_shell_casing() -> void:
+    # A tiny brass casing ejects to the right and fades out. It is a render-only
+    # effect: no collision, rigid body, particles, or additional light.
+    if not is_instance_valid(camera):
+        return
+    if shell_casing_material == null:
+        shell_casing_material = StandardMaterial3D.new()
+        shell_casing_material.albedo_color = Color(0.72, 0.48, 0.16, 1.0)
+        shell_casing_material.metallic = 0.72
+        shell_casing_material.roughness = 0.3
+        shell_casing_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+    var casing := MeshInstance3D.new()
+    casing.name = "ShellCasing"
+    var casing_mesh := CylinderMesh.new()
+    casing_mesh.top_radius = 0.018
+    casing_mesh.bottom_radius = 0.022
+    casing_mesh.height = 0.085
+    casing.mesh = casing_mesh
+    casing.material_override = shell_casing_material
+    casing.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    var basis := camera.global_transform.basis
+    var start := camera.global_position + basis.x * 0.30 - basis.y * 0.22 - basis.z * 0.42
+    casing.global_position = start
+    casing.global_rotation = camera.global_rotation + Vector3(0.8, 0.4, 0.6)
+    add_child(casing)
+
+    var end_position := start + basis.x * 0.72 - basis.y * 0.92 + basis.z * 0.28
+    var tween := create_tween().set_parallel(true)
+    tween.tween_property(casing, "global_position", end_position, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+    tween.tween_property(casing, "rotation", casing.rotation + Vector3(5.2, 3.6, 7.0), 0.62)
+    tween.tween_property(casing, "modulate:a", 0.0, 0.24).set_delay(0.34)
+    tween.finished.connect(casing.queue_free)
 
 func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color) -> void:
     # Tiny short-lived impact flash improves hit readability without particles,
