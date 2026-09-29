@@ -67,6 +67,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Team-colored spawn-side floor bands, modular concrete seams, and objective approach chevrons improve spatial orientation without changing collision or bot navigation
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
 - Minimal crosshair and hit feedback
+- Hit confirmation now shows a brief centered marker; taking damage produces a short, restrained red screen flash. Both effects are screen-space UI only and use no particles or dynamic lights.
 - Godot Compatibility renderer
 
 ## Controls
