@@ -3870,6 +3870,13 @@ func _create_visual_environment() -> void:
     environment.sky = sky
     environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
     environment.ambient_light_energy = 0.62
+    # A restrained glow pass makes emissive site beacons, warning strips, and
+    # weapon flashes read as luminous accents. F4/low-spec mode disables it.
+    environment.glow_enabled = not low_spec_mode
+    environment.glow_intensity = 0.28
+    environment.glow_strength = 0.72
+    environment.glow_bloom = 0.035
+    environment.glow_hdr_threshold = 1.25
     environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     # A light atmospheric haze softens distant wall edges while keeping the
     # compact arena readable; restrained grading separates cool concrete
@@ -3924,6 +3931,11 @@ func _apply_visual_quality_mode() -> void:
     # and dynamic shadows while lifting ambient fill to keep dark corners legible.
     if is_instance_valid(visual_environment):
         visual_environment.fog_enabled = not low_spec_mode
+        visual_environment.glow_enabled = not low_spec_mode
+        visual_environment.glow_intensity = 0.28
+        visual_environment.glow_strength = 0.72
+        visual_environment.glow_bloom = 0.035
+        visual_environment.glow_hdr_threshold = 1.25
         visual_environment.ambient_light_energy = 0.78 if low_spec_mode else 0.62
     if is_instance_valid(map_key_light):
         map_key_light.shadow_enabled = not low_spec_mode
