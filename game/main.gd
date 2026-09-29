@@ -92,6 +92,8 @@ var crouched := false
 var hud: Label
 var hud_layer: CanvasLayer
 var round_banner_label: Label
+var visual_notice_label: Label
+var visual_notice_timer := 0.0
 var round_banner_timer := 0.0
 var round_banner_signature := ""
 var health_bar: ProgressBar
@@ -278,6 +280,7 @@ func _ready() -> void:
     _world()
     _hud()
     _create_round_banner()
+    _create_visual_notice()
     _create_crosshair()
     _create_damage_direction_indicator()
     _create_objective_compass()
@@ -308,8 +311,10 @@ func _unhandled_input(event: InputEvent) -> void:
         elif event.keycode == KEY_F4:
             low_spec_mode = not low_spec_mode
             _apply_visual_quality_mode()
+            _show_visual_notice("VISUAL QUALITY  /  " + ("LOW" if low_spec_mode else "HIGH"), Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_F5:
             reduced_motion_mode = not reduced_motion_mode
+            _show_visual_notice("REDUCED MOTION  /  " + ("ON" if reduced_motion_mode else "OFF"), Color(0.72, 0.92, 1.0))
             camera_bob_offset = Vector2.ZERO
             if reduced_motion_mode:
                 damage_camera_kick = Vector2.ZERO
@@ -361,6 +366,7 @@ func _process(delta: float) -> void:
     _update_elimination_feedback(delta)
     _update_bomb_explosion_effect(delta)
     _update_round_banner(delta)
+    _update_visual_notice(delta)
 
 func _update_view_weapon_motion(delta: float) -> void:
     if not is_instance_valid(view_weapon_root) or not is_instance_valid(player):
@@ -1487,6 +1493,43 @@ func _create_round_banner() -> void:
     round_banner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     round_banner_label.modulate.a = 0.0
     hud_layer.add_child(round_banner_label)
+
+
+func _create_visual_notice() -> void:
+    # Brief feedback confirms graphics/accessibility toggles without interrupting play.
+    visual_notice_label = Label.new()
+    visual_notice_label.name = "VisualSettingsNotice"
+    visual_notice_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+    visual_notice_label.position = Vector2(-240.0, 178.0)
+    visual_notice_label.size = Vector2(480.0, 44.0)
+    visual_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    visual_notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    visual_notice_label.add_theme_font_size_override("font_size", 18)
+    visual_notice_label.add_theme_color_override("font_color", Color(0.72, 0.94, 1.0))
+    visual_notice_label.add_theme_color_override("font_outline_color", Color(0.015, 0.025, 0.04, 0.98))
+    visual_notice_label.add_theme_constant_override("outline_size", 5)
+    visual_notice_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    visual_notice_label.modulate.a = 0.0
+    hud_layer.add_child(visual_notice_label)
+
+
+func _show_visual_notice(message: String, tint: Color) -> void:
+    if not is_instance_valid(visual_notice_label):
+        return
+    visual_notice_label.text = message
+    visual_notice_label.add_theme_color_override("font_color", tint)
+    visual_notice_timer = 1.65
+    visual_notice_label.scale = Vector2.ONE * 0.96
+
+
+func _update_visual_notice(delta: float) -> void:
+    if not is_instance_valid(visual_notice_label):
+        return
+    visual_notice_timer = maxf(0.0, visual_notice_timer - delta)
+    var fade_in := clampf((1.65 - visual_notice_timer) / 0.12, 0.0, 1.0)
+    var fade_out := clampf(visual_notice_timer / 0.38, 0.0, 1.0)
+    visual_notice_label.modulate.a = minf(fade_in, fade_out)
+    visual_notice_label.scale = Vector2.ONE * (0.96 + 0.04 * fade_in)
 
 
 func _refresh_round_banner() -> void:
