@@ -137,6 +137,7 @@ The server validates input packet field types before parsing, rejects malformed 
 The flags are parsed only at startup; without them the existing offline flow is unchanged.
 
 ### Visual polish
+- A 28-particle GPU ambient-dust layer adds subtle depth to the arena; it is non-colliding, casts no shadows, adds no lights, and is automatically disabled by `--low-spec` or the F4 LOW setting.
 
 - Two wall-mounted ventilation fans rotate slowly as lightweight ambient animation; their meshes are visual-only, shadow-free, and add no collision, particles, or dynamic lights.
 
