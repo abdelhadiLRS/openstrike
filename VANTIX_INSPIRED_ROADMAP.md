@@ -24,7 +24,8 @@ This document adapts *systems ideas* observed in [VANTIX](https://github.com/van
 | Bot drop-in replacement | Treat each bot/player as a match slot; transfer slot ownership safely on join/leave without resetting the round | P1 |
 | Runtime console / ConVars | Add a permission-gated developer console with typed variables, defaults, ranges, and server/client scopes | P1 |
 | NetGraph / performance overlay | Show authoritative network diagnostics in an opt-in debug-only overlay, including input/snapshot flow, pending prediction, rejection reasons, tick gaps, and corrections | P1 (implemented) |
-| Visual arena dressing | Add lightweight, original, non-colliding details to cover and arena surfaces without changing gameplay geometry | P1 (cover detailing implemented) |
+| Visual arena dressing | Build an original industrial look with lightweight procedural details while preserving gameplay geometry; current graybox dressing is implemented, but final authored materials, textures, and character assets remain future work | P1 (procedural pass implemented) |
+| Art-quality progression | Replace placeholder graybox surfaces in stages with original modular environment meshes, restrained PBR materials, and optimized texture atlases; preserve a LOW profile for integrated GPUs and keep collision/navigation meshes separate | P2 (planned; no external assets copied) |
 | Authoritative bot roster snapshots | Replicate an explicit bot count, synchronize client bot slots without per-snapshot cache rebuilds, and reject inconsistent count/state payloads | P1 (implemented) |
 | Smoke, penetration, per-limb damage | Add as separate gameplay systems only after authoritative hitscan, collision/material rules, and tests are stable | P2 |
 | Dedicated server and launch flags | Add headless server, listen-server, connect-address, port, and bot-count options with clear startup validation | P1 (listen-server/launch flags implemented; headless remains) |
