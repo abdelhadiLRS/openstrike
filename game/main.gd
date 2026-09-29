@@ -161,6 +161,7 @@ var bomb_visual: MeshInstance3D
 var bomb_light: OmniLight3D
 var bomb_status_material: StandardMaterial3D
 var site_beacon_materials: Array[StandardMaterial3D] = []
+var rotating_site_markers: Array[Node3D] = []
 var site_beacon_time := 0.0
 var bomb_time_left := 0.0
 var objective_action := ""
@@ -297,6 +298,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
     _update_site_beacon_pulse(delta)
+    _update_rotating_site_markers(delta)
     _update_view_weapon_motion(delta)
     _update_crosshair()
     _update_objective_compass()
@@ -2649,6 +2651,7 @@ func _world() -> void:
     _create_floor_service_panels()
     _create_cover_visual_details()
     _create_site_beacons()
+    _create_rotating_site_markers()
     _spawn_bots()
     _objective_site(BOMB_SITE_A, "A")
     _objective_site(BOMB_SITE_B, "B")
@@ -3359,6 +3362,40 @@ func _create_site_beacons() -> void:
         site_label.outline_modulate = Color(0.015, 0.025, 0.04, 0.96)
         site_label.no_depth_test = false
         add_child(site_label)
+
+func _create_rotating_site_markers() -> void:
+    # Slow, elevated twin bars make each objective site identifiable at a glance.
+    # These are render-only markers: no collision, physics, or dynamic lights.
+    var specs := [
+        {"position": BOMB_SITE_A, "color": Color(1.0, 0.54, 0.16)},
+        {"position": BOMB_SITE_B, "color": Color(0.10, 0.72, 0.98)}
+    ]
+    for spec in specs:
+        var marker := Node3D.new()
+        marker.name = "RotatingSiteMarker_" + ("A" if spec["position"] == BOMB_SITE_A else "B")
+        marker.position = spec["position"] + Vector3(0.0, 3.15, 0.0)
+        var material := StandardMaterial3D.new()
+        material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        material.albedo_color = spec["color"]
+        material.emission_enabled = true
+        material.emission = spec["color"] * 0.7
+        material.emission_energy_multiplier = 1.0
+        for angle in [0.0, PI * 0.5]:
+            var bar := MeshInstance3D.new()
+            var bar_mesh := BoxMesh.new()
+            bar_mesh.size = Vector3(1.25, 0.045, 0.11)
+            bar.mesh = bar_mesh
+            bar.rotation.y = angle
+            bar.material_override = material
+            bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+            marker.add_child(bar)
+        add_child(marker)
+        rotating_site_markers.append(marker)
+
+func _update_rotating_site_markers(delta: float) -> void:
+    for marker in rotating_site_markers:
+        if is_instance_valid(marker):
+            marker.rotation.y = fmod(marker.rotation.y + delta * 0.38, TAU)
 
 func _update_site_beacon_pulse(delta: float) -> void:
     if site_beacon_materials.is_empty():
