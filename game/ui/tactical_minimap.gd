@@ -65,6 +65,43 @@ func _draw() -> void:
     _draw_objective(center, scale_factor, Vector2(10.0, 7.0), "B", Color(1.0, 0.58, 0.20))
 
     if is_instance_valid(game_root):
+        var session = game_root.get("network_session")
+        if is_instance_valid(session):
+            var network_players = session.get("network_players")
+            if network_players is Dictionary:
+                for peer_value in network_players.keys():
+                    var ally = network_players.get(peer_value)
+                    if not is_instance_valid(ally) or bool(ally.get("dead")):
+                        continue
+                    if str(ally.get("team")) != "BLUE":
+                        continue
+                    var ally_position: Vector3 = ally.global_position
+                    var ally_point := _map_point(center, scale_factor, Vector2(ally_position.x, ally_position.z))
+                    draw_circle(ally_point, 3.4, Color(0.18, 0.62, 1.0, 0.96))
+                    draw_arc(ally_point, 5.0, 0.0, TAU, 16, Color(0.55, 0.82, 1.0, 0.8), 1.0, true)
+
+        var objective_state := str(game_root.get("objective_state"))
+        var bomb_position := Vector3.ZERO
+        var show_bomb := false
+        if objective_state == "DROPPED":
+            bomb_position = game_root.get("dropped_bomb_position")
+            show_bomb = true
+        elif objective_state == "PLANTED":
+            var bomb_node = game_root.get("bomb_visual")
+            if is_instance_valid(bomb_node) and bomb_node is Node3D:
+                bomb_position = bomb_node.global_position
+                show_bomb = true
+        if show_bomb:
+            var bomb_point := _map_point(center, scale_factor, Vector2(bomb_position.x, bomb_position.z))
+            draw_circle(bomb_point, 7.0, Color(1.0, 0.16, 0.10, 0.20))
+            draw_arc(bomb_point, 7.0, 0.0, TAU, 20, Color(1.0, 0.22, 0.14, 1.0), 1.8, true)
+            draw_colored_polygon(PackedVector2Array([
+                bomb_point + Vector2(0.0, -4.0),
+                bomb_point + Vector2(4.0, 0.0),
+                bomb_point + Vector2(0.0, 4.0),
+                bomb_point + Vector2(-4.0, 0.0)
+            ]), Color(1.0, 0.30, 0.18, 1.0))
+
         var player_node = game_root.get("player")
         if is_instance_valid(player_node) and player_node is Node3D:
             var player_position: Vector3 = player_node.global_position
