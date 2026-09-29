@@ -116,6 +116,8 @@ var crosshair_segments: Array[ColorRect] = []
 var crosshair_spread_current := 5.0
 var crosshair_target_refresh_timer := 0.0
 var crosshair_target_state := 0
+var crosshair_palette_index := 0
+const CROSSHAIR_PALETTES := [Color(0.78, 0.96, 1.0, 0.96), Color(0.42, 1.0, 0.48, 0.96), Color(1.0, 0.88, 0.24, 0.96), Color(1.0, 0.45, 0.92, 0.96)]
 var objective_compass_a: Label
 var objective_compass_b: Label
 var network_debug_hud: Label
@@ -373,6 +375,9 @@ func _unhandled_input(event: InputEvent) -> void:
             camera_fov_preset_index = (camera_fov_preset_index + 1) % CAMERA_FOV_PRESETS.size()
             var selected_fov := float(CAMERA_FOV_PRESETS[camera_fov_preset_index])
             _show_visual_notice("FIELD OF VIEW  /  %d°" % int(selected_fov), Color(0.35, 0.86, 1.0))
+        elif event.keycode == KEY_F10:
+            crosshair_palette_index = (crosshair_palette_index + 1) % CROSSHAIR_PALETTES.size()
+            _show_visual_notice("RETICLE COLOR  /  " + _crosshair_palette_label(), Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_F9:
             cinematic_hud_mode = not cinematic_hud_mode
             if is_instance_valid(hud_layer):
@@ -2041,7 +2046,8 @@ func _update_crosshair() -> void:
         return
 
     _refresh_crosshair_target()
-    var reticle_color := Color(0.98, 0.30, 0.24, 0.98) if crosshair_target_state == 1 else (Color(0.24, 0.82, 1.0, 0.98) if crosshair_target_state == 2 else Color(0.78, 0.96, 1.0, 0.96))
+    var neutral_reticle: Color = CROSSHAIR_PALETTES[crosshair_palette_index]
+    var reticle_color := Color(0.98, 0.30, 0.24, 0.98) if crosshair_target_state == 1 else (Color(0.24, 0.82, 1.0, 0.98) if crosshair_target_state == 2 else neutral_reticle)
     var reticle_alpha := 0.30 if aim_blend > 0.65 else 0.98
     for segment_index in range(4):
         crosshair_segments[segment_index].color = Color(reticle_color.r, reticle_color.g, reticle_color.b, reticle_alpha)
@@ -2076,6 +2082,11 @@ func _update_crosshair() -> void:
     crosshair_segments[4].position = center - Vector2(1.0, 1.0)
     crosshair_segments[4].size = Vector2(2.0, 2.0)
     crosshair_segments[4].color = Color(1.0, 0.68, 0.20, 1.0) if crosshair_target_state == 0 else reticle_color
+
+
+func _crosshair_palette_label() -> String:
+    var labels := ["ICE", "MINT", "GOLD", "MAGENTA"]
+    return str(labels[crosshair_palette_index])
 
 
 func _refresh_crosshair_target() -> void:
