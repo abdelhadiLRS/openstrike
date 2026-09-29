@@ -3399,6 +3399,7 @@ func _world() -> void:
     _create_perimeter_supply_crates()
     _create_ambient_dust()
     _create_mid_lane_markings()
+    _create_lane_direction_chevrons()
     _create_mid_lane_signage()
     _create_floor_panel_seams()
     _create_floor_safety_markings()
@@ -3431,6 +3432,27 @@ func _world() -> void:
     _create_bomb_visual()
     _create_bomb_explosion_visual()
 
+
+
+func _create_lane_direction_chevrons() -> void:
+    # Painted floor chevrons give the central route a stronger visual rhythm.
+    # They are unlit, non-colliding meshes and do not alter navigation or cover.
+    var blue_material := StandardMaterial3D.new()
+    blue_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    blue_material.albedo_color = Color(0.10, 0.58, 0.78, 0.78)
+    blue_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+    var amber_material := StandardMaterial3D.new()
+    amber_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    amber_material.albedo_color = Color(0.92, 0.48, 0.13, 0.78)
+    amber_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+    for z in [-11.0, -5.5, 0.0, 5.5, 11.0]:
+        var material: StandardMaterial3D = blue_material if z >= 0.0 else amber_material
+        var center := Vector3(0.0, 0.025, z)
+        for side in [-1.0, 1.0]:
+            var slash := _visual_box(center + Vector3(side * 0.30, 0.0, 0.0), Vector3(0.72, 0.018, 0.065), material)
+            slash.rotation.y = deg_to_rad(32.0 * side)
 
 
 func _create_mid_lane_signage() -> void:
