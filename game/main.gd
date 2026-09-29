@@ -2431,9 +2431,12 @@ func _update_objective_progress_ui() -> void:
             progress = 1.0 - clampf(objective_action_time_left / DEFUSE_TIME, 0.0, 1.0)
             tint = Color(0.28, 0.88, 0.58, 0.98)
         elif objective_state == "PLANTED":
-            label_text = "BOMB DETONATION"
+            label_text = "BOMB DETONATION  /  %02d" % ceili(maxf(0.0, bomb_time_left))
             progress = clampf(bomb_time_left / BOMB_TIME, 0.0, 1.0)
-            tint = Color(1.0, 0.30, 0.12, 0.98)
+            var urgency := clampf(1.0 - progress, 0.0, 1.0)
+            var pulse_rate := lerpf(2.0, 7.0, urgency)
+            var pulse := (sin(Time.get_ticks_msec() / 1000.0 * pulse_rate) + 1.0) * 0.5
+            tint = Color(1.0, lerpf(0.36, 0.12, urgency) + pulse * 0.10, 0.08, 0.98)
     var visible_progress := not label_text.is_empty()
     objective_progress_label.visible = visible_progress
     objective_progress_bar.visible = visible_progress
@@ -2444,6 +2447,12 @@ func _update_objective_progress_ui() -> void:
     var fill_style := objective_progress_bar.get_theme_stylebox("fill") as StyleBoxFlat
     if fill_style != null:
         fill_style.bg_color = tint
+    if objective_state == "PLANTED":
+        var urgency := clampf(1.0 - progress, 0.0, 1.0)
+        var pulse := (sin(Time.get_ticks_msec() / 1000.0 * lerpf(2.0, 7.0, urgency)) + 1.0) * 0.5
+        objective_progress_label.modulate = Color(1.0, 0.78 + pulse * 0.22, 0.68 + pulse * 0.18, 1.0)
+    else:
+        objective_progress_label.modulate = Color.WHITE
 
 func _update_network_debug_hud() -> void:
     if network_debug_hud == null:
