@@ -104,6 +104,7 @@ var visual_right_arm: MeshInstance3D
 var visual_left_leg: MeshInstance3D
 var visual_right_leg: MeshInstance3D
 var visual_motion_time := 0.0
+var visual_hit_recoil := 0.0
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 var damage_flash_ring: MeshInstance3D
@@ -266,6 +267,7 @@ func _update_visual_motion(delta: float) -> void:
             visual_right_leg.rotation = Vector3.ZERO
         return
 
+    visual_hit_recoil = move_toward(visual_hit_recoil, 0.0, delta * 3.8)
     var horizontal_velocity := velocity
     horizontal_velocity.y = 0.0
     var speed_ratio := clampf(horizontal_velocity.length() / SPRINT_SPEED, 0.0, 1.0)
@@ -280,7 +282,7 @@ func _update_visual_motion(delta: float) -> void:
     # Only the visual child moves; the CharacterBody3D collider stays untouched.
     var target_position := Vector3(0.0, bob + idle_breath, 0.0)
     var target_rotation := Vector3(
-        -0.018 * speed_ratio + idle_breath * 0.35,
+        -0.018 * speed_ratio + idle_breath * 0.35 + visual_hit_recoil * 0.12,
         0.0,
         clampf(-local_velocity.x * 0.025, -0.055, 0.055)
     )
@@ -293,14 +295,15 @@ func _update_visual_motion(delta: float) -> void:
     # readable while moving.
     var leg_swing := sin(visual_motion_time) * 0.34 * speed_ratio
     var arm_swing := sin(visual_motion_time + PI) * 0.075 * speed_ratio
+    var flinch_arm_offset := -visual_hit_recoil * 0.20
     if is_instance_valid(visual_left_leg):
         visual_left_leg.rotation.x = lerpf(visual_left_leg.rotation.x, leg_swing, minf(delta * 12.0, 1.0))
     if is_instance_valid(visual_right_leg):
         visual_right_leg.rotation.x = lerpf(visual_right_leg.rotation.x, -leg_swing, minf(delta * 12.0, 1.0))
     if is_instance_valid(visual_left_arm):
-        visual_left_arm.rotation.x = lerpf(visual_left_arm.rotation.x, arm_swing, minf(delta * 10.0, 1.0))
+        visual_left_arm.rotation.x = lerpf(visual_left_arm.rotation.x, arm_swing + flinch_arm_offset, minf(delta * 10.0, 1.0))
     if is_instance_valid(visual_right_arm):
-        visual_right_arm.rotation.x = lerpf(visual_right_arm.rotation.x, -arm_swing, minf(delta * 10.0, 1.0))
+        visual_right_arm.rotation.x = lerpf(visual_right_arm.rotation.x, -arm_swing + flinch_arm_offset, minf(delta * 10.0, 1.0))
 
 
 func _create_bot_muzzle_flash() -> void:
@@ -1350,6 +1353,7 @@ func take_damage(amount: int, source_id: String = "player") -> void:
     _spawn_damage_number(previous_health - health)
     _show_damage_health_bar()
     recently_hit_timer = RECENT_HIT_REACTION_TIME
+    visual_hit_recoil = 1.0
     combat_reposition_timer = 0.0
     combat_reposition_goal = Vector3.ZERO
     route.clear()
@@ -1401,6 +1405,7 @@ func reset_target() -> void:
     tactical_memory_revision = -1
     combat_decision_timer = 0.0
     recently_hit_timer = 0.0
+    visual_hit_recoil = 0.0
     combat_reposition_timer = 0.0
     combat_reposition_goal = Vector3.ZERO
     retreat_cover_goal = Vector3.ZERO
