@@ -3414,6 +3414,7 @@ func _world() -> void:
     _create_wall_light_fixtures()
     _create_overhead_gantry()
     _create_ceiling_light_banks()
+    _create_lane_overhead_fixtures()
     _create_ceiling_cable_runs()
     _create_distant_skyline()
     _create_wall_signage()
@@ -3438,6 +3439,37 @@ func _world() -> void:
     _create_bomb_visual()
     _create_bomb_explosion_visual()
 
+
+
+func _create_lane_overhead_fixtures() -> void:
+    # Compact suspended service fixtures add a stronger ceiling silhouette
+    # above the three main lanes. They are mesh-only and do not affect combat.
+    var housing := StandardMaterial3D.new()
+    housing.albedo_color = Color(0.045, 0.065, 0.082)
+    housing.metallic = 0.58
+    housing.roughness = 0.52
+
+    var cyan := StandardMaterial3D.new()
+    cyan.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    cyan.albedo_color = Color(0.10, 0.68, 0.86)
+    cyan.emission_enabled = true
+    cyan.emission = Color(0.025, 0.30, 0.48)
+    cyan.emission_energy_multiplier = 0.85
+
+    var amber := StandardMaterial3D.new()
+    amber.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    amber.albedo_color = Color(0.92, 0.48, 0.16)
+    amber.emission_enabled = true
+    amber.emission = Color(0.40, 0.13, 0.025)
+    amber.emission_energy_multiplier = 0.72
+
+    for z in [-10.0, 0.0, 10.0]:
+        for x in [-5.2, 5.2]:
+            _visual_box(Vector3(x, 3.52, z), Vector3(2.65, 0.14, 0.42), housing)
+            _visual_box(Vector3(x, 3.425, z), Vector3(2.30, 0.035, 0.25), cyan if z >= 0.0 else amber)
+            for side in [-1.0, 1.0]:
+                _visual_box(Vector3(x + side * 1.12, 3.72, z), Vector3(0.07, 0.34, 0.07), housing)
+            _visual_box(Vector3(x, 3.60, z), Vector3(2.78, 0.045, 0.50), housing)
 
 
 func _create_team_spawn_beacons() -> void:
