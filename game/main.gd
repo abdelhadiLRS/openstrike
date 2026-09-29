@@ -1039,7 +1039,7 @@ func _fire() -> void:
         _spawn_impact_spark(hit.position, impact_normal, tracer_color)
         var impact_collider = hit.get("collider")
         if impact_collider != null and not impact_collider.has_method("take_damage"):
-            _spawn_impact_mark(hit.position, impact_normal, tracer_color)
+            _spawn_impact_mark(hit.position, impact_normal)
 
     if network_session != null and network_session.is_server and network_session.is_online:
         if network_session.process_host_fire(origin, direction, str(weapon["id"]), int(weapon["damage"])):
@@ -1144,7 +1144,7 @@ func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color
     get_tree().create_timer(0.09).timeout.connect(spark.queue_free)
 
 
-func _spawn_impact_mark(position: Vector3, surface_normal: Vector3, tint: Color) -> void:
+func _spawn_impact_mark(position: Vector3, surface_normal: Vector3) -> void:
     # A brief, flat scorch ring makes bullet impacts persist long enough to read
     # against concrete and metal. It is render-only, capped by a short lifetime,
     # and never changes collision or gameplay state.
