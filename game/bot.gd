@@ -98,6 +98,8 @@ var squad_threat_revision := -1
 var applied_threat_revision := -1
 var flank_goal_revision := -1
 var collision_shape: CollisionShape3D
+var visual_rig: Node3D
+var visual_motion_time := 0.0
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 const MUZZLE_FLASH_DURATION := 0.055
@@ -108,6 +110,33 @@ func _ready() -> void:
     health = max_health
     target = main.get("player")
     _create_bot_muzzle_flash()
+
+func _update_visual_motion(delta: float) -> void:
+    if not is_instance_valid(visual_rig):
+        return
+    if dead:
+        visual_rig.position = Vector3.ZERO
+        visual_rig.rotation = Vector3.ZERO
+        return
+
+    var horizontal_velocity := velocity
+    horizontal_velocity.y = 0.0
+    var speed_ratio := clampf(horizontal_velocity.length() / SPRINT_SPEED, 0.0, 1.0)
+    visual_motion_time += delta * lerpf(1.8, 9.0, speed_ratio)
+    var local_velocity := global_transform.basis.inverse() * horizontal_velocity
+    var stride := sin(visual_motion_time)
+    var bob := absf(stride) * 0.035 * speed_ratio
+    # A restrained body bob and lateral lean add life to the low-poly model.
+    # Only the visual child moves; the CharacterBody3D collider stays untouched.
+    var target_position := Vector3(0.0, bob, 0.0)
+    var target_rotation := Vector3(
+        -0.018 * speed_ratio,
+        0.0,
+        clampf(-local_velocity.x * 0.025, -0.055, 0.055)
+    )
+    visual_rig.position = visual_rig.position.lerp(target_position, minf(delta * 12.0, 1.0))
+    visual_rig.rotation = visual_rig.rotation.lerp(target_rotation, minf(delta * 10.0, 1.0))
+
 
 func _create_bot_muzzle_flash() -> void:
     muzzle_flash = MeshInstance3D.new()
@@ -136,6 +165,7 @@ func _trigger_bot_muzzle_flash() -> void:
     muzzle_flash.visible = true
 
 func _physics_process(delta: float) -> void:
+    _update_visual_motion(delta)
     muzzle_flash_timer = maxf(0.0, muzzle_flash_timer - delta)
     if muzzle_flash_timer <= 0.0 and is_instance_valid(muzzle_flash):
         muzzle_flash.visible = false
