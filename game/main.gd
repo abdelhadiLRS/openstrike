@@ -103,6 +103,7 @@ var ammo_bar: ProgressBar
 var health_hud_label: Label
 var ammo_hud_label: Label
 var elimination_feedback_label: Label
+var elimination_feedback_panel: PanelContainer
 var elimination_feedback_timer := 0.0
 var crosshair_root: Control
 var crosshair_segments: Array[ColorRect] = []
@@ -1944,43 +1945,59 @@ func _refresh_crosshair_target() -> void:
 
 
 func _create_elimination_feedback() -> void:
-    # A compact kill-confirmation banner reinforces successful eliminations
-    # without adding world-space objects or changing combat rules.
+    # A compact, layered kill-confirmation card reinforces successful
+    # eliminations while remaining a lightweight screen-space UI element.
+    elimination_feedback_panel = PanelContainer.new()
+    elimination_feedback_panel.name = "EliminationFeedbackPanel"
+    elimination_feedback_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+    elimination_feedback_panel.position = Vector2(-220.0, 92.0)
+    elimination_feedback_panel.size = Vector2(440.0, 58.0)
+    elimination_feedback_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var panel_style := StyleBoxFlat.new()
+    panel_style.bg_color = Color(0.018, 0.045, 0.052, 0.92)
+    panel_style.border_color = Color(0.95, 0.65, 0.20, 0.96)
+    panel_style.set_border_width_all(1)
+    panel_style.border_width_left = 4
+    panel_style.set_corner_radius_all(7)
+    panel_style.content_margin_left = 16.0
+    panel_style.content_margin_right = 16.0
+    panel_style.content_margin_top = 5.0
+    panel_style.content_margin_bottom = 5.0
+    elimination_feedback_panel.add_theme_stylebox_override("panel", panel_style)
+
     elimination_feedback_label = Label.new()
     elimination_feedback_label.name = "EliminationFeedback"
-    elimination_feedback_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-    elimination_feedback_label.position = Vector2(-220.0, 92.0)
-    elimination_feedback_label.size = Vector2(440.0, 54.0)
     elimination_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     elimination_feedback_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     elimination_feedback_label.text = "ELIMINATION  +$%d" % KILL_REWARD
-    elimination_feedback_label.add_theme_font_size_override("font_size", 25)
-    elimination_feedback_label.add_theme_color_override("font_color", Color(1.0, 0.78, 0.30, 1.0))
+    elimination_feedback_label.add_theme_font_size_override("font_size", 23)
+    elimination_feedback_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.42, 1.0))
     elimination_feedback_label.add_theme_color_override("font_outline_color", Color(0.015, 0.025, 0.04, 0.98))
-    elimination_feedback_label.add_theme_constant_override("outline_size", 5)
+    elimination_feedback_label.add_theme_constant_override("outline_size", 3)
     elimination_feedback_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    elimination_feedback_label.visible = false
-    hud_layer.add_child(elimination_feedback_label)
+    elimination_feedback_panel.add_child(elimination_feedback_label)
+    elimination_feedback_panel.visible = false
+    hud_layer.add_child(elimination_feedback_panel)
 
 func _show_elimination_feedback() -> void:
     elimination_feedback_timer = 1.15
-    if elimination_feedback_label == null:
+    if not is_instance_valid(elimination_feedback_panel) or elimination_feedback_label == null:
         return
     elimination_feedback_label.text = "ELIMINATION  +$%d" % KILL_REWARD
-    elimination_feedback_label.visible = true
-    elimination_feedback_label.modulate = Color.WHITE
-    elimination_feedback_label.scale = Vector2.ONE
+    elimination_feedback_panel.visible = true
+    elimination_feedback_panel.modulate = Color.WHITE
+    elimination_feedback_panel.scale = Vector2.ONE
 
 func _update_elimination_feedback(delta: float) -> void:
-    if elimination_feedback_label == null:
+    if not is_instance_valid(elimination_feedback_panel):
         return
     elimination_feedback_timer = maxf(0.0, elimination_feedback_timer - delta)
     if elimination_feedback_timer <= 0.0:
-        elimination_feedback_label.visible = false
+        elimination_feedback_panel.visible = false
         return
     var progress := clampf(elimination_feedback_timer / 1.15, 0.0, 1.0)
-    elimination_feedback_label.modulate.a = minf(1.0, progress * 2.8)
-    elimination_feedback_label.scale = Vector2.ONE * (1.0 + 0.10 * (1.0 - progress))
+    elimination_feedback_panel.modulate.a = minf(1.0, progress * 2.8)
+    elimination_feedback_panel.scale = Vector2.ONE * (1.0 + 0.10 * (1.0 - progress))
 
 func _create_tactical_minimap() -> void:
     var minimap_script = load("res://ui/tactical_minimap.gd")
