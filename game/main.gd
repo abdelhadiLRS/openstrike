@@ -6,6 +6,7 @@ const STAND_HEIGHT := 1.8
 const CROUCH_HEIGHT := 1.15
 const STAND_CAMERA_Y := 0.55
 const CROUCH_CAMERA_Y := 0.30
+const CAMERA_BASE_FOV := 75.0
 const MAX_HEALTH := 100
 const ROUND_TIME := 120.0
 const BUY_TIME := 10.0
@@ -107,6 +108,7 @@ var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
 var camera_bob_time := 0.0
 var camera_bob_offset := Vector2.ZERO
+var camera_fov_kick := 0.0
 var view_weapon_recoil := 0.0
 var view_weapon_shot_pitch := 0.0
 var view_weapon_reload_timer := 0.0
@@ -302,6 +304,7 @@ func _update_view_weapon_motion(delta: float) -> void:
     var speed_ratio := clampf(local_velocity.length() / 5.6, 0.0, 1.0)
     view_weapon_bob_time += delta * (2.0 + speed_ratio * 7.5)
     view_weapon_recoil = move_toward(view_weapon_recoil, 0.0, delta * 1.35)
+    camera_fov_kick = move_toward(camera_fov_kick, 0.0, delta * 5.0)
     view_weapon_shot_pitch = move_toward(view_weapon_shot_pitch, 0.0, delta * 2.2)
     view_weapon_reload_timer = maxf(0.0, view_weapon_reload_timer - delta)
     view_weapon_inspect_timer = maxf(0.0, view_weapon_inspect_timer - delta)
@@ -327,6 +330,10 @@ func _update_view_weapon_motion(delta: float) -> void:
     if is_instance_valid(camera):
         camera.position.x = camera_bob_offset.x
         camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y
+        # A tiny speed-based FOV lift and short shot pulse add motion feedback
+        # without changing aim direction, movement, or network state.
+        var target_fov := CAMERA_BASE_FOV + speed_ratio * (1.8 if not crouched else 0.6) + camera_fov_kick
+        camera.fov = lerpf(camera.fov, target_fov, minf(delta * 8.0, 1.0))
     var bob_y := absf(sin(view_weapon_bob_time)) * bob_amount
     var sway_x := clampf(-local_velocity.x * 0.006, -0.035, 0.035)
     var target_position := view_weapon_base_position + Vector3(
@@ -1045,6 +1052,7 @@ func _fire() -> void:
     # Local weapon kick adds a readable, lightweight firing response without
     # changing the authoritative shot direction or player movement.
     view_weapon_recoil = minf(view_weapon_recoil + 0.045 + float(weapon["recoil"]) * 0.16, 0.16)
+    camera_fov_kick = minf(camera_fov_kick + 0.85 + float(weapon["recoil"]) * 0.55, 2.8)
     view_weapon_shot_pitch = maxf(view_weapon_shot_pitch - 0.035 - float(weapon["recoil"]) * 0.08, -0.14)
     combat_events.advance_tick()
     combat_events.emit_shot("player", str(weapon["id"]), ammo, reserve)
@@ -4119,6 +4127,7 @@ func _player() -> void:
     camera.name = "PlayerCamera"
     camera.position = Vector3(0.0, STAND_CAMERA_Y, 0.0)
     camera.current = true
+    camera.fov = CAMERA_BASE_FOV
     player.add_child(camera)
 
     _create_view_weapon()
