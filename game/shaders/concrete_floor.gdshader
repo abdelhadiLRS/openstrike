@@ -32,7 +32,17 @@ void fragment() {
     float texture_mix = broad * 0.58 + grain * 0.30 + fine * 0.12;
     vec3 concrete_dark = vec3(0.135, 0.155, 0.175);
     vec3 concrete_light = vec3(0.205, 0.220, 0.235);
-    ALBEDO = mix(concrete_dark, concrete_light, smoothstep(0.22, 0.78, texture_mix));
+    vec3 concrete = mix(concrete_dark, concrete_light, smoothstep(0.22, 0.78, texture_mix));
+
+    // Faint large-format slab joints add scale cues without extra meshes or
+    // texture assets. World-space coordinates keep the pattern stable.
+    vec2 slab_uv = fract(uv / 4.0);
+    vec2 slab_edge = min(slab_uv, 1.0 - slab_uv);
+    float joint_x = 1.0 - smoothstep(0.012, 0.035, slab_edge.x);
+    float joint_y = 1.0 - smoothstep(0.012, 0.035, slab_edge.y);
+    float joint = max(joint_x, joint_y);
+    float edge_glint = (1.0 - smoothstep(0.035, 0.075, min(slab_edge.x, slab_edge.y))) * 0.025;
+    ALBEDO = concrete * (1.0 - joint * 0.16) + vec3(edge_glint);
     ROUGHNESS = 0.94;
     METALLIC = 0.015;
 }
