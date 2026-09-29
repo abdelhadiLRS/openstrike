@@ -3409,6 +3409,7 @@ func _world() -> void:
     _create_floor_panel_seams()
     _create_floor_safety_markings()
     _create_spawn_wayfinding()
+    _create_team_spawn_beacons()
     _create_wall_ribs()
     _create_wall_light_fixtures()
     _create_overhead_gantry()
@@ -3437,6 +3438,52 @@ func _world() -> void:
     _create_bomb_visual()
     _create_bomb_explosion_visual()
 
+
+
+func _create_team_spawn_beacons() -> void:
+    # Lightweight emissive pylons make each team's entry side readable at a glance.
+    # These are render-only meshes: no collision, lights, particles, or navigation changes.
+    var blue := StandardMaterial3D.new()
+    blue.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    blue.albedo_color = Color(0.12, 0.68, 0.95)
+    blue.emission_enabled = true
+    blue.emission = Color(0.04, 0.38, 0.82)
+    blue.emission_energy_multiplier = 1.15
+
+    var red := StandardMaterial3D.new()
+    red.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    red.albedo_color = Color(1.0, 0.34, 0.16)
+    red.emission_enabled = true
+    red.emission = Color(0.72, 0.12, 0.035)
+    red.emission_energy_multiplier = 1.05
+
+    var frame := StandardMaterial3D.new()
+    frame.albedo_color = Color(0.035, 0.055, 0.07)
+    frame.metallic = 0.48
+    frame.roughness = 0.58
+
+    var entries := [
+        {"position": Vector3(-15.2, 0.0, 13.2), "material": blue, "label": "BLUE  /  ENTRY"},
+        {"position": Vector3(15.2, 0.0, -13.2), "material": red, "label": "RED  /  ENTRY"}
+    ]
+    for entry in entries:
+        var origin: Vector3 = entry["position"]
+        var accent: StandardMaterial3D = entry["material"]
+        _visual_box(origin + Vector3(0.0, 0.08, 0.0), Vector3(1.1, 0.16, 1.1), frame)
+        _visual_box(origin + Vector3(0.0, 0.95, 0.0), Vector3(0.20, 1.65, 0.20), frame)
+        _visual_box(origin + Vector3(0.0, 1.78, 0.0), Vector3(0.52, 0.10, 0.52), accent)
+        _visual_box(origin + Vector3(0.0, 0.98, 0.0), Vector3(0.34, 0.62, 0.34), accent)
+        var sign := Label3D.new()
+        sign.name = "SpawnBeaconLabel"
+        sign.text = str(entry["label"])
+        sign.position = origin + Vector3(0.0, 2.10, -0.16)
+        sign.font_size = 30
+        sign.pixel_size = 0.007
+        sign.modulate = Color(0.78, 0.92, 1.0) if accent == blue else Color(1.0, 0.78, 0.62)
+        sign.outline_size = 5
+        sign.outline_modulate = Color(0.01, 0.02, 0.03, 0.98)
+        sign.shaded = false
+        add_child(sign)
 
 
 func _create_lane_direction_chevrons() -> void:
