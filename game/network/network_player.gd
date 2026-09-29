@@ -47,8 +47,10 @@ var snapshot_render_tick: float = 0.0
 
 var collision_shape: CollisionShape3D
 var mesh: MeshInstance3D
+var visual_root: Node3D
 
 func _physics_process(delta: float) -> void:
+	_update_visual_pose(delta)
 	if not has_snapshot_target:
 		return
 	if snapshot_buffer.size() >= 2:
@@ -60,6 +62,17 @@ func _physics_process(delta: float) -> void:
 	rotation.y += yaw_delta * blend
 	yaw = rotation.y
 	pitch = lerpf(pitch, snapshot_target_pitch, blend)
+
+func _update_visual_pose(delta: float) -> void:
+	if visual_root == null:
+		return
+	# Compress only the render model while crouched; the authoritative capsule
+	# remains controlled by _update_collider() and is never scaled visually.
+	var target_scale_y := 0.68 if crouched else 1.0
+	var target_offset_y := -0.24 if crouched else 0.0
+	var blend := 1.0 - exp(-12.0 * maxf(delta, 0.0))
+	visual_root.scale.y = lerpf(visual_root.scale.y, target_scale_y, blend)
+	visual_root.position.y = lerpf(visual_root.position.y, target_offset_y, blend)
 
 func _update_buffered_transform(delta: float) -> void:
 	var latest := snapshot_buffer[snapshot_buffer.size() - 1]
@@ -379,6 +392,10 @@ func _build_visual() -> void:
 	collision_shape.shape = capsule_shape
 	add_child(collision_shape)
 
+	visual_root = Node3D.new()
+	visual_root.name = "RemoteAvatarVisual"
+	add_child(visual_root)
+
 	# Keep the capsule as the single collider, but give remote teammates a
 	# readable low-poly tactical silhouette instead of a plain blue capsule.
 	mesh = MeshInstance3D.new()
@@ -391,7 +408,7 @@ func _build_visual() -> void:
 	body_material.roughness = 0.9
 	mesh.material_override = body_material
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mesh)
+	visual_root.add_child(mesh)
 
 	var armor_material := StandardMaterial3D.new()
 	armor_material.albedo_color = Color(0.075, 0.12, 0.16)
@@ -429,7 +446,7 @@ func _build_visual() -> void:
 	head.position = Vector3(0.0, 0.62, 0.0)
 	head.material_override = skin_material
 	head.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(head)
+	visual_root.add_child(head)
 
 	var helmet := MeshInstance3D.new()
 	var helmet_mesh := SphereMesh.new()
