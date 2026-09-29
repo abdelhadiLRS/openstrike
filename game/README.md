@@ -69,6 +69,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Accepted local shots eject a small brass casing that tumbles beside the weapon and then shrinks away; the casing is visual-only, short-lived, shadow-free, and uses no collision, rigid bodies, particles, or extra lights.
 - First-person weapon silhouettes now include low-poly barrel tubes, muzzle collars, top rails, and contrasting iron sights; all viewmodel parts are visual-only and cast no shadows
 - Team-colored spawn-side floor bands, modular concrete seams, and objective approach chevrons improve spatial orientation without changing collision or bot navigation
+- Blue and red deployment wall signs plus matching inward-facing floor guide bars make the starting sides easier to identify; they are render-only and do not alter collision, cover, or navigation.
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
 - Minimal crosshair and hit feedback
 - Player eliminations trigger a brief amber `ELIMINATION +$300` confirmation banner with a short scale/fade animation; it is HUD-only and does not affect combat or rewards.
