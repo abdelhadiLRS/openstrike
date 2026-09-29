@@ -3833,6 +3833,7 @@ func _update_rotating_site_markers(delta: float) -> void:
         var material: StandardMaterial3D = site_marker_materials.get(site_id)
         if not is_instance_valid(material):
             continue
+        var base_color: Color = Color(1.0, 0.54, 0.16) if site_id == "A" else Color(0.10, 0.72, 0.98)
         if planted and site_id == planted_site:
             # The active plant site switches to urgent red and pulses faster
             # as a persistent, distant-readable objective cue.
@@ -3841,12 +3842,10 @@ func _update_rotating_site_markers(delta: float) -> void:
             material.emission = Color(1.0, 0.08 + pulse * 0.12, 0.025)
             material.emission_energy_multiplier = 1.25 + urgency * 1.25 + pulse * 0.55
         elif planted:
-            var base_color: Color = Color(1.0, 0.54, 0.16) if site_id == "A" else Color(0.10, 0.72, 0.98)
             material.albedo_color = base_color.darkened(0.48)
             material.emission = base_color * 0.22
             material.emission_energy_multiplier = 0.45
         else:
-            var base_color: Color = Color(1.0, 0.54, 0.16) if site_id == "A" else Color(0.10, 0.72, 0.98)
             material.albedo_color = base_color
             material.emission = base_color * 0.7
             material.emission_energy_multiplier = 1.0
