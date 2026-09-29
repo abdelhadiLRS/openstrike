@@ -77,7 +77,16 @@ func _draw() -> void:
                         continue
                     var ally_position: Vector3 = ally.global_position
                     var ally_point := _map_point(center, scale_factor, Vector2(ally_position.x, ally_position.z))
-                    draw_circle(ally_point, 3.4, Color(0.18, 0.62, 1.0, 0.96))
+                    var ally_yaw := float(ally.rotation.y)
+                    var ally_forward := Vector2(-sin(ally_yaw), cos(ally_yaw))
+                    var ally_side := Vector2(-ally_forward.y, ally_forward.x)
+                    var ally_tip := ally_point + ally_forward * 7.0
+                    var ally_left := ally_point - ally_forward * 3.0 + ally_side * 3.5
+                    var ally_right := ally_point - ally_forward * 3.0 - ally_side * 3.5
+                    # A small heading arrow distinguishes ally orientation without
+                    # exposing enemy positions or adding any gameplay information.
+                    draw_colored_polygon(PackedVector2Array([ally_tip, ally_left, ally_right]), Color(0.30, 0.72, 1.0, 0.98))
+                    draw_circle(ally_point, 2.4, Color(0.72, 0.90, 1.0, 1.0))
                     draw_arc(ally_point, 5.0, 0.0, TAU, 16, Color(0.55, 0.82, 1.0, 0.8), 1.0, true)
 
         var objective_state := str(game_root.get("objective_state"))
