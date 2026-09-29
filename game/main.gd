@@ -3379,6 +3379,7 @@ func _world() -> void:
     _create_floor_grates()
     _create_floor_service_panels()
     _create_cover_visual_details()
+    _create_cover_corner_reinforcement()
     _create_site_perimeter_lights()
     _create_site_floor_stencils()
     var objective_floor_stencils := Node3D.new()
@@ -4138,6 +4139,58 @@ func _create_cover_visual_details() -> void:
                     Vector3(0.055, 0.055, 0.018),
                     fastener_material
                 )
+
+func _create_cover_corner_reinforcement() -> void:
+    # Slim armor rails and top caps give existing cover blocks a more finished
+    # modular-steel silhouette. These details are render-only and do not alter
+    # the cover collision, hitboxes, bot navigation, or gameplay.
+    var rail_material := StandardMaterial3D.new()
+    rail_material.albedo_color = Color(0.17, 0.22, 0.26)
+    rail_material.metallic = 0.58
+    rail_material.roughness = 0.54
+
+    var edge_material := StandardMaterial3D.new()
+    edge_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    edge_material.albedo_color = Color(0.78, 0.43, 0.15)
+    edge_material.emission_enabled = true
+    edge_material.emission = Color(0.22, 0.075, 0.018)
+    edge_material.emission_energy_multiplier = 0.62
+
+    var cover_blocks := [
+        {"p": Vector3(-7.0, 1.0, -5.0), "s": Vector3(3.0, 2.0, 2.0)},
+        {"p": Vector3(6.0, 1.0, -2.0), "s": Vector3(3.0, 2.0, 2.0)},
+        {"p": Vector3(-3.0, 1.0, 7.0), "s": Vector3(3.0, 2.0, 2.0)},
+        {"p": Vector3(10.0, 1.0, 9.0), "s": Vector3(3.0, 2.0, 2.0)},
+        {"p": Vector3(-12.0, 0.65, -7.0), "s": Vector3(2.8, 1.3, 1.2)},
+        {"p": Vector3(-2.0, 0.65, -8.0), "s": Vector3(3.4, 1.3, 1.2)},
+        {"p": Vector3(7.0, 0.65, -7.0), "s": Vector3(2.6, 1.3, 1.2)},
+        {"p": Vector3(-9.0, 0.65, 4.0), "s": Vector3(2.4, 1.3, 1.4)},
+        {"p": Vector3(2.0, 0.65, 5.0), "s": Vector3(3.2, 1.3, 1.2)},
+        {"p": Vector3(11.0, 0.65, 4.0), "s": Vector3(2.4, 1.3, 1.4)}
+    ]
+
+    for data in cover_blocks:
+        var center: Vector3 = data["p"]
+        var size: Vector3 = data["s"]
+        var front_z := center.z + size.z * 0.5 + 0.065
+        var rail_height := size.y * 0.72
+        for side in [-1.0, 1.0]:
+            _visual_box(
+                Vector3(center.x + side * (size.x * 0.5 - 0.075), center.y, front_z),
+                Vector3(0.075, rail_height, 0.055),
+                rail_material
+            )
+        _visual_box(
+            Vector3(center.x, center.y + size.y * 0.5 - 0.065, front_z),
+            Vector3(size.x - 0.08, 0.085, 0.06),
+            rail_material
+        )
+        _visual_box(
+            Vector3(center.x, center.y - size.y * 0.5 + 0.12, front_z + 0.006),
+            Vector3(size.x * 0.46, 0.035, 0.018),
+            edge_material
+        )
+
 
 func _create_ventilation_fans() -> void:
 	# Slow wall-mounted rotors add subtle industrial motion without physics,
