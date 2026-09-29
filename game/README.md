@@ -59,6 +59,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Procedural graybox training range with cool ambient lighting and directional shadows
 - Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
 - Industrial perimeter wall panels, hazard accents on cover, and concentric objective-site floor rings (visual-only; no collision or navigation changes)
+- New wall-mounted sector plaques with numbered wayfinding labels and restrained cyan/amber accents; render-only and non-colliding.
 - RED combatants use a layered low-poly silhouette with vest, head, helmet, and a readable team-color band
 - RED combatants now include lightweight shoulder armor, forearm and thigh plates, a chest rig, and a backpack for a more readable tactical silhouette; details are visual-only and share the existing capsule collider
 - First-person AR-17/PX-9 geometric viewmodels that follow weapon selection and authoritative network weapon state
