@@ -4166,6 +4166,22 @@ func _create_cover_visual_details() -> void:
                     fastener_material
                 )
 
+        # Three shallow face ribs and a compact status tab break up the broad
+        # plate surface. They are cosmetic meshes only and remain outside the
+        # cover's collision shape.
+        for rib_index in range(3):
+            var rib_y := panel_center.y + (float(rib_index) - 1.0) * 0.075
+            _visual_box(
+                Vector3(panel_center.x, rib_y, panel_center.z + 0.036),
+                Vector3(panel_width * 0.34, 0.018, 0.014),
+                trim_material
+            )
+        _visual_box(
+            panel_center + Vector3(panel_width * 0.28, 0.0, 0.040),
+            Vector3(0.075, 0.12, 0.018),
+            hazard_material
+        )
+
 func _create_cover_corner_reinforcement() -> void:
     # Slim armor rails and top caps give existing cover blocks a more finished
     # modular-steel silhouette. These details are render-only and do not alter
