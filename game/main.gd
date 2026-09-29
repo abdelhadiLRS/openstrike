@@ -4698,6 +4698,18 @@ func _refresh_view_weapon() -> void:
     vertical_ray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     muzzle_flash.add_child(vertical_ray)
 
+    # Short diagonal rays create a fuller starburst while keeping the flash
+    # mesh-only, unlit by the scene, and cheap on integrated graphics.
+    for diagonal_sign in [-1.0, 1.0]:
+        var diagonal_ray := MeshInstance3D.new()
+        var diagonal_mesh := BoxMesh.new()
+        diagonal_mesh.size = Vector3(0.20 if is_rifle else 0.14, 0.018, 0.022)
+        diagonal_ray.mesh = diagonal_mesh
+        diagonal_ray.rotation.z = deg_to_rad(32.0 * diagonal_sign)
+        diagonal_ray.material_override = flash_ray_material
+        diagonal_ray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        muzzle_flash.add_child(diagonal_ray)
+
     muzzle_flash.visible = false
     view_weapon_root.add_child(muzzle_flash)
 
