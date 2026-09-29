@@ -373,6 +373,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - A dropped-bomb position change of at least 0.5 world units also triggers a refresh, keeping the designated recovery/guard role aligned with a newly dropped objective.
 - Contact and threat revision triggers remain unchanged, and the cached objective signature is reset at round start.
 
+### Mid-lane floor graphics
+- Added a subtle MID / CONTROL floor stencil, broken centerline, and short lane chevrons to strengthen spatial orientation around the central engagement area.
+- The markings are render-only and cast no shadows; they do not alter collision, movement, cover, or bot navigation.
+
 ### Visual combat feedback
 - Player and host shots now render a short-lived, emissive tracer from the firing camera toward the first raycast impact (or a capped distant endpoint).
 - Rifle and sidearm tracers use distinct cool/amber tints. The effect is visual-only and uses a tiny temporary mesh rather than particles or dynamic lights.
