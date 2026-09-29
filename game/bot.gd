@@ -104,6 +104,10 @@ var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 var damage_flash_ring: MeshInstance3D
 var damage_flash_timer := 0.0
+var damage_health_bar_root: Node3D
+var damage_health_bar_fill: MeshInstance3D
+var damage_health_bar_timer := 0.0
+const DAMAGE_HEALTH_BAR_DURATION := 1.65
 const MUZZLE_FLASH_DURATION := 0.055
 const DAMAGE_FLASH_DURATION := 0.16
 
@@ -114,6 +118,7 @@ func _ready() -> void:
     target = main.get("player")
     _create_bot_muzzle_flash()
     _create_damage_flash_ring()
+    _create_damage_health_bar()
 
 func _create_damage_flash_ring() -> void:
     # A short red ring gives immediate hit feedback without particles or lights.
@@ -136,6 +141,64 @@ func _create_damage_flash_ring() -> void:
     damage_flash_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     damage_flash_ring.visible = false
     add_child(damage_flash_ring)
+
+func _create_damage_health_bar() -> void:
+    # Brief billboard health bar appears only after damage, preserving clean
+    # silhouettes during idle movement while helping players read hit results.
+    damage_health_bar_root = Node3D.new()
+    damage_health_bar_root.name = "DamageHealthBar"
+    damage_health_bar_root.position = Vector3(0.0, 1.35, 0.0)
+    damage_health_bar_root.visible = false
+    add_child(damage_health_bar_root)
+
+    var background := MeshInstance3D.new()
+    var background_mesh := BoxMesh.new()
+    background_mesh.size = Vector3(0.92, 0.085, 0.025)
+    background.mesh = background_mesh
+    var background_material := StandardMaterial3D.new()
+    background_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    background_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+    background_material.albedo_color = Color(0.025, 0.035, 0.045, 0.94)
+    background_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    background.material_override = background_material
+    background.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    damage_health_bar_root.add_child(background)
+
+    damage_health_bar_fill = MeshInstance3D.new()
+    damage_health_bar_fill.name = "HealthFill"
+    var fill_mesh := BoxMesh.new()
+    fill_mesh.size = Vector3(0.84, 0.045, 0.035)
+    damage_health_bar_fill.mesh = fill_mesh
+    damage_health_bar_fill.position = Vector3(0.0, 0.0, -0.018)
+    var fill_material := StandardMaterial3D.new()
+    fill_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    fill_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+    fill_material.albedo_color = Color(0.20, 0.88, 0.48, 1.0)
+    damage_health_bar_fill.material_override = fill_material
+    damage_health_bar_fill.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    damage_health_bar_root.add_child(damage_health_bar_fill)
+
+func _show_damage_health_bar() -> void:
+    if not is_instance_valid(damage_health_bar_root) or not is_instance_valid(damage_health_bar_fill):
+        return
+    damage_health_bar_timer = DAMAGE_HEALTH_BAR_DURATION
+    damage_health_bar_root.visible = not dead
+    var ratio := clampf(float(health) / maxf(1.0, float(max_health)), 0.0, 1.0)
+    damage_health_bar_fill.scale.x = maxf(0.015, ratio)
+    damage_health_bar_fill.position.x = -0.42 * (1.0 - ratio)
+    var fill_material := damage_health_bar_fill.material_override as StandardMaterial3D
+    if fill_material != null:
+        fill_material.albedo_color = Color(0.20, 0.88, 0.48) if ratio > 0.55 else (Color(1.0, 0.67, 0.16) if ratio > 0.25 else Color(1.0, 0.22, 0.15))
+
+func _update_damage_health_bar(delta: float) -> void:
+    if not is_instance_valid(damage_health_bar_root):
+        return
+    damage_health_bar_timer = maxf(0.0, damage_health_bar_timer - delta)
+    if dead or damage_health_bar_timer <= 0.0:
+        damage_health_bar_root.visible = false
+        return
+    damage_health_bar_root.visible = true
+    damage_health_bar_root.modulate.a = clampf(damage_health_bar_timer / 0.28, 0.0, 1.0) if damage_health_bar_timer < 0.28 else 1.0
 
 func _trigger_damage_flash() -> void:
     if not is_instance_valid(damage_flash_ring):
@@ -210,6 +273,7 @@ func _trigger_bot_muzzle_flash() -> void:
 func _physics_process(delta: float) -> void:
     _update_visual_motion(delta)
     _update_damage_flash(delta)
+    _update_damage_health_bar(delta)
     muzzle_flash_timer = maxf(0.0, muzzle_flash_timer - delta)
     if muzzle_flash_timer <= 0.0 and is_instance_valid(muzzle_flash):
         muzzle_flash.visible = false
@@ -1221,6 +1285,7 @@ func take_damage(amount: int, source_id: String = "player") -> void:
     last_damage_source_id = source_id
     health = maxi(0, health - amount)
     _trigger_damage_flash()
+    _show_damage_health_bar()
     recently_hit_timer = RECENT_HIT_REACTION_TIME
     combat_reposition_timer = 0.0
     combat_reposition_goal = Vector3.ZERO
@@ -1241,6 +1306,9 @@ func reset_target() -> void:
     network_target_yaw = 0.0
     health = max_health
     dead = false
+    damage_health_bar_timer = 0.0
+    if is_instance_valid(damage_health_bar_root):
+        damage_health_bar_root.visible = false
     last_damage_source_id = ""
     visible = true
     collision_layer = 1
