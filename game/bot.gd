@@ -695,7 +695,7 @@ func _decide_combat_intent() -> void:
         return
 
     if role != "ROAMER" and has_los and distance <= HOLD_DISTANCE and health >= PUSH_HEALTH_THRESHOLD:
-        var defend_site := main.get("bomb_site_a") if role == "DEFENDER_A" else main.get("bomb_site_b")
+        var defend_site: Vector3 = main.get("bomb_site_a") if role == "DEFENDER_A" else main.get("bomb_site_b")
         if global_position.distance_to(defend_site) <= SITE_RADIUS * 2.5 and distance <= PUSH_DISTANCE:
             combat_intent = "PUSH"
             return
@@ -974,7 +974,7 @@ func _update_goal() -> void:
     keep_current_defend_goal = keep_current_defend_goal and current_goal.distance_to(site_position) <= 10.0
     keep_current_defend_goal = keep_current_defend_goal and current_goal.distance_to(target.global_position) >= 5.0
     keep_current_defend_goal = keep_current_defend_goal and main.call("_bot_has_navigation_path", self, current_goal)
-    var defend_goal_has_cover := main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), current_goal)
+    var defend_goal_has_cover: bool = bool(main.call("_has_obstacle_between", target.global_position + Vector3(0, 1.0, 0), current_goal))
     var defend_goal_is_site_fallback := current_goal.is_equal_approx(site_position)
     keep_current_defend_goal = keep_current_defend_goal and (defend_goal_has_cover or defend_goal_is_site_fallback)
 
