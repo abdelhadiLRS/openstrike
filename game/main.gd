@@ -384,7 +384,7 @@ func _update_view_weapon_motion(delta: float) -> void:
     var target_rotation := Vector3(
         sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + landing_camera_kick * 0.55,
         0.38 * inspect_amount,
-        -local_velocity.x * 0.006 + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
+        (0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
     )
     view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
     view_weapon_root.rotation = view_weapon_root.rotation.lerp(target_rotation, minf(delta * 9.0, 1.0))
