@@ -656,7 +656,7 @@ func _on_network_input_rejected(_peer_id: int, _command: OpenStrikeInputCommand)
     network_diagnostics.record_rejected_input()
 
 func _on_network_input_rejected_reason(_peer_id: int, _command: OpenStrikeInputCommand, reason: String) -> void:
-	network_diagnostics.record_rejection_reason(reason)
+    network_diagnostics.record_rejection_reason(reason)
 
 
 func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
@@ -1198,13 +1198,13 @@ func _current_speed() -> float:
     return float(_current_weapon()["speed"])
 
 func apply_authoritative_network_damage(damage: int) -> bool:
-	if dead or damage <= 0 or round_state != "LIVE":
-		return false
-	health = maxi(0, health - damage)
-	if health <= 0:
-		dead = true
-		respawn_timer = RESPAWN_DELAY
-	return true
+    if dead or damage <= 0 or round_state != "LIVE":
+        return false
+    health = maxi(0, health - damage)
+    if health <= 0:
+        dead = true
+        respawn_timer = RESPAWN_DELAY
+    return true
 
 func _fire() -> void:
     if ammo <= 0:
@@ -4192,66 +4192,66 @@ func _create_cover_corner_reinforcement() -> void:
 
 
 func _create_ventilation_fans() -> void:
-	# Slow wall-mounted rotors add subtle industrial motion without physics,
-	# collision, particles, or dynamic lights.
-	var frame_material := StandardMaterial3D.new()
-	frame_material.albedo_color = Color(0.075, 0.105, 0.13)
-	frame_material.metallic = 0.55
-	frame_material.roughness = 0.58
-	var blade_material := StandardMaterial3D.new()
-	blade_material.albedo_color = Color(0.16, 0.23, 0.27)
-	blade_material.metallic = 0.35
-	blade_material.roughness = 0.64
-	var hub_material := StandardMaterial3D.new()
-	hub_material.albedo_color = Color(0.08, 0.42, 0.52)
-	hub_material.emission_enabled = true
-	hub_material.emission = Color(0.015, 0.16, 0.22)
-	hub_material.emission_energy_multiplier = 0.7
-	for x in [-11.5, 11.5]:
-		var fan_root := Node3D.new()
-		fan_root.name = "WallVentilationFan"
-		fan_root.position = Vector3(x, 2.55, -17.42)
-		add_child(fan_root)
-		var guard := MeshInstance3D.new()
-		var guard_mesh := TorusMesh.new()
-		guard_mesh.inner_radius = 0.53
-		guard_mesh.outer_radius = 0.59
-		guard.mesh = guard_mesh
-		guard.rotation.x = PI * 0.5
-		guard.material_override = frame_material
-		guard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		fan_root.add_child(guard)
-		var rotor := Node3D.new()
-		rotor.name = "FanRotor"
-		fan_root.add_child(rotor)
-		for blade_index in range(3):
-			var blade := MeshInstance3D.new()
-			var blade_mesh := BoxMesh.new()
-			blade_mesh.size = Vector3(0.13, 0.46, 0.055)
-			blade.mesh = blade_mesh
-			var angle := float(blade_index) * TAU / 3.0
-			blade.position = Vector3(sin(angle) * 0.27, cos(angle) * 0.27, 0.015)
-			blade.rotation.z = -angle
-			blade.material_override = blade_material
-			blade.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			rotor.add_child(blade)
-		var hub := MeshInstance3D.new()
-		var hub_mesh := CylinderMesh.new()
-		hub_mesh.top_radius = 0.14
-		hub_mesh.bottom_radius = 0.14
-		hub_mesh.height = 0.12
-		hub.mesh = hub_mesh
-		hub.rotation.x = PI * 0.5
-		hub.material_override = hub_material
-		hub.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		rotor.add_child(hub)
-		ventilation_fan_rotors.append(rotor)
+    # Slow wall-mounted rotors add subtle industrial motion without physics,
+    # collision, particles, or dynamic lights.
+    var frame_material := StandardMaterial3D.new()
+    frame_material.albedo_color = Color(0.075, 0.105, 0.13)
+    frame_material.metallic = 0.55
+    frame_material.roughness = 0.58
+    var blade_material := StandardMaterial3D.new()
+    blade_material.albedo_color = Color(0.16, 0.23, 0.27)
+    blade_material.metallic = 0.35
+    blade_material.roughness = 0.64
+    var hub_material := StandardMaterial3D.new()
+    hub_material.albedo_color = Color(0.08, 0.42, 0.52)
+    hub_material.emission_enabled = true
+    hub_material.emission = Color(0.015, 0.16, 0.22)
+    hub_material.emission_energy_multiplier = 0.7
+    for x in [-11.5, 11.5]:
+        var fan_root := Node3D.new()
+        fan_root.name = "WallVentilationFan"
+        fan_root.position = Vector3(x, 2.55, -17.42)
+        add_child(fan_root)
+        var guard := MeshInstance3D.new()
+        var guard_mesh := TorusMesh.new()
+        guard_mesh.inner_radius = 0.53
+        guard_mesh.outer_radius = 0.59
+        guard.mesh = guard_mesh
+        guard.rotation.x = PI * 0.5
+        guard.material_override = frame_material
+        guard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        fan_root.add_child(guard)
+        var rotor := Node3D.new()
+        rotor.name = "FanRotor"
+        fan_root.add_child(rotor)
+        for blade_index in range(3):
+            var blade := MeshInstance3D.new()
+            var blade_mesh := BoxMesh.new()
+            blade_mesh.size = Vector3(0.13, 0.46, 0.055)
+            blade.mesh = blade_mesh
+            var angle := float(blade_index) * TAU / 3.0
+            blade.position = Vector3(sin(angle) * 0.27, cos(angle) * 0.27, 0.015)
+            blade.rotation.z = -angle
+            blade.material_override = blade_material
+            blade.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+            rotor.add_child(blade)
+        var hub := MeshInstance3D.new()
+        var hub_mesh := CylinderMesh.new()
+        hub_mesh.top_radius = 0.14
+        hub_mesh.bottom_radius = 0.14
+        hub_mesh.height = 0.12
+        hub.mesh = hub_mesh
+        hub.rotation.x = PI * 0.5
+        hub.material_override = hub_material
+        hub.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        rotor.add_child(hub)
+        ventilation_fan_rotors.append(rotor)
 
 
 func _update_ventilation_fans(delta: float) -> void:
-	for rotor in ventilation_fan_rotors:
-		if is_instance_valid(rotor):
-			rotor.rotate_z(delta * 0.48)
+    for rotor in ventilation_fan_rotors:
+        if is_instance_valid(rotor):
+            rotor.rotate_z(delta * 0.48)
 
 
 func _create_ambient_dust() -> void:
