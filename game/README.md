@@ -487,6 +487,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Damage readability
 - Bots briefly show a camera-facing health bar after taking damage. The fill changes from green to amber to red as health falls, then fades away so untouched bots do not carry persistent overhead UI.
 - The bar is visual-only, uses lightweight unlit meshes, and follows authoritative health changes on network clients without changing hitboxes or combat rules.
+- Rapid hits on the same bot now stack into one floating damage total and restart its short fade/lift animation, reducing overlapping combat text while reusing one temporary label per target.
 
 ### Landing feedback
 - Hard player landings now emit a short expanding floor-level dust ring, paired with the existing landing camera response.
