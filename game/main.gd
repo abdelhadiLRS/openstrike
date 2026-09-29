@@ -3318,6 +3318,7 @@ func _world() -> void:
     _create_floor_service_panels()
     _create_cover_visual_details()
     _create_site_perimeter_lights()
+    _create_site_floor_stencils()
     _create_site_beacons()
     _create_rotating_site_markers()
     _spawn_bots()
@@ -4509,6 +4510,28 @@ func _create_site_perimeter_lights() -> void:
                 stripe_material
             )
             strip.rotation.y = -angle
+
+func _create_site_floor_stencils() -> void:
+    # Flat site names act as close-range wayfinding when players enter either
+    # objective zone. They are unlit, non-colliding labels with no gameplay use.
+    var site_specs := [
+        {"id": "A", "name": "ALPHA", "position": BOMB_SITE_A, "color": Color(0.28, 0.76, 0.94, 0.78)},
+        {"id": "B", "name": "BRAVO", "position": BOMB_SITE_B, "color": Color(1.0, 0.62, 0.28, 0.78)}
+    ]
+    for spec in site_specs:
+        var stencil := Label3D.new()
+        stencil.name = "SiteFloorStencil_" + str(spec["id"])
+        stencil.text = str(spec["id"]) + "  /  " + str(spec["name"])
+        stencil.position = spec["position"] + Vector3(0.0, 0.045, 1.72)
+        stencil.rotation_degrees.x = -90.0
+        stencil.font_size = 58
+        stencil.pixel_size = 0.010
+        stencil.modulate = spec["color"]
+        stencil.outline_size = 6
+        stencil.outline_modulate = Color(0.015, 0.025, 0.035, 0.88)
+        stencil.shaded = false
+        add_child(stencil)
+
 
 func _create_site_beacons() -> void:
     # Small emissive pylons make both bomb sites readable from a distance.
