@@ -1565,7 +1565,7 @@ func _spawn_impact_mark(position: Vector3, surface_normal: Vector3) -> void:
     spark_material.emission_enabled = true
     spark_material.emission = Color(0.95, 0.28, 0.055)
     spark_material.emission_energy_multiplier = 1.2
-    for spark_index in range(3):
+    for spark_index in range(0 if low_spec_mode else 3):
         var spark := MeshInstance3D.new()
         spark.name = "ImpactSpark_%d" % spark_index
         var spark_mesh := BoxMesh.new()
