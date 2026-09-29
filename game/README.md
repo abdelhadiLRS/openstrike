@@ -111,11 +111,11 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - ESC: release mouse
 - F3: toggle the network diagnostics overlay (NetGraph)
 - F4: toggle visual quality between HIGH (fog + directional shadows, lower ambient fill) and LOW (fog/shadows off, brighter ambient fill) while playing
-- F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway, and speed-based FOV lift while preserving aiming, recoil, and gameplay
+- F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay
 - Tactical minimap: north-up orientation; cyan arrow is you, amber/cyan markers are Sites A/B, and the red marker identifies a dropped or planted bomb.
 - Dynamic center reticle: expands with movement and recoil, tightens while crouched, and changes color for friendly/enemy targets
 - Landing feedback: a short, decaying camera and viewmodel dip on touchdown adds weight to jumps and drops; it is visual-only and does not alter movement or network state.
-- Reduced-motion mode (F5) removes continuous movement-driven camera and weapon motion for comfort; it does not change player movement, recoil input, hit registration, or network simulation.
+- Reduced-motion mode (F5) removes continuous movement-driven camera and weapon motion plus landing/damage camera impulses for comfort; it does not change player movement, recoil input, hit registration, or network simulation.
 
 This prototype uses original code and procedurally generated geometry. It does not use Counter-Strike proprietary code or assets.
 
