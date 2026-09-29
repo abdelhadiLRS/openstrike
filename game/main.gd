@@ -133,6 +133,8 @@ var camera_bob_offset := Vector2.ZERO
 var camera_roll_current := 0.0
 var damage_camera_kick := Vector2.ZERO
 var camera_fov_kick := 0.0
+var aiming_down_sights := false
+var aim_blend := 0.0
 var landing_camera_kick := 0.0
 var view_weapon_recoil := 0.0
 var view_weapon_shot_pitch := 0.0
@@ -368,8 +370,11 @@ func _unhandled_input(event: InputEvent) -> void:
         scoreboard_visible = false
         if scoreboard_panel != null:
             scoreboard_panel.visible = false
-    elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not dead:
-        Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+    elif event is InputEventMouseButton and not dead:
+        if event.button_index == MOUSE_BUTTON_RIGHT:
+            aiming_down_sights = event.pressed and view_weapon_reload_timer <= 0.0 and view_weapon_inspect_timer <= 0.0 and view_weapon_switch_timer <= 0.0
+        elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+            Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _process(delta: float) -> void:
     _update_site_beacon_pulse(delta)
@@ -398,6 +403,9 @@ func _update_view_weapon_motion(delta: float) -> void:
     view_weapon_reload_timer = maxf(0.0, view_weapon_reload_timer - delta)
     view_weapon_inspect_timer = maxf(0.0, view_weapon_inspect_timer - delta)
     view_weapon_switch_timer = maxf(0.0, view_weapon_switch_timer - delta)
+    if dead or view_weapon_reload_timer > 0.0 or view_weapon_inspect_timer > 0.0 or view_weapon_switch_timer > 0.0:
+        aiming_down_sights = false
+    aim_blend = move_toward(aim_blend, 1.0 if aiming_down_sights and not reduced_motion_mode else (1.0 if aiming_down_sights else 0.0), delta * 7.5)
     var reload_phase := 1.0 - view_weapon_reload_timer / VIEW_WEAPON_RELOAD_DURATION
     var reload_amount := sin(clampf(reload_phase, 0.0, 1.0) * PI)
     var inspect_phase := 1.0 - view_weapon_inspect_timer / VIEW_WEAPON_INSPECT_DURATION
@@ -427,7 +435,7 @@ func _update_view_weapon_motion(delta: float) -> void:
         camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y - landing_camera_kick + damage_camera_kick.y
         # A tiny speed-based FOV lift and short shot pulse add motion feedback
         # without changing aim direction, movement, or network state.
-        var target_fov := CAMERA_BASE_FOV + (0.0 if reduced_motion_mode else speed_ratio * (1.8 if not crouched else 0.6)) + camera_fov_kick
+        var target_fov := CAMERA_BASE_FOV - 11.0 * aim_blend + (0.0 if reduced_motion_mode else speed_ratio * (1.8 if not crouched else 0.6) * (1.0 - aim_blend)) + camera_fov_kick
         camera.fov = lerpf(camera.fov, target_fov, minf(delta * 8.0, 1.0))
     # The weapon lags slightly behind quick camera turns, then settles smoothly.
     # This is viewmodel-only, is disabled by reduced-motion mode, and never
@@ -451,15 +459,16 @@ func _update_view_weapon_motion(delta: float) -> void:
     # matches the camera stance; this remains presentation-only.
     var crouch_weapon_drop := 0.055 if crouched else 0.0
     var crouch_weapon_roll := 0.045 if crouched else 0.0
-    var target_position := view_weapon_base_position + Vector3(
-        sway_x + bob_x + idle_sway_x + view_weapon_look_sway.x + 0.12 * inspect_amount,
-        bob_y + idle_sway_y + view_weapon_look_sway.y - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
+    var aim_offset := Vector3(-0.23, 0.13, 0.23)
+    var target_position := view_weapon_base_position + aim_offset * aim_blend + Vector3(
+        (sway_x + bob_x + idle_sway_x + view_weapon_look_sway.x + 0.12 * inspect_amount) * (1.0 - aim_blend),
+        (bob_y + idle_sway_y + view_weapon_look_sway.y) * (1.0 - aim_blend) - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
         view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount + 0.08 * switch_amount
     )
     var target_rotation := Vector3(
         sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + landing_camera_kick * 0.55,
         -view_weapon_look_sway.x * 0.55 + 0.38 * inspect_amount,
-        (0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + crouch_weapon_roll + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
+        ((0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + crouch_weapon_roll) * (1.0 - aim_blend) + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
     )
     view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
     view_weapon_root.rotation = view_weapon_root.rotation.lerp(target_rotation, minf(delta * 9.0, 1.0))
