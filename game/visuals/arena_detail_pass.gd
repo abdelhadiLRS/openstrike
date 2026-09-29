@@ -27,6 +27,7 @@ func _process(delta: float) -> void:
 func _ready() -> void:
     _build_corner_plates()
     _build_wall_service_runs()
+    _build_wall_beacons()
 
 
 func _build_corner_plates() -> void:
@@ -153,3 +154,40 @@ func _build_wall_service_runs() -> void:
                 var clamp_z := z - 2.5 + float(clamp_index) * 1.65
                 _add_box(self, Vector3(side * 16.70, 2.85, clamp_z), Vector3(0.20, 0.34, 0.10), rail_material)
             _add_box(self, Vector3(side * 16.68, 2.69, z), Vector3(0.045, 0.035, 1.05), status_material)
+
+
+func _build_wall_beacons() -> void:
+    # Compact warning beacons break up the long perimeter walls and reinforce
+    # the industrial facility theme. They are emissive meshes only: no lights,
+    # collision, shadows, or navigation changes.
+    var housing_material := StandardMaterial3D.new()
+    housing_material.albedo_color = Color(0.035, 0.055, 0.068)
+    housing_material.metallic = 0.72
+    housing_material.roughness = 0.42
+
+    var cyan_material := _make_beacon_material(Color(0.06, 0.72, 0.96))
+    var amber_material := _make_beacon_material(Color(1.0, 0.42, 0.10))
+
+    for side in [-1.0, 1.0]:
+        for index in range(3):
+            var z := -8.0 + float(index) * 8.0
+            var beacon := Node3D.new()
+            beacon.name = "PerimeterBeacon_%s_%02d" % ["L" if side < 0.0 else "R", index + 1]
+            beacon.position = Vector3(side * 16.35, 3.35, z)
+            add_child(beacon)
+
+            _add_box(beacon, Vector3.ZERO, Vector3(0.72, 0.34, 1.45), housing_material)
+            _add_box(beacon, Vector3(-side * 0.13, 0.0, 0.0), Vector3(0.10, 0.22, 1.12), cyan_material)
+            _add_box(beacon, Vector3(-side * 0.19, 0.0, 0.0), Vector3(0.07, 0.16, 0.78), amber_material)
+
+
+func _make_beacon_material(color: Color) -> StandardMaterial3D:
+    var material := StandardMaterial3D.new()
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    material.albedo_color = color
+    material.emission_enabled = true
+    material.emission = color * 0.72
+    material.emission_energy_multiplier = 0.9
+    status_materials.append(material)
+    status_phases.append(float(status_materials.size()) * 0.9)
+    return material
