@@ -2647,7 +2647,12 @@ func _create_bomb_visual() -> void:
     bomb_visual.add_child(bomb_light)
 
 func _objective_site(pos: Vector3, label: String) -> void:
+    # Color-coded objective zones improve wayfinding while keeping the arena
+    # lightweight: the marker and text are visual-only and add no collision.
+    var is_site_a := label == "A"
+    var site_color := Color(1.0, 0.62, 0.18) if is_site_a else Color(0.12, 0.78, 0.96)
     var marker := MeshInstance3D.new()
+    marker.name = "ObjectiveZone" + label
     marker.position = pos
     var cylinder := CylinderMesh.new()
     cylinder.top_radius = BOMB_SITE_RADIUS
@@ -2655,16 +2660,23 @@ func _objective_site(pos: Vector3, label: String) -> void:
     cylinder.height = 0.08
     marker.mesh = cylinder
     var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.15, 0.55, 0.90, 0.45)
+    mat.albedo_color = Color(site_color.r, site_color.g, site_color.b, 0.20)
     mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    mat.roughness = 0.9
     marker.material_override = mat
+    marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(marker)
 
     var site_label := Label3D.new()
+    site_label.name = "ObjectiveLabel" + label
     site_label.text = "SITE " + label
-    site_label.position = pos + Vector3(0, 0.35, 0)
-    site_label.font_size = 48
-    site_label.outline_size = 8
+    site_label.position = pos + Vector3(0, 0.42, 0)
+    site_label.font_size = 56
+    site_label.pixel_size = 0.012
+    site_label.modulate = site_color
+    site_label.outline_modulate = Color(0.015, 0.025, 0.04, 0.98)
+    site_label.outline_size = 10
+    site_label.shaded = false
     add_child(site_label)
 
 
