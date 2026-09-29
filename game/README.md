@@ -70,6 +70,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Team-colored spawn-side floor bands, modular concrete seams, and objective approach chevrons improve spatial orientation without changing collision or bot navigation
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
 - Minimal crosshair and hit feedback
+- Player eliminations trigger a brief amber `ELIMINATION +$300` confirmation banner with a short scale/fade animation; it is HUD-only and does not affect combat or rewards.
 - Planting, defusing, and planted-bomb urgency now show a compact bottom-center progress bar with action-specific color; the HUD cue is screen-space only and adds no world geometry or lighting.
 - Hit confirmation now shows a brief centered marker that fades and scales down with a quick impact pulse; taking damage produces a short, restrained red screen flash. Both effects are screen-space UI only and use no particles or dynamic lights.
 - A soft red edge vignette fades in below 55 HP and gently pulses at 30 HP or less; it stays away from the center reticle and uses a tiny CanvasItem shader with no world geometry, particles, or lights.
