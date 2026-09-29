@@ -115,6 +115,7 @@ var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
 var camera_bob_time := 0.0
 var camera_bob_offset := Vector2.ZERO
+var camera_roll_current := 0.0
 var damage_camera_kick := Vector2.ZERO
 var camera_fov_kick := 0.0
 var landing_camera_kick := 0.0
@@ -370,8 +371,13 @@ func _update_view_weapon_motion(delta: float) -> void:
         absf(sin(camera_bob_time)) * camera_bob_strength
     )
     camera_bob_offset = camera_bob_offset.lerp(camera_target_offset, minf(delta * 8.0, 1.0))
+    # A very small strafe-linked camera roll adds physicality without obscuring
+    # the reticle; F5 disables it together with other continuous motion.
+    var target_camera_roll := 0.0 if reduced_motion_mode else clampf(-local_velocity.x * 0.0022, -0.012, 0.012)
+    camera_roll_current = lerpf(camera_roll_current, target_camera_roll, minf(delta * 7.0, 1.0))
     damage_camera_kick = damage_camera_kick.lerp(Vector2.ZERO, minf(delta * 11.0, 1.0))
     if is_instance_valid(camera):
+        camera.rotation.z = camera_roll_current
         camera.position.x = camera_bob_offset.x + damage_camera_kick.x
         camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y - landing_camera_kick + damage_camera_kick.y
         # A tiny speed-based FOV lift and short shot pulse add motion feedback
