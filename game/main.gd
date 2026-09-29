@@ -203,6 +203,10 @@ var ventilation_fan_rotors: Array[Node3D] = []
 var ambient_dust_motes: Array[MeshInstance3D] = []
 var ambient_dust_origins: Array[Vector3] = []
 var ambient_dust_time := 0.0
+var landing_dust_ring: MeshInstance3D
+var landing_dust_material: StandardMaterial3D
+var landing_dust_timer := 0.0
+var player_was_airborne := false
 var site_beacon_time := 0.0
 var bomb_time_left := 0.0
 var objective_action := ""
@@ -285,6 +289,7 @@ func _ready() -> void:
     bomb_site_b = BOMB_SITE_B
     _player()
     _world()
+    _create_landing_dust_effect()
     _hud()
     _create_round_banner()
     _create_visual_notice()
@@ -381,6 +386,7 @@ func _process(delta: float) -> void:
     _update_rotating_site_markers(delta)
     _update_ventilation_fans(delta)
     _update_ambient_dust(delta)
+    _update_landing_dust(delta)
     _update_view_weapon_motion(delta)
     _update_crosshair()
     _update_objective_compass()
@@ -3927,6 +3933,51 @@ func _create_ambient_dust() -> void:
         add_child(mote)
         ambient_dust_motes.append(mote)
         ambient_dust_origins.append(origin)
+
+func _create_landing_dust_effect() -> void:
+    # One reusable ground ring gives hard landings a little visual weight.
+    # It is a shadow-free mesh (not a particle system) and is disabled in low-spec mode.
+    landing_dust_ring = MeshInstance3D.new()
+    landing_dust_ring.name = "LandingDustRing"
+    var ring_mesh := TorusMesh.new()
+    ring_mesh.inner_radius = 0.28
+    ring_mesh.outer_radius = 0.46
+    ring_mesh.rings = 8
+    ring_mesh.ring_segments = 12
+    landing_dust_ring.mesh = ring_mesh
+    landing_dust_material = StandardMaterial3D.new()
+    landing_dust_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    landing_dust_material.albedo_color = Color(0.62, 0.72, 0.76, 0.0)
+    landing_dust_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    landing_dust_material.roughness = 1.0
+    landing_dust_ring.material_override = landing_dust_material
+    landing_dust_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    landing_dust_ring.visible = false
+    add_child(landing_dust_ring)
+
+
+func _update_landing_dust(delta: float) -> void:
+    if not is_instance_valid(player) or not is_instance_valid(landing_dust_ring):
+        return
+    if not player.is_on_floor():
+        player_was_airborne = true
+    elif player_was_airborne:
+        player_was_airborne = false
+        if not low_spec_mode and not reduced_motion_mode:
+            landing_dust_timer = 0.22
+            landing_dust_ring.global_position = player.global_position + Vector3(0.0, 0.035, 0.0)
+            landing_dust_ring.scale = Vector3.ONE * 0.22
+            landing_dust_material.albedo_color.a = 0.34
+            landing_dust_ring.visible = true
+
+    if landing_dust_timer <= 0.0:
+        return
+    landing_dust_timer = maxf(0.0, landing_dust_timer - delta)
+    var progress := 1.0 - landing_dust_timer / 0.22
+    landing_dust_ring.scale = Vector3.ONE * lerpf(0.22, 1.55, progress)
+    landing_dust_material.albedo_color.a = 0.34 * (1.0 - progress)
+    landing_dust_ring.visible = landing_dust_timer > 0.0
+
 
 func _update_ambient_dust(delta: float) -> void:
     if low_spec_mode or ambient_dust_motes.is_empty():
