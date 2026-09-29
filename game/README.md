@@ -114,7 +114,8 @@ The prototype remains offline by default. Optional user arguments can start the 
 - `--bots=3`: choose the number of AI bots (0..15)
   When connected to an authoritative server, the client's bot roster is synchronized from the server snapshot automatically; the snapshot also carries an explicit bot count so partial state arrays cannot silently collapse the roster to zero. Snapshot payloads are versioned. Clients validate raw field types before parsing to prevent silent coercion, then reject incompatible schemas, invalid peer/acknowledgement metadata, unknown round phases, out-of-range pitch, oversized metadata strings, non-finite positions/velocities/angles/timers, invalid health/ammo/credit ranges, malformed or duplicate owned-weapon IDs, and internally inconsistent bot rosters—including invalid bot health, dead-state, state/assignment types, and round mismatches—before applying authoritative state.
 - `--connect=127.0.0.1`: connect as a client to a host
-- `--help`: print the OpenStrike network launch options
+- `--low-spec`: disable environment fog and directional-light shadows for lower-end integrated graphics
+- `--help`: print the OpenStrike launch options
 
 `--server` and `--connect` are mutually exclusive. Invalid combinations are rejected at startup.
 
@@ -129,6 +130,8 @@ The server validates input packet field types before parsing, rejects malformed 
 The flags are parsed only at startup; without them the existing offline flow is unchanged.
 
 ### Visual polish
+
+- Optional `--low-spec` launch mode disables atmospheric fog and the main directional light's real-time shadows. It keeps the same map geometry, materials, gameplay, and Compatibility renderer path while reducing two costly visual effects on modest hardware.
 
 - A compact top-center objective compass displays the screen-space bearing and distance to Sites A and B, hides markers outside the camera's horizontal field of view, and uses cyan/amber labels; it is HUD-only and does not affect movement, navigation, or objective rules.
 
