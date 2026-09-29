@@ -36,6 +36,16 @@ func _build_site_stencil(site: Dictionary) -> void:
             var bar := _add_box(center + offset, Vector3(1.05, 0.018, 0.075), paint)
             bar.rotation.y = -0.42 if side == axis else 0.42
 
+    # A second, shorter inner boundary adds depth to the objective zone while
+    # keeping the center clear for planting, defusing, and player movement.
+    for side in [-1.0, 1.0]:
+        var inner_bar := _add_box(
+            center + Vector3(side * 1.72, 0.027, 0.0),
+            Vector3(0.055, 0.014, 1.05),
+            paint
+        )
+        inner_bar.name = "SiteInnerBoundary_" + str(site["code"])
+
     # Three small approach chevrons point from each site back toward mid.
     var toward_mid := Vector3(-center.x, 0.0, -center.z).normalized()
     var side_axis := Vector3(toward_mid.z, 0.0, -toward_mid.x)
