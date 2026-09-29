@@ -1,0 +1,52 @@
+extends Node3D
+
+## A tiny GPU-only dust layer that gives the arena depth without adding
+## collision, lights, shadows, or navigation work. Disabled in low-spec mode.
+
+var particles: GPUParticles3D
+
+
+func _ready() -> void:
+    _build_particles()
+
+
+func set_enabled(enabled: bool) -> void:
+    if is_instance_valid(particles):
+        particles.emitting = enabled
+
+
+func _build_particles() -> void:
+    particles = GPUParticles3D.new()
+    particles.name = "AmbientDust"
+    particles.amount = 28
+    particles.lifetime = 9.0
+    particles.preprocess = 3.0
+    particles.randomness = 1.0
+    particles.emitting = true
+    particles.visibility_aabb = AABB(Vector3(-18.0, -0.5, -18.0), Vector3(36.0, 7.0, 36.0))
+
+    var process_material := ParticleProcessMaterial.new()
+    process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+    process_material.emission_box_extents = Vector3(15.5, 2.2, 15.5)
+    process_material.direction = Vector3(0.18, 0.08, 0.0)
+    process_material.spread = 38.0
+    process_material.initial_velocity_min = 0.025
+    process_material.initial_velocity_max = 0.095
+    process_material.gravity = Vector3(0.0, 0.012, 0.0)
+    process_material.scale_min = 0.45
+    process_material.scale_max = 1.1
+    process_material.damping_min = 0.01
+    process_material.damping_max = 0.04
+    particles.process_material = process_material
+
+    var quad := QuadMesh.new()
+    quad.size = Vector2(0.035, 0.035)
+    var dust_material := StandardMaterial3D.new()
+    dust_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    dust_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    dust_material.albedo_color = Color(0.72, 0.82, 0.9, 0.14)
+    dust_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+    dust_material.no_depth_test = false
+    quad.material = dust_material
+    particles.draw_pass_1 = quad
+    add_child(particles)
