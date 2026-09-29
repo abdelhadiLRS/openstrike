@@ -2543,7 +2543,7 @@ func _create_wall_signage() -> void:
             label.name = "WallPlaque_" + str(plaque["code"]) + ("_N" if side < 0.0 else "_S")
             label.text = str(plaque["text"])
             label.position = Vector3(x, 2.73, z - side * 0.105)
-            label.rotation.y = PI if side > 0.0 else 0.0
+            label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
             label.font_size = 38
             label.pixel_size = 0.010
             label.modulate = Color(0.78, 0.88, 0.94)
