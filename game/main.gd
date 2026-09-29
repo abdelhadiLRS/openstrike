@@ -100,6 +100,8 @@ var elimination_feedback_timer := 0.0
 var crosshair_root: Control
 var crosshair_segments: Array[ColorRect] = []
 var crosshair_spread_current := 5.0
+var crosshair_target_refresh_timer := 0.0
+var crosshair_target_state := 0
 var objective_compass_a: Label
 var objective_compass_b: Label
 var network_debug_hud: Label
@@ -1586,6 +1588,10 @@ func _update_crosshair() -> void:
     if dead:
         return
 
+    _refresh_crosshair_target()
+    var reticle_color := Color(0.98, 0.30, 0.24, 0.98) if crosshair_target_state == 1 else (Color(0.24, 0.82, 1.0, 0.98) if crosshair_target_state == 2 else Color(0.78, 0.96, 1.0, 0.96))
+    for segment_index in range(4):
+        crosshair_segments[segment_index].color = reticle_color
     var viewport_size := get_viewport().get_visible_rect().size
     var center := viewport_size * 0.5
     var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length() if is_instance_valid(player) else 0.0
@@ -1612,6 +1618,30 @@ func _update_crosshair() -> void:
     crosshair_segments[3].size = Vector2(thickness, length)
     crosshair_segments[4].position = center - Vector2(1.0, 1.0)
     crosshair_segments[4].size = Vector2(2.0, 2.0)
+    crosshair_segments[4].color = Color(1.0, 0.68, 0.20, 1.0) if crosshair_target_state == 0 else reticle_color
+
+
+func _refresh_crosshair_target() -> void:
+    crosshair_target_refresh_timer -= get_process_delta_time()
+    if crosshair_target_refresh_timer > 0.0:
+        return
+    crosshair_target_refresh_timer = 0.08
+    crosshair_target_state = 0
+    if not is_instance_valid(camera) or not is_instance_valid(player):
+        return
+    var ray_end := camera.global_position - camera.global_transform.basis.z * 100.0
+    var query := PhysicsRayQueryParameters3D.create(camera.global_position, ray_end)
+    query.exclude = [player]
+    var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    if hit.is_empty():
+        return
+    var target = hit.get("collider")
+    if target == null or not target.has_method("take_damage"):
+        return
+    var target_team := str(target.get("team"))
+    if target_team.is_empty():
+        return
+    crosshair_target_state = 2 if target_team == player_team else 1
 
 
 func _create_elimination_feedback() -> void:
