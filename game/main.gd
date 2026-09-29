@@ -3197,6 +3197,7 @@ func _world() -> void:
     _create_perimeter_supply_crates()
     _create_ambient_dust()
     _create_mid_lane_markings()
+    _create_mid_lane_signage()
     _create_floor_panel_seams()
     _create_floor_safety_markings()
     _create_spawn_wayfinding()
@@ -3221,6 +3222,51 @@ func _world() -> void:
     _create_bomb_visual()
     _create_bomb_explosion_visual()
 
+
+
+func _create_mid_lane_signage() -> void:
+    # A suspended two-sided MID sign gives the central lane a clear landmark.
+    # It is composed of a few shadow-free meshes and labels; no lights,
+    # collision, navigation, or gameplay state are added.
+    var housing := StandardMaterial3D.new()
+    housing.albedo_color = Color(0.025, 0.045, 0.060)
+    housing.metallic = 0.42
+    housing.roughness = 0.62
+
+    var cyan_trim := StandardMaterial3D.new()
+    cyan_trim.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    cyan_trim.albedo_color = Color(0.10, 0.72, 0.92)
+    cyan_trim.emission_enabled = true
+    cyan_trim.emission = Color(0.025, 0.34, 0.58)
+    cyan_trim.emission_energy_multiplier = 1.05
+
+    var amber_trim := StandardMaterial3D.new()
+    amber_trim.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    amber_trim.albedo_color = Color(0.96, 0.57, 0.18)
+    amber_trim.emission_enabled = true
+    amber_trim.emission = Color(0.42, 0.15, 0.025)
+    amber_trim.emission_energy_multiplier = 0.75
+
+    _visual_box(Vector3(0.0, 3.02, 0.0), Vector3(7.6, 0.78, 0.18), housing)
+    _visual_box(Vector3(0.0, 3.43, 0.0), Vector3(7.7, 0.045, 0.22), cyan_trim)
+    _visual_box(Vector3(0.0, 2.61, 0.0), Vector3(7.7, 0.045, 0.22), amber_trim)
+    for side in [-1.0, 1.0]:
+        _visual_box(Vector3(side * 3.72, 3.02, 0.0), Vector3(0.12, 0.80, 0.24), cyan_trim)
+        _visual_box(Vector3(side * 3.42, 3.52, 0.0), Vector3(0.10, 0.42, 0.10), housing)
+
+    for side in [-1.0, 1.0]:
+        var label := Label3D.new()
+        label.name = "MidControlSignFront" if side > 0.0 else "MidControlSignBack"
+        label.text = "MID  /  CONTROL"
+        label.position = Vector3(0.0, 3.02, side * 0.105)
+        label.rotation.y = 0.0 if side > 0.0 else PI
+        label.font_size = 54
+        label.pixel_size = 0.010
+        label.modulate = Color(0.56, 0.88, 0.96)
+        label.outline_size = 8
+        label.outline_modulate = Color(0.01, 0.025, 0.035, 0.98)
+        label.shaded = false
+        add_child(label)
 
 
 func _create_ceiling_light_banks() -> void:
