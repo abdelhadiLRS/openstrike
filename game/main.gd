@@ -970,6 +970,8 @@ func _fire() -> void:
     var tracer_end: Vector3 = hit.position if not hit.is_empty() else origin + direction * 75.0
     var tracer_color := Color(0.50, 0.88, 1.0) if str(weapon["id"]) == "ar_17" else Color(1.0, 0.68, 0.28)
     _spawn_shot_tracer(origin, tracer_end, tracer_color)
+    if not hit.is_empty():
+        _spawn_impact_spark(hit.position, hit.get("normal", Vector3.UP), tracer_color)
 
     if network_session != null and network_session.is_server and network_session.is_online:
         if network_session.process_host_fire(origin, direction, str(weapon["id"]), int(weapon["damage"])):
@@ -1013,6 +1015,31 @@ func _spawn_shot_tracer(start_position: Vector3, end_position: Vector3, tint: Co
     tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(tracer)
     get_tree().create_timer(0.065).timeout.connect(tracer.queue_free)
+
+func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color) -> void:
+    # Tiny short-lived impact flash improves hit readability without particles,
+    # dynamic lights, collision, or persistent decals.
+    var spark := MeshInstance3D.new()
+    spark.name = "ImpactSpark"
+    var spark_mesh := SphereMesh.new()
+    spark_mesh.radius = 0.055
+    spark_mesh.height = 0.11
+    spark.mesh = spark_mesh
+    var normal := surface_normal.normalized()
+    if normal.length_squared() < 0.01:
+        normal = Vector3.UP
+    spark.global_position = position + normal * 0.035
+    spark.scale = Vector3(1.0, 0.8, 1.0)
+    var material := StandardMaterial3D.new()
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    material.albedo_color = tint
+    material.emission_enabled = true
+    material.emission = tint
+    material.emission_energy_multiplier = 2.4
+    spark.material_override = material
+    spark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(spark)
+    get_tree().create_timer(0.09).timeout.connect(spark.queue_free)
 
 func _reload() -> void:
     if ammo >= int(_current_weapon()["mag"]) or reserve <= 0:
