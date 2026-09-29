@@ -146,6 +146,9 @@ var camera_fov_preset_index := 0
 var landing_camera_kick := 0.0
 var view_weapon_recoil := 0.0
 var view_weapon_shot_pitch := 0.0
+var view_weapon_bolt: MeshInstance3D
+var view_weapon_bolt_timer := 0.0
+const VIEW_WEAPON_BOLT_DURATION := 0.11
 var view_weapon_reload_timer := 0.0
 var view_weapon_inspect_timer := 0.0
 var view_weapon_switch_timer := 0.0
@@ -438,6 +441,10 @@ func _update_view_weapon_motion(delta: float) -> void:
     camera_fov_kick = move_toward(camera_fov_kick, 0.0, delta * 5.0)
     landing_camera_kick = move_toward(landing_camera_kick, 0.0, delta * 3.8)
     view_weapon_shot_pitch = move_toward(view_weapon_shot_pitch, 0.0, delta * 2.2)
+    view_weapon_bolt_timer = maxf(0.0, view_weapon_bolt_timer - delta)
+    if is_instance_valid(view_weapon_bolt):
+        var bolt_progress := 1.0 - view_weapon_bolt_timer / VIEW_WEAPON_BOLT_DURATION
+        view_weapon_bolt.position.z = -0.02 + 0.055 * sin(clampf(bolt_progress, 0.0, 1.0) * PI)
     view_weapon_reload_timer = maxf(0.0, view_weapon_reload_timer - delta)
     view_weapon_inspect_timer = maxf(0.0, view_weapon_inspect_timer - delta)
     view_weapon_switch_timer = maxf(0.0, view_weapon_switch_timer - delta)
@@ -5617,6 +5624,8 @@ func _create_view_weapon() -> void:
 func _refresh_view_weapon() -> void:
     if view_weapon_root == null:
         return
+    view_weapon_bolt = null
+    view_weapon_bolt_timer = 0.0
     for child in view_weapon_root.get_children():
         child.queue_free()
 
@@ -5685,6 +5694,18 @@ func _refresh_view_weapon() -> void:
         _view_box(Vector3(0.0, 0.145, -0.06), Vector3(0.055, 0.05, 0.045), accent_material)
         _view_cylinder(Vector3(0.0, 0.0, -0.54), 0.032, 0.28, body_material)
         _view_cylinder(Vector3(0.0, 0.0, -0.69), 0.038, 0.035, grip_material)
+
+        # A compact bolt carrier reciprocates on each shot for a tactile firing
+        # cue. It is part of the camera-only viewmodel and has no physics.
+        view_weapon_bolt = MeshInstance3D.new()
+        view_weapon_bolt.name = "RifleBoltCarrier"
+        var bolt_mesh := BoxMesh.new()
+        bolt_mesh.size = Vector3(0.025, 0.045, 0.12)
+        view_weapon_bolt.mesh = bolt_mesh
+        view_weapon_bolt.position = Vector3(0.095, 0.035, -0.02)
+        view_weapon_bolt.material_override = detail_material
+        view_weapon_bolt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        view_weapon_root.add_child(view_weapon_bolt)
 
         # Compact reflex optic gives the rifle a more distinctive first-person
         # silhouette. Its housing and dot are visual-only and cast no shadows.
