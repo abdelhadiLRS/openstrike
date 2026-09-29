@@ -5757,6 +5757,31 @@ func _refresh_view_weapon() -> void:
         _view_cylinder(Vector3(0.0, 0.0, -0.32), 0.024, 0.20, body_material)
         _view_cylinder(Vector3(0.0, 0.0, -0.425), 0.03, 0.03, grip_material)
 
+    # Weapon-specific silhouette pass: stock hardware and vented handguard on
+    # the rifle, plus a trigger guard and textured grip panels on the sidearm.
+    # These camera-only meshes add no collision, shadows, or gameplay behavior.
+    if is_rifle:
+        _view_box(Vector3(0.0, -0.005, 0.405), Vector3(0.19, 0.16, 0.075), grip_material)
+        _view_box(Vector3(0.0, 0.015, 0.365), Vector3(0.20, 0.035, 0.035), detail_material)
+        _view_box(Vector3(0.0, 0.055, 0.19), Vector3(0.13, 0.025, 0.12), detail_material)
+        for side in [-1.0, 1.0]:
+            for vent_index in range(4):
+                _view_box(
+                    Vector3(side * 0.083, 0.012, -0.30 + float(vent_index) * 0.065),
+                    Vector3(0.009, 0.026, 0.038),
+                    dark_detail_material
+                )
+            _view_box(Vector3(side * 0.091, -0.015, 0.285), Vector3(0.018, 0.055, 0.09), detail_material)
+    else:
+        # A squared, open-sided trigger guard frames the trigger area without
+        # obscuring the pistol's compact profile.
+        _view_box(Vector3(0.0, -0.045, -0.005), Vector3(0.12, 0.018, 0.16), detail_material)
+        _view_box(Vector3(-0.055, 0.005, -0.005), Vector3(0.018, 0.09, 0.16), detail_material)
+        _view_box(Vector3(0.055, 0.005, -0.005), Vector3(0.018, 0.09, 0.16), detail_material)
+        for side in [-1.0, 1.0]:
+            _view_box(Vector3(side * 0.052, -0.13, 0.115), Vector3(0.012, 0.14, 0.12), body_material)
+            _view_box(Vector3(side * 0.059, -0.15, 0.13), Vector3(0.008, 0.075, 0.075), detail_material)
+
     # Fine receiver details improve the first-person silhouette while keeping
     # the weapon fully procedural, low-poly, and free of extra physics.
     if is_rifle:
