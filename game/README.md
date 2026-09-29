@@ -114,6 +114,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 ### Visual polish
 
+- The arena now uses a procedural daylight sky with a blue-to-horizon gradient and matching ground haze; it is generated at runtime, needs no external texture assets, and keeps the Compatibility renderer path.
 - Arena lighting now uses a slightly brighter cool ambient fill, subtle distance haze, and restrained contrast/saturation grading to separate concrete, team colors, and objective accents.
 - Thin emissive cyan and amber strips accent the upper perimeter walls; they are unlit mesh effects with shadows disabled and add no collision, navigation, or dynamic-light cost.
 
