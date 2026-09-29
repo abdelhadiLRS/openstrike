@@ -5206,6 +5206,30 @@ func _refresh_view_weapon() -> void:
         _view_box(Vector3(0.0, 0.145, -0.06), Vector3(0.055, 0.05, 0.045), accent_material)
         _view_cylinder(Vector3(0.0, 0.0, -0.54), 0.032, 0.28, body_material)
         _view_cylinder(Vector3(0.0, 0.0, -0.69), 0.038, 0.035, grip_material)
+
+        # Compact reflex optic gives the rifle a more distinctive first-person
+        # silhouette. Its housing and dot are visual-only and cast no shadows.
+        _view_box(Vector3(0.0, 0.165, -0.075), Vector3(0.17, 0.035, 0.20), grip_material)
+        _view_box(Vector3(-0.067, 0.235, -0.075), Vector3(0.025, 0.13, 0.18), body_material)
+        _view_box(Vector3(0.067, 0.235, -0.075), Vector3(0.025, 0.13, 0.18), body_material)
+        _view_box(Vector3(0.0, 0.292, -0.075), Vector3(0.16, 0.022, 0.18), detail_material)
+        _view_box(Vector3(0.0, 0.235, 0.025), Vector3(0.12, 0.025, 0.025), detail_material)
+        var optic_dot := MeshInstance3D.new()
+        optic_dot.name = "ReflexOpticDot"
+        var optic_dot_mesh := SphereMesh.new()
+        optic_dot_mesh.radius = 0.012
+        optic_dot_mesh.height = 0.024
+        optic_dot.mesh = optic_dot_mesh
+        optic_dot.position = Vector3(0.0, 0.235, 0.008)
+        var optic_dot_material := StandardMaterial3D.new()
+        optic_dot_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        optic_dot_material.albedo_color = Color(1.0, 0.12, 0.08)
+        optic_dot_material.emission_enabled = true
+        optic_dot_material.emission = Color(1.0, 0.035, 0.015)
+        optic_dot_material.emission_energy_multiplier = 1.25
+        optic_dot.material_override = optic_dot_material
+        optic_dot.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        view_weapon_root.add_child(optic_dot)
     else:
         _view_box(Vector3(0.0, 0.09, 0.11), Vector3(0.09, 0.07, 0.08), accent_material)
         _view_box(Vector3(0.0, 0.105, -0.16), Vector3(0.045, 0.022, 0.18), grip_material)
