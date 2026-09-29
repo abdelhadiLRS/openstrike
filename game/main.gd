@@ -4432,8 +4432,11 @@ func _create_visual_environment() -> void:
 func _apply_visual_quality_mode() -> void:
     # Runtime quality switching changes rendering only; gameplay, collision,
     # navigation, and network simulation remain intact. LOW removes fog, glow,
-    # shadows, and dust; BALANCED keeps haze but skips glow and shadow maps;
-    # HIGH enables the complete lightweight presentation stack.
+    # shadows, dust, and anti-aliasing; BALANCED uses 2x MSAA; HIGH uses 4x MSAA
+    # alongside the full lightweight presentation stack.
+    var viewport := get_viewport()
+    if is_instance_valid(viewport):
+        viewport.msaa_3d = Viewport.MSAA_DISABLED if low_spec_mode else (Viewport.MSAA_2X if balanced_visual_mode else Viewport.MSAA_4X)
     if is_instance_valid(visual_environment):
         visual_environment.fog_enabled = not low_spec_mode
         visual_environment.glow_enabled = not low_spec_mode and not balanced_visual_mode
