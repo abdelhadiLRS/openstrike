@@ -3,6 +3,21 @@ extends Node3D
 # Small, static wayfinding panels add readable landmarks to the center lane.
 # They are render-only: no collision shapes, lights, shadows, or navigation data.
 
+var accent_materials: Array[StandardMaterial3D] = []
+var pulse_time := 0.0
+
+
+func _process(delta: float) -> void:
+    # Slow emissive breathing keeps the wall wayfinding panels alive without
+    # adding lights, particles, or any gameplay-side work.
+    pulse_time = fmod(pulse_time + delta, TAU)
+    for index in accent_materials.size():
+        var material := accent_materials[index]
+        if is_instance_valid(material):
+            var phase := pulse_time * 1.25 + float(index) * 1.7
+            material.emission_energy_multiplier = 0.62 + (sin(phase) + 1.0) * 0.22
+
+
 func _ready() -> void:
     _build_wall_marker(
         "MidControlMarker",
@@ -51,6 +66,7 @@ func _build_wall_marker(
     accent_material.emission_enabled = true
     accent_material.emission = accent_color * 0.38
     accent_material.emission_energy_multiplier = 0.85
+    accent_materials.append(accent_material)
 
     _add_box(marker, Vector3.ZERO, Vector3(4.6, 1.15, 0.12), frame_material)
     _add_box(marker, Vector3(0.0, 0.0, -0.075), Vector3(4.42, 0.98, 0.035), panel_material)
