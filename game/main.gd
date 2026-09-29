@@ -101,6 +101,8 @@ var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 var hit_marker: Label
 var damage_flash: ColorRect
+var objective_progress_bar: ProgressBar
+var objective_progress_label: Label
 var hit_feedback_timer := 0.0
 var damage_feedback_timer := 0.0
 
@@ -1179,6 +1181,46 @@ func _create_crosshair() -> void:
     hit_marker.visible = false
     crosshair_root.add_child(hit_marker)
 
+    # Bottom-center objective progress gives plant/defuse actions a clear,
+    # screen-space completion cue without adding world geometry or lights.
+    objective_progress_label = Label.new()
+    objective_progress_label.name = "ObjectiveProgressLabel"
+    objective_progress_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+    objective_progress_label.position = Vector2(-180.0, -142.0)
+    objective_progress_label.size = Vector2(360.0, 26.0)
+    objective_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    objective_progress_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    objective_progress_label.add_theme_font_size_override("font_size", 15)
+    objective_progress_label.add_theme_color_override("font_color", Color(0.90, 0.96, 1.0, 1.0))
+    objective_progress_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.95))
+    objective_progress_label.add_theme_constant_override("shadow_offset_x", 1)
+    objective_progress_label.add_theme_constant_override("shadow_offset_y", 1)
+    objective_progress_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    objective_progress_label.visible = false
+    crosshair_root.add_child(objective_progress_label)
+
+    objective_progress_bar = ProgressBar.new()
+    objective_progress_bar.name = "ObjectiveProgressBar"
+    objective_progress_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+    objective_progress_bar.position = Vector2(-180.0, -112.0)
+    objective_progress_bar.size = Vector2(360.0, 14.0)
+    objective_progress_bar.min_value = 0.0
+    objective_progress_bar.max_value = 100.0
+    objective_progress_bar.show_percentage = false
+    objective_progress_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var progress_background := StyleBoxFlat.new()
+    progress_background.bg_color = Color(0.015, 0.025, 0.04, 0.88)
+    progress_background.border_color = Color(0.38, 0.53, 0.62, 0.9)
+    progress_background.set_border_width_all(1)
+    progress_background.set_corner_radius_all(3)
+    objective_progress_bar.add_theme_stylebox_override("background", progress_background)
+    var progress_fill := StyleBoxFlat.new()
+    progress_fill.bg_color = Color(0.10, 0.78, 0.88, 0.98)
+    progress_fill.set_corner_radius_all(3)
+    objective_progress_bar.add_theme_stylebox_override("fill", progress_fill)
+    objective_progress_bar.visible = false
+    crosshair_root.add_child(objective_progress_bar)
+
     for index in 5:
         var segment := ColorRect.new()
         segment.name = "ReticlePart%d" % index
@@ -1269,6 +1311,37 @@ func _update_hud() -> void:
         credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive
     ]
     _update_network_debug_hud()
+    _update_objective_progress_ui()
+
+func _update_objective_progress_ui() -> void:
+    if objective_progress_bar == null or objective_progress_label == null:
+        return
+    var label_text := ""
+    var progress := 0.0
+    var tint := Color(0.10, 0.78, 0.88, 0.98)
+    if not dead and round_state == "LIVE":
+        if objective_action == "PLANT":
+            label_text = "PLANTING SITE %s — HOLD F" % objective_site
+            progress = 1.0 - clampf(objective_action_time_left / PLANT_TIME, 0.0, 1.0)
+            tint = Color(0.10, 0.78, 0.88, 0.98)
+        elif objective_action == "DEFUSE":
+            label_text = "DEFUSING SITE %s — HOLD F" % planted_site
+            progress = 1.0 - clampf(objective_action_time_left / DEFUSE_TIME, 0.0, 1.0)
+            tint = Color(0.28, 0.88, 0.58, 0.98)
+        elif objective_state == "PLANTED":
+            label_text = "BOMB DETONATION"
+            progress = clampf(bomb_time_left / BOMB_TIME, 0.0, 1.0)
+            tint = Color(1.0, 0.30, 0.12, 0.98)
+    var visible_progress := not label_text.is_empty()
+    objective_progress_label.visible = visible_progress
+    objective_progress_bar.visible = visible_progress
+    if not visible_progress:
+        return
+    objective_progress_label.text = label_text
+    objective_progress_bar.value = progress * 100.0
+    var fill_style := objective_progress_bar.get_theme_stylebox("fill") as StyleBoxFlat
+    if fill_style != null:
+        fill_style.bg_color = tint
 
 func _update_network_debug_hud() -> void:
     if network_debug_hud == null:
