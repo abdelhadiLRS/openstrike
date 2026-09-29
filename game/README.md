@@ -127,6 +127,8 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 ### Visual polish
 
+- A compact top-center objective compass displays the screen-space bearing and distance to Sites A and B, hides markers outside the camera's horizontal field of view, and uses cyan/amber labels; it is HUD-only and does not affect movement, navigation, or objective rules.
+
 - The arena now uses a procedural daylight sky with a blue-to-horizon gradient and matching ground haze; it is generated at runtime, needs no external texture assets, and keeps the Compatibility renderer path.
 - Arena lighting now uses a slightly brighter cool ambient fill, subtle distance haze, and restrained contrast/saturation grading to separate concrete, team colors, and objective accents.
 - Thin emissive cyan and amber strips accent the upper perimeter walls; they are unlit mesh effects with shadows disabled and add no collision, navigation, or dynamic-light cost.
