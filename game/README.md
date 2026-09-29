@@ -155,7 +155,8 @@ The prototype remains offline by default. Optional user arguments can start the 
   When connected to an authoritative server, the client's bot roster is synchronized from the server snapshot automatically; the snapshot also carries an explicit bot count so partial state arrays cannot silently collapse the roster to zero. Snapshot payloads are versioned. Clients validate raw field types before parsing to prevent silent coercion, then reject incompatible schemas, invalid peer/acknowledgement metadata, unknown round phases, out-of-range pitch, oversized metadata strings, non-finite positions/velocities/angles/timers, invalid health/ammo/credit ranges, malformed or duplicate owned-weapon IDs, and internally inconsistent bot rosters—including invalid bot health, dead-state, state/assignment types, and round mismatches—before applying authoritative state.
 - `--connect=127.0.0.1`: connect as a client to a host
 - `--low-spec`: disable environment fog and directional-light shadows and skip decorative shell-casing/impact-spark effects for lower-end integrated graphics; shot tracers and impact marks remain enabled.
-- `--balanced-visual`: start with atmospheric fog and ambient dust enabled, but disable glow and directional-light shadow maps for a middle ground between HIGH and LOW; ignored when `--low-spec` is also supplied.
+- `--balanced-visual`: legacy alias for the BALANCED profile; starts with atmospheric fog and ambient dust enabled, but disables glow and directional-light shadow maps.
+- `--visual=high|balanced|low`: select the rendering profile at startup. HIGH enables the full lighting presentation, BALANCED keeps haze/dust but disables glow and shadow maps, and LOW disables fog, shadows, glow, and ambient dust. This explicit option takes precedence over the legacy `--low-spec` and `--balanced-visual` flags.
 - `--help`: print the OpenStrike launch options
 
 `--server` and `--connect` are mutually exclusive. Invalid combinations are rejected at startup.
@@ -165,6 +166,9 @@ Examples:
 - Server: `godot --path game -- --server --port=27015 --max-clients=8`
 - Client: `godot --path game -- --connect=127.0.0.1 --port=27015`
 - Server with a custom bot count: `godot --path game -- --server --port=27015 --bots=5`
+- Low-end graphics profile: `godot --path game -- --visual=low`
+- Balanced graphics profile: `godot --path game -- --visual=balanced`
+- Full graphics profile: `godot --path game -- --visual=high`
 
 The server validates input packet field types before parsing, rejects malformed or oversized weapon identifiers, and refuses negative, stale, future, duplicate, or regressing input ticks; accepted movement and look values are bounded before simulation.
 
