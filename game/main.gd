@@ -27,6 +27,7 @@ const BOMB_SITE_A := Vector3(-10, 0.15, -7)
 const BOMB_SITE_B := Vector3(10, 0.15, 7)
 const BOT_COUNT := 3
 const MAX_BOT_COUNT := 15
+const MAX_IMPACT_MARKS := 32
 const COMBAT_SLOT_UPDATE_INTERVAL := 0.75
 const COMBAT_ASSIGNMENT_UPDATE_INTERVAL := 1.25
 const TACTICAL_MEMORY_TIMEOUT := 4.5
@@ -125,6 +126,7 @@ const VIEW_WEAPON_SWITCH_DURATION := 0.30
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 var shell_casing_material: StandardMaterial3D
+var impact_marks: Array[MeshInstance3D] = []
 var hit_marker: Label
 var damage_flash: ColorRect
 var low_health_vignette: ColorRect
@@ -1209,9 +1211,13 @@ func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color
 
 
 func _spawn_impact_mark(position: Vector3, surface_normal: Vector3) -> void:
-    # A brief, flat scorch ring makes bullet impacts persist long enough to read
-    # against concrete and metal. It is render-only, capped by a short lifetime,
-    # and never changes collision or gameplay state.
+    # Keep only a small number of short-lived marks so sustained fire cannot
+    # grow the scene tree without bound on low-memory machines.
+    while impact_marks.size() >= MAX_IMPACT_MARKS:
+        var oldest := impact_marks.pop_front()
+        if is_instance_valid(oldest):
+            oldest.queue_free()
+
     var normal := surface_normal.normalized()
     if normal.length_squared() < 0.01:
         normal = Vector3.UP
@@ -1234,10 +1240,17 @@ func _spawn_impact_mark(position: Vector3, surface_normal: Vector3) -> void:
     material.roughness = 1.0
     mark.material_override = material
     add_child(mark)
+    impact_marks.append(mark)
 
     var tween := create_tween()
     tween.tween_property(material, "albedo_color:a", 0.0, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-    tween.finished.connect(mark.queue_free)
+    tween.finished.connect(_on_impact_mark_fade_finished.bind(mark))
+
+
+func _on_impact_mark_fade_finished(mark: MeshInstance3D) -> void:
+    impact_marks.erase(mark)
+    if is_instance_valid(mark):
+        mark.queue_free()
 
 
 func _reload() -> void:
