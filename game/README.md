@@ -71,6 +71,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - First-person AR-17/PX-9 geometric viewmodels that follow weapon selection and authoritative network weapon state
 - First-person weapon viewmodels now include low-poly tactical sleeves, cuffs, and gloves positioned around the grip and fore-end; they are visual-only, shadow-free, and add no collision or physics.
 - First-person weapon motion adds restrained movement bob, lateral counter-sway, and a short recoil kick; the animation is visual-only and uses no extra physics or lights
+- Crouching lowers and gently rolls the first-person weapon to match the reduced stance; the eased viewmodel adjustment is cosmetic and does not change aim, hit registration, collision, or network state.
 - First-person camera adds a restrained walking bob and lateral sway, scaled down while crouching; it is cosmetic and does not alter player movement or network state
 - Camera field of view widens slightly with movement and gives a brief, restrained pulse on accepted shots; the effect is cosmetic, smoothly eased, and does not change aim, movement, or network state.
 - Pressing T plays a short eased weapon-inspection gesture with a gentle tilt and dip; it is cosmetic, does not block firing or change weapon state, and adds no physics, particles, or lights.
