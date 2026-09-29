@@ -512,14 +512,22 @@ func _update_view_weapon_motion(delta: float) -> void:
     # matches the camera stance; this remains presentation-only.
     var crouch_weapon_drop := 0.055 if crouched else 0.0
     var crouch_weapon_roll := 0.045 if crouched else 0.0
+    # At high movement speed the weapon settles into a slightly lowered ready
+    # posture. The transition is eased, fades out while aiming, and is disabled
+    # with reduced-motion mode; it never affects the camera or weapon authority.
+    var sprint_phase := clampf((speed_ratio - 0.55) / 0.45, 0.0, 1.0)
+    var sprint_amount := sprint_phase * sprint_phase * (3.0 - 2.0 * sprint_phase)
+    if reduced_motion_mode:
+        sprint_amount = 0.0
+    sprint_amount *= 1.0 - aim_blend
     var aim_offset := Vector3(-0.23, 0.13, 0.23)
     var target_position := view_weapon_base_position + aim_offset * aim_blend + Vector3(
         (sway_x + bob_x + idle_sway_x + view_weapon_look_sway.x + 0.12 * inspect_amount + 0.035 * inspect_twist) * (1.0 - aim_blend),
-        (bob_y + idle_sway_y + view_weapon_look_sway.y) * (1.0 - aim_blend) - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount - 0.035 * inspect_twist + 0.18 * switch_amount - landing_camera_kick * 0.45,
-        view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount + 0.08 * switch_amount
+        (bob_y + idle_sway_y + view_weapon_look_sway.y) * (1.0 - aim_blend) - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount - 0.035 * inspect_twist + 0.18 * switch_amount - landing_camera_kick * 0.45 - 0.065 * sprint_amount,
+        view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount + 0.08 * switch_amount + 0.055 * sprint_amount
     )
     var target_rotation := Vector3(
-        sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + 0.05 * inspect_twist + landing_camera_kick * 0.55,
+        sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + 0.05 * inspect_twist + landing_camera_kick * 0.55 + 0.045 * sprint_amount,
         -view_weapon_look_sway.x * 0.55 + 0.38 * inspect_amount + 0.14 * inspect_twist,
         ((0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + crouch_weapon_roll) * (1.0 - aim_blend) + 0.22 * reload_amount - 0.48 * inspect_amount - 0.10 * inspect_twist + 0.22 * switch_amount
     )
