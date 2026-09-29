@@ -62,6 +62,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Arena floor uses a subtle procedural concrete shader with broad slab mottling and fine grain; it is texture-free and adds no geometry, lights, or collision.
 - Ambient GPU dust now fades smoothly across each particle's lifetime, softening the arena atmosphere without adding collision, lights, or shadow work; LOW visual quality disables the layer.
 - Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
+- Objective A/B now have low-profile ALPHA/BRAVO floor stencils, segmented corner paint, and approach chevrons to improve site recognition without adding collision, lights, or navigation work.
 - New ceiling-level industrial light banks use emissive cyan diffusers with amber end caps; the fixture meshes are shadow-free and add no dynamic lights, collision, or navigation cost.
 - Paired overhead service conduits, support clamps, and small junction housings add layered industrial detail above the lanes; all are shadow-free visual meshes with no lights, collision, or navigation impact.
 - Industrial perimeter wall panels, hazard accents on cover, and segmented cyan/amber emissive perimeter strips around both objective sites (visual-only; no collision or navigation changes)
