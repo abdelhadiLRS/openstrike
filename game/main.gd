@@ -2374,6 +2374,21 @@ func _create_site_beacons() -> void:
         # A compact center marker adds a distinct visual anchor without a light source.
         _visual_box(site_position + Vector3(0.0, 0.07, 0.0), Vector3(0.44, 0.08, 0.44), trim_material)
 
+        # Floating, billboarded site signage stays legible from every approach.
+        # Label3D is render-only and adds no collision, lights, or navigation cost.
+        var site_label := Label3D.new()
+        site_label.name = "SiteSign_" + ("A" if site_position == BOMB_SITE_A else "B")
+        site_label.text = "SITE " + ("A  /  ALPHA" if site_position == BOMB_SITE_A else "B  /  BRAVO")
+        site_label.position = site_position + Vector3(0.0, 2.35, 0.0)
+        site_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+        site_label.font_size = 56
+        site_label.pixel_size = 0.012
+        site_label.modulate = site_color
+        site_label.outline_size = 10
+        site_label.outline_modulate = Color(0.015, 0.025, 0.04, 0.96)
+        site_label.no_depth_test = false
+        add_child(site_label)
+
 func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> void:
     var mesh_instance := MeshInstance3D.new()
     var mesh := BoxMesh.new()
