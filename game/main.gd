@@ -2118,6 +2118,29 @@ func _world() -> void:
 
 
 
+func _create_wall_ribs() -> void:
+    # Vertical steel ribs add depth to the perimeter walls without changing
+    # collision, sightlines, navigation, or shadow cost.
+    var rib_material := StandardMaterial3D.new()
+    rib_material.albedo_color = Color(0.045, 0.065, 0.085)
+    rib_material.metallic = 0.42
+    rib_material.roughness = 0.58
+
+    var edge_material := StandardMaterial3D.new()
+    edge_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    edge_material.albedo_color = Color(0.035, 0.30, 0.42)
+    edge_material.emission_enabled = true
+    edge_material.emission = Color(0.02, 0.16, 0.25)
+    edge_material.emission_energy_multiplier = 0.75
+
+    for coordinate in [-16.0, -8.0, 0.0, 8.0, 16.0]:
+        for wall_z in [-17.43, 17.43]:
+            _visual_box(Vector3(coordinate, 1.9, wall_z), Vector3(0.28, 3.45, 0.12), rib_material)
+            _visual_box(Vector3(coordinate, 3.62, wall_z - signf(wall_z) * 0.075), Vector3(0.38, 0.055, 0.035), edge_material)
+        for wall_x in [-17.43, 17.43]:
+            _visual_box(Vector3(wall_x, 1.9, coordinate), Vector3(0.12, 3.45, 0.28), rib_material)
+            _visual_box(Vector3(wall_x - signf(wall_x) * 0.075, 3.62, coordinate), Vector3(0.035, 0.055, 0.38), edge_material)
+
 func _create_floor_grates() -> void:
     # Decorative drainage grates add industrial surface detail at the arena edges.
     # They are mesh-only and intentionally do not affect collision or navigation.
