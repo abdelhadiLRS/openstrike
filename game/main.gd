@@ -5932,13 +5932,15 @@ func _refresh_view_weapon() -> void:
     flash_mesh.height = 0.17
     muzzle_flash.mesh = flash_mesh
     muzzle_flash.position = Vector3(0.0, 0.015, -0.84 if is_rifle else -0.50)
-    muzzle_flash.scale = Vector3(0.72, 1.25, 1.7)
+    # Give each weapon a distinct flash signature: the rifle uses a brief
+    # white-hot core, while the compact sidearm produces a warmer, tighter flare.
+    muzzle_flash.scale = Vector3(0.72, 1.25, 1.7) if is_rifle else Vector3(0.62, 1.0, 1.25)
     var flash_material := StandardMaterial3D.new()
     flash_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    flash_material.albedo_color = Color(1.0, 0.66, 0.16)
+    flash_material.albedo_color = Color(1.0, 0.88, 0.58) if is_rifle else Color(1.0, 0.58, 0.20)
     flash_material.emission_enabled = true
-    flash_material.emission = Color(1.0, 0.32, 0.045)
-    flash_material.emission_energy_multiplier = 3.0
+    flash_material.emission = Color(1.0, 0.62, 0.22) if is_rifle else Color(1.0, 0.24, 0.035)
+    flash_material.emission_energy_multiplier = 3.2 if is_rifle else 2.6
     muzzle_flash.material_override = flash_material
     muzzle_flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
@@ -5947,11 +5949,11 @@ func _refresh_view_weapon() -> void:
     # unshaded, shadowless, and free of particle or light allocations.
     var flash_ray_material := StandardMaterial3D.new()
     flash_ray_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    flash_ray_material.albedo_color = Color(1.0, 0.86, 0.48, 0.94)
+    flash_ray_material.albedo_color = Color(1.0, 0.94, 0.70, 0.94) if is_rifle else Color(1.0, 0.72, 0.36, 0.90)
     flash_ray_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     flash_ray_material.emission_enabled = true
-    flash_ray_material.emission = Color(1.0, 0.42, 0.08)
-    flash_ray_material.emission_energy_multiplier = 2.4
+    flash_ray_material.emission = Color(1.0, 0.55, 0.16) if is_rifle else Color(1.0, 0.25, 0.025)
+    flash_ray_material.emission_energy_multiplier = 2.6 if is_rifle else 2.0
 
     var horizontal_ray := MeshInstance3D.new()
     var horizontal_mesh := BoxMesh.new()
@@ -5987,7 +5989,10 @@ func _refresh_view_weapon() -> void:
 func _trigger_muzzle_flash() -> void:
     if muzzle_flash == null:
         return
-    muzzle_flash_timer = 0.055
+    # Rifle flashes linger just enough to read as a larger burst; the sidearm
+    # flash is shorter and tighter. This affects presentation only.
+    var is_rifle := str(_current_weapon().get("id", "")) == "ar_17"
+    muzzle_flash_timer = 0.060 if is_rifle else 0.042
     view_weapon_recoil = maxf(view_weapon_recoil, 0.075)
     muzzle_flash.visible = true
 
