@@ -2938,6 +2938,59 @@ func _create_wall_signage() -> void:
             label.shaded = false
             add_child(label)
 
+func _create_wall_ventilation_details() -> void:
+    # Recessed-looking vent panels and service conduits break up the long side
+    # walls. Every element is render-only and has no collision or light cost.
+    var frame_material := StandardMaterial3D.new()
+    frame_material.albedo_color = Color(0.045, 0.065, 0.082)
+    frame_material.metallic = 0.52
+    frame_material.roughness = 0.72
+
+    var slat_material := StandardMaterial3D.new()
+    slat_material.albedo_color = Color(0.22, 0.28, 0.32)
+    slat_material.metallic = 0.58
+    slat_material.roughness = 0.62
+
+    var accent_material := StandardMaterial3D.new()
+    accent_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    accent_material.albedo_color = Color(0.04, 0.42, 0.58)
+    accent_material.emission_enabled = true
+    accent_material.emission = Color(0.02, 0.20, 0.32)
+    accent_material.emission_energy_multiplier = 0.75
+
+    for side in [-1.0, 1.0]:
+        for lane_z in [-11.0, -5.0, 5.0, 11.0]:
+            var center := Vector3(side * 17.38, 2.35, lane_z)
+            var rotation := PI * 0.5 if side < 0.0 else -PI * 0.5
+            var frame := _visual_box(center, Vector3(2.65, 1.18, 0.12), frame_material)
+            frame.rotation.y = rotation
+            var inner := _visual_box(center + Vector3(-side * 0.075, 0.0, 0.0), Vector3(2.42, 0.96, 0.045), frame_material)
+            inner.rotation.y = rotation
+            for slat_index in range(7):
+                var local_y := -0.34 + float(slat_index) * 0.11
+                var slat := _visual_box(
+                    center + Vector3(-side * 0.11, local_y, 0.0),
+                    Vector3(2.20, 0.045, 0.055),
+                    slat_material
+                )
+                slat.rotation.y = rotation
+            var status_strip := _visual_box(
+                center + Vector3(-side * 0.12, 0.48, 0.0),
+                Vector3(2.34, 0.045, 0.06),
+                accent_material
+            )
+            status_strip.rotation.y = rotation
+
+    # A pair of narrow service conduits runs along each wall near the ceiling.
+    var conduit_material := StandardMaterial3D.new()
+    conduit_material.albedo_color = Color(0.10, 0.14, 0.17)
+    conduit_material.metallic = 0.42
+    conduit_material.roughness = 0.78
+    for side in [-1.0, 1.0]:
+        _visual_box(Vector3(side * 17.25, 3.48, 0.0), Vector3(0.12, 0.14, 29.0), conduit_material)
+        for lane_z in [-14.0, -7.0, 0.0, 7.0, 14.0]:
+            _visual_box(Vector3(side * 17.16, 3.48, lane_z), Vector3(0.22, 0.20, 0.16), accent_material)
+
 func _create_floor_grates() -> void:
     # Decorative drainage grates add industrial surface detail at the arena edges.
     # They are mesh-only and intentionally do not affect collision or navigation.
