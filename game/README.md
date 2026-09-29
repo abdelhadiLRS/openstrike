@@ -68,6 +68,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
 - Minimal crosshair and hit feedback
 - Hit confirmation now shows a brief centered marker; taking damage produces a short, restrained red screen flash. Both effects are screen-space UI only and use no particles or dynamic lights.
+- Bullet impacts now produce a tiny emissive spark at the ray-hit point, color-matched to the weapon tracer; the effect self-cleans quickly and adds no physics, particles, persistent decals, or dynamic lights.
 - Godot Compatibility renderer
 
 ## Controls
