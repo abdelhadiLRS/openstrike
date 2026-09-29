@@ -7,6 +7,7 @@ const CROUCH_HEIGHT := 1.15
 const STAND_CAMERA_Y := 0.55
 const CROUCH_CAMERA_Y := 0.30
 const CAMERA_BASE_FOV := 75.0
+const CAMERA_FOV_PRESETS := [75.0, 85.0, 95.0]
 const MAX_HEALTH := 100
 const ROUND_TIME := 120.0
 const BUY_TIME := 10.0
@@ -135,6 +136,7 @@ var damage_camera_kick := Vector2.ZERO
 var camera_fov_kick := 0.0
 var aiming_down_sights := false
 var aim_blend := 0.0
+var camera_fov_preset_index := 0
 var landing_camera_kick := 0.0
 var view_weapon_recoil := 0.0
 var view_weapon_shot_pitch := 0.0
@@ -345,6 +347,10 @@ func _unhandled_input(event: InputEvent) -> void:
             if is_instance_valid(tactical_minimap):
                 tactical_minimap.visible = tactical_minimap_visible
             _show_visual_notice("TACTICAL MAP  /  " + ("ON" if tactical_minimap_visible else "OFF"), Color(0.35, 0.86, 1.0))
+        elif event.keycode == KEY_F8:
+            camera_fov_preset_index = (camera_fov_preset_index + 1) % CAMERA_FOV_PRESETS.size()
+            var selected_fov := float(CAMERA_FOV_PRESETS[camera_fov_preset_index])
+            _show_visual_notice("FIELD OF VIEW  /  %d°" % int(selected_fov), Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_1 and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_buy_weapon_id = str(weapons[0]["id"])
@@ -448,7 +454,7 @@ func _update_view_weapon_motion(delta: float) -> void:
         camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y - landing_camera_kick + damage_camera_kick.y
         # A tiny speed-based FOV lift and short shot pulse add motion feedback
         # without changing aim direction, movement, or network state.
-        var target_fov := CAMERA_BASE_FOV - 11.0 * aim_blend + (0.0 if reduced_motion_mode else speed_ratio * (1.8 if not crouched else 0.6) * (1.0 - aim_blend)) + camera_fov_kick
+        var target_fov := float(CAMERA_FOV_PRESETS[camera_fov_preset_index]) - 11.0 * aim_blend + (0.0 if reduced_motion_mode else speed_ratio * (1.8 if not crouched else 0.6) * (1.0 - aim_blend)) + camera_fov_kick
         camera.fov = lerpf(camera.fov, target_fov, minf(delta * 8.0, 1.0))
     # The weapon lags slightly behind quick camera turns, then settles smoothly.
     # This is viewmodel-only, is disabled by reduced-motion mode, and never
@@ -2224,13 +2230,14 @@ func _update_hud() -> void:
             weapons[0]["name"], weapons[0]["cost"], weapons[1]["name"], weapons[1]["cost"]
         ]
 
-    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   RMB aim   R reload   E switch   T inspect   F objective\nESC mouse   F3 netgraph   F4 visuals %s   F5 motion %s   F6 compact HUD %s   F7 map %s" % [
+    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   RMB aim   R reload   E switch   T inspect   F objective\nESC mouse   F3 netgraph   F4 visuals %s   F5 motion %s   F6 compact HUD %s   F7 map %s   F8 FOV %d°" % [
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
         credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive,
         "LOW" if low_spec_mode else "HIGH",
         "REDUCED" if reduced_motion_mode else "FULL",
         "ON" if compact_hud_mode else "OFF",
-        "ON" if tactical_minimap_visible else "OFF"
+        "ON" if tactical_minimap_visible else "OFF",
+        int(CAMERA_FOV_PRESETS[camera_fov_preset_index])
     ]
     _update_network_debug_hud()
     _update_objective_progress_ui()
@@ -5425,7 +5432,7 @@ func _player() -> void:
     camera.name = "PlayerCamera"
     camera.position = Vector3(0.0, STAND_CAMERA_Y, 0.0)
     camera.current = true
-    camera.fov = CAMERA_BASE_FOV
+    camera.fov = float(CAMERA_FOV_PRESETS[camera_fov_preset_index])
     player.add_child(camera)
 
     _create_view_weapon()
