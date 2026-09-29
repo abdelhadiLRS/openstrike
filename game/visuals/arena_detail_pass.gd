@@ -3,12 +3,26 @@ extends Node3D
 ## Small industrial floor service plates for the four quiet arena corners.
 ## Everything is render-only: no collision, shadows, lights, or navigation data.
 
+var status_materials: Array[StandardMaterial3D] = []
+var status_phases: Array[float] = []
+var pulse_time := 0.0
+
 const PLATE_POSITIONS := [
     Vector3(-13.2, 0.013, -13.2),
     Vector3(13.2, 0.013, -13.2),
     Vector3(-13.2, 0.013, 13.2),
     Vector3(13.2, 0.013, 13.2)
 ]
+
+func _process(delta: float) -> void:
+    pulse_time = fmod(pulse_time + delta, TAU)
+    for index in status_materials.size():
+        var material := status_materials[index]
+        if not is_instance_valid(material):
+            continue
+        var pulse := (sin(pulse_time * 2.0 + status_phases[index]) + 1.0) * 0.5
+        material.emission_energy_multiplier = 0.35 + pulse * 0.8
+
 
 func _ready() -> void:
     _build_corner_plates()
@@ -69,6 +83,10 @@ func _build_corner_plates() -> void:
         label.shaded = false
         plate.add_child(label)
 
+        # Tiny paired status LEDs add a subtle active-facility cue to each plate.
+        _add_status_led(plate, Vector3(-1.12, 0.035, 0.48), Color(0.06, 0.62, 0.88), float(index) * 0.8)
+        _add_status_led(plate, Vector3(1.12, 0.035, 0.48), Color(0.98, 0.48, 0.14), float(index) * 0.8 + 1.3)
+
 
 func _add_box(parent: Node3D, local_position: Vector3, box_size: Vector3, material: Material) -> MeshInstance3D:
     var mesh_instance := MeshInstance3D.new()
@@ -80,3 +98,23 @@ func _add_box(parent: Node3D, local_position: Vector3, box_size: Vector3, materi
     mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     parent.add_child(mesh_instance)
     return mesh_instance
+
+
+func _add_status_led(parent: Node3D, local_position: Vector3, color: Color, phase: float) -> void:
+    var led := MeshInstance3D.new()
+    var led_mesh := BoxMesh.new()
+    led_mesh.size = Vector3(0.12, 0.025, 0.07)
+    led.mesh = led_mesh
+    led.position = local_position
+    led.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    var led_material := StandardMaterial3D.new()
+    led_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    led_material.albedo_color = color
+    led_material.emission_enabled = true
+    led_material.emission = color * 0.65
+    led_material.emission_energy_multiplier = 0.6
+    led.material_override = led_material
+    status_materials.append(led_material)
+    status_phases.append(phase)
+    parent.add_child(led)
