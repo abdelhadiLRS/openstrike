@@ -69,6 +69,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - RED bot arms and legs now use a restrained alternating stride animation while moving; only render meshes rotate, while the capsule collider and gameplay/network transforms remain unchanged.
 - RED bots now have a faint, staggered idle-breathing motion that fades while moving; it affects only the visual rig and does not change hitboxes, collision, or network state.
 - Remote network teammates now use a lightweight low-poly soldier silhouette with helmet, armor plates, blue identification trim, backpack, and a compact rifle; the original capsule remains the only collider, and added meshes cast no shadows.
+- Remote network player weapon silhouettes now switch between compact PX-9 pistol and longer AR-17 rifle models when the authoritative weapon selection changes; both are lightweight, shadow-free visuals and do not affect hitboxes.
 - Remote teammates now carry a small depth-tested cyan `ALLY ##` identifier above the helmet, improving ally recognition without exposing enemy positions or changing gameplay.
 - RED combatants now include lightweight shoulder armor, forearm and thigh plates, a chest rig, and a backpack for a more readable tactical silhouette; details are visual-only and share the existing capsule collider
 - RED bot silhouettes now add a dark helmet visor with a subtle cyan glint, chest webbing, knee guards, a radio aerial, and a shoulder patch; all pieces are lightweight render-only meshes and do not alter hitboxes or navigation.
