@@ -341,13 +341,13 @@ func _unhandled_input(event: InputEvent) -> void:
         elif event.keycode == KEY_F4:
             if low_spec_mode:
                 low_spec_mode = false
-                balanced_visual_mode = true
+                balanced_visual_mode = false
             elif balanced_visual_mode:
                 balanced_visual_mode = false
-                low_spec_mode = false
-            else:
                 low_spec_mode = true
-                balanced_visual_mode = false
+            else:
+                low_spec_mode = false
+                balanced_visual_mode = true
             _apply_visual_quality_mode()
             _show_visual_notice("VISUAL QUALITY  /  " + _visual_quality_label(), Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_F5:
