@@ -115,9 +115,9 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F: hold to plant/defuse the bomb at an objective site
 - ESC: release mouse
 - F3: toggle the network diagnostics overlay (NetGraph)
-- F4: toggle visual quality between HIGH (fog + directional shadows, lower ambient fill) and LOW (fog/shadows off, brighter ambient fill) while playing
+- F4: toggle visual quality between HIGH (fog + directional shadows, lower ambient fill) and LOW (fog/shadows off, brighter ambient fill) while playing; a brief on-screen notice confirms the active preset
 - TAB (hold): show the live match scoreboard with team score, round/time, player status, credits, and bot health
-- F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway (including mouse-look counter-sway), strafe-linked camera roll, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay
+- F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway (including mouse-look counter-sway), strafe-linked camera roll, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay; a brief on-screen notice confirms ON/OFF
 - Tactical minimap: north-up orientation; cyan arrow is you, amber/cyan markers are Sites A/B, and the red marker identifies a dropped or planted bomb.
 - Dynamic center reticle: expands with movement and recoil, tightens while crouched, and changes color for friendly/enemy targets
 - Landing feedback: a short, decaying camera and viewmodel dip on touchdown adds weight to jumps and drops; it is visual-only and does not alter movement or network state.
