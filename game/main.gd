@@ -91,6 +91,9 @@ var recoil_kick := 0.0
 var crouched := false
 var hud: Label
 var hud_layer: CanvasLayer
+var round_banner_label: Label
+var round_banner_timer := 0.0
+var round_banner_signature := ""
 var health_bar: ProgressBar
 var ammo_bar: ProgressBar
 var health_hud_label: Label
@@ -267,6 +270,7 @@ func _ready() -> void:
     _player()
     _world()
     _hud()
+    _create_round_banner()
     _create_crosshair()
     _create_damage_direction_indicator()
     _create_objective_compass()
@@ -338,6 +342,7 @@ func _process(delta: float) -> void:
     _update_objective_compass()
     _update_elimination_feedback(delta)
     _update_bomb_explosion_effect(delta)
+    _update_round_banner(delta)
 
 func _update_view_weapon_motion(delta: float) -> void:
     if not is_instance_valid(view_weapon_root) or not is_instance_valid(player):
@@ -1414,6 +1419,61 @@ func _set_crouch(value: bool) -> void:
     player_capsule.height = CROUCH_HEIGHT if crouched else STAND_HEIGHT
     camera.position.y = CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y
 
+func _create_round_banner() -> void:
+    # Short phase cards make round transitions legible without covering the reticle.
+    round_banner_label = Label.new()
+    round_banner_label.name = "RoundTransitionBanner"
+    round_banner_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+    round_banner_label.position = Vector2(-270.0, 86.0)
+    round_banner_label.size = Vector2(540.0, 92.0)
+    round_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    round_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    round_banner_label.add_theme_font_size_override("font_size", 29)
+    round_banner_label.add_theme_color_override("font_color", Color(0.78, 0.95, 1.0, 1.0))
+    round_banner_label.add_theme_color_override("font_outline_color", Color(0.015, 0.025, 0.04, 0.98))
+    round_banner_label.add_theme_constant_override("outline_size", 6)
+    round_banner_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+    round_banner_label.add_theme_constant_override("shadow_offset_x", 2)
+    round_banner_label.add_theme_constant_override("shadow_offset_y", 3)
+    round_banner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    round_banner_label.modulate.a = 0.0
+    hud_layer.add_child(round_banner_label)
+
+
+func _refresh_round_banner() -> void:
+    if not is_instance_valid(round_banner_label):
+        return
+    var signature := "%d:%s:%s" % [round_number, round_state, str(round_won)]
+    if signature == round_banner_signature:
+        return
+    round_banner_signature = signature
+    round_banner_timer = 2.4
+    round_banner_label.scale = Vector2.ONE
+    round_banner_label.pivot_offset = round_banner_label.size * 0.5
+    match round_state:
+        "BUY":
+            round_banner_label.text = "ROUND %02d  /  BUY PHASE" % round_number
+            round_banner_label.add_theme_color_override("font_color", Color(0.48, 0.88, 1.0, 1.0))
+        "LIVE":
+            round_banner_label.text = "ROUND %02d  /  LIVE" % round_number
+            round_banner_label.add_theme_color_override("font_color", Color(0.88, 0.96, 1.0, 1.0))
+        "POST":
+            round_banner_label.text = "ROUND %02d  /  %s" % [round_number, "VICTORY" if round_won else "DEFEAT"]
+            round_banner_label.add_theme_color_override("font_color", Color(0.38, 0.96, 0.66, 1.0) if round_won else Color(1.0, 0.40, 0.28, 1.0))
+
+
+func _update_round_banner(delta: float) -> void:
+    if not is_instance_valid(round_banner_label):
+        return
+    _refresh_round_banner()
+    round_banner_timer = maxf(0.0, round_banner_timer - delta)
+    var fade_in := clampf((2.4 - round_banner_timer) / 0.22, 0.0, 1.0)
+    var fade_out := clampf(round_banner_timer / 0.55, 0.0, 1.0)
+    round_banner_label.modulate.a = minf(fade_in, fade_out)
+    var scale_value := 0.94 + 0.06 * fade_in
+    round_banner_label.scale = Vector2.ONE * scale_value
+
+
 func _hud() -> void:
     # A lightweight HUD card keeps match information readable over bright
     # surfaces while leaving most of the view unobstructed.
@@ -1861,6 +1921,7 @@ func _update_combat_feedback() -> void:
             hit_marker.scale = Vector2.ONE
 
 func _update_hud() -> void:
+    _refresh_round_banner()
     var weapon := _current_weapon()
     var state := "CROUCH" if crouched else "STAND"
     var phase := round_state
