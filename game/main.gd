@@ -518,6 +518,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     objective_action_time_left = snapshot.objective_action_time_left
     credits = clampi(snapshot.credits, 0, MAX_CREDITS)
     primary_owned = snapshot.owned_weapons.has("ar_17")
+    var previous_weapon_id := str(_current_weapon().get("id", ""))
     var authoritative_index := -1
     for i in weapons.size():
         if str(weapons[i].get("id", "")) == snapshot.weapon_id:
@@ -527,6 +528,8 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
         weapon_index = authoritative_index
         ammo = snapshot.ammo
         reserve = snapshot.reserve
+        if previous_weapon_id != snapshot.weapon_id:
+            view_weapon_switch_timer = VIEW_WEAPON_SWITCH_DURATION
         _refresh_view_weapon()
 
     # Keep the newest authoritative transform until the current rollback finishes.
