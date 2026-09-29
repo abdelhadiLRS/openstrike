@@ -97,6 +97,8 @@ var view_weapon_root: Node3D
 var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
 var view_weapon_recoil := 0.0
+var view_weapon_reload_timer := 0.0
+const VIEW_WEAPON_RELOAD_DURATION := 0.62
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 var shell_casing_material: StandardMaterial3D
@@ -275,12 +277,15 @@ func _update_view_weapon_motion(delta: float) -> void:
     var speed_ratio := clampf(local_velocity.length() / 5.6, 0.0, 1.0)
     view_weapon_bob_time += delta * (2.0 + speed_ratio * 7.5)
     view_weapon_recoil = move_toward(view_weapon_recoil, 0.0, delta * 0.72)
+    view_weapon_reload_timer = maxf(0.0, view_weapon_reload_timer - delta)
+    var reload_phase := 1.0 - view_weapon_reload_timer / VIEW_WEAPON_RELOAD_DURATION
+    var reload_amount := sin(clampf(reload_phase, 0.0, 1.0) * PI)
     var bob_amount := speed_ratio * (0.012 if not crouched else 0.006)
     var bob_x := cos(view_weapon_bob_time * 0.5) * bob_amount * 0.65
     var bob_y := absf(sin(view_weapon_bob_time)) * bob_amount
     var sway_x := clampf(-local_velocity.x * 0.006, -0.035, 0.035)
-    var target_position := view_weapon_base_position + Vector3(sway_x + bob_x, bob_y, view_weapon_recoil)
-    var target_rotation := Vector3(sin(view_weapon_bob_time) * bob_amount * 0.65, 0.0, -local_velocity.x * 0.006)
+    var target_position := view_weapon_base_position + Vector3(sway_x + bob_x, bob_y - 0.20 * reload_amount, view_weapon_recoil + 0.06 * reload_amount)
+    var target_rotation := Vector3(sin(view_weapon_bob_time) * bob_amount * 0.65 - 0.18 * reload_amount, 0.0, -local_velocity.x * 0.006 + 0.22 * reload_amount)
     view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
     view_weapon_root.rotation = view_weapon_root.rotation.lerp(target_rotation, minf(delta * 9.0, 1.0))
 
@@ -1087,6 +1092,7 @@ func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color
 func _reload() -> void:
     if ammo >= int(_current_weapon()["mag"]) or reserve <= 0:
         return
+    view_weapon_reload_timer = VIEW_WEAPON_RELOAD_DURATION
     var magazine_size := int(_current_weapon()["mag"])
     var amount := mini(magazine_size - ammo, reserve)
     ammo += amount
