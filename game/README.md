@@ -133,6 +133,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 - Existing high and low cover blocks now have inset-looking dark face plates with restrained cyan trim; the details are visual-only, cast no shadows, and do not change collision or bot navigation.
 - Perimeter walls now include slim dark steel ribs with small cyan edge accents, adding architectural depth while remaining non-colliding, shadow-free, and independent of bot navigation.
 - Two edge drainage grates and rear service panels add a restrained industrial floor finish; all parts are mesh-only, cast no shadows, and do not alter collision or navigation.
+- Four subtle outer-lane service-panel outlines and amber registration marks add a manufactured floor finish; they are thin, shadow-free visual meshes and do not change collision, cover, or navigation.
 
 - Both bomb sites now have four low-cost emissive corner beacons and a matching center marker: cool cyan for Site A and amber for Site B.
 - Floating billboarded `SITE A / ALPHA` and `SITE B / BRAVO` labels make both objectives readable from different approach angles; labels use outlined `Label3D` text and add no collision or dynamic lights.
