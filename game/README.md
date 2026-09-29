@@ -164,6 +164,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 ### Visual polish
 - RED bot models now use a lightweight procedural locomotion pass: a subtle stride bob and lateral body lean follow horizontal movement. The animation runs on a visual-only child rig, leaving the CharacterBody3D collider, navigation, and network transform unchanged.
 - RED bot rifle shots now trigger a brief amber emissive muzzle flash at the barrel; it is visual-only, shadow-free, and uses no particles, extra lights, collision, or physics.
+- RED bot muzzle flashes now include a compact four-ray starburst around the emissive core, matching the first-person weapon's shot language; the rays reuse the existing timed flash and remain shadow-free with no particles, lights, collision, or physics.
 - RED bots now show a brief expanding red emissive ring when damaged; it also triggers from authoritative health decreases on clients and uses no particles, dynamic lights, collision, or gameplay changes.
 - Bot hits now display a short floating amber damage number that rises and fades; it is driven by actual health loss on both the host and snapshot-driven clients, and creates no physics, particles, lights, or persistent nodes.
 - An 18-mote ambient-dust layer adds subtle depth to the arena with slow, lightweight mesh motion; it uses no particle simulation, collision, shadows, or lights, and is automatically hidden by `--low-spec` or the F4 LOW setting.
