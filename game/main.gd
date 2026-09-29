@@ -125,6 +125,7 @@ var scoreboard_panel: PanelContainer
 var scoreboard_label: Label
 var scoreboard_visible := false
 var low_spec_mode := false
+var balanced_visual_mode := false
 var reduced_motion_mode := false
 var visual_environment: Environment
 var map_key_light: DirectionalLight3D
@@ -332,9 +333,17 @@ func _unhandled_input(event: InputEvent) -> void:
             if scoreboard_panel != null:
                 scoreboard_panel.visible = true
         elif event.keycode == KEY_F4:
-            low_spec_mode = not low_spec_mode
+            if low_spec_mode:
+                low_spec_mode = false
+                balanced_visual_mode = true
+            elif balanced_visual_mode:
+                balanced_visual_mode = false
+                low_spec_mode = false
+            else:
+                low_spec_mode = true
+                balanced_visual_mode = false
             _apply_visual_quality_mode()
-            _show_visual_notice("VISUAL QUALITY  /  " + ("LOW" if low_spec_mode else "HIGH"), Color(0.35, 0.86, 1.0))
+            _show_visual_notice("VISUAL QUALITY  /  " + _visual_quality_label(), Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_F5:
             reduced_motion_mode = not reduced_motion_mode
             _show_visual_notice("REDUCED MOTION  /  " + ("ON" if reduced_motion_mode else "OFF"), Color(0.72, 0.92, 1.0))
@@ -2328,7 +2337,7 @@ func _update_hud() -> void:
     hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   RMB aim   R reload   E switch   T inspect   F objective\nESC mouse   F3 netgraph   F4 visuals %s   F5 motion %s   F6 compact HUD %s   F7 map %s   F8 FOV %d°" % [
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
         credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive,
-        "LOW" if low_spec_mode else "HIGH",
+        _visual_quality_label(),
         "REDUCED" if reduced_motion_mode else "FULL",
         "ON" if compact_hud_mode else "OFF",
         "ON" if tactical_minimap_visible else "OFF",
@@ -4305,21 +4314,30 @@ func _create_visual_environment() -> void:
 
 func _apply_visual_quality_mode() -> void:
     # Runtime quality switching changes rendering only; gameplay, collision,
-    # navigation, and network simulation remain intact. Low mode removes fog
-    # and dynamic shadows while lifting ambient fill to keep dark corners legible.
+    # navigation, and network simulation remain intact. LOW removes fog, glow,
+    # shadows, and dust; BALANCED keeps haze but skips glow and shadow maps;
+    # HIGH enables the complete lightweight presentation stack.
     if is_instance_valid(visual_environment):
         visual_environment.fog_enabled = not low_spec_mode
-        visual_environment.glow_enabled = not low_spec_mode
+        visual_environment.glow_enabled = not low_spec_mode and not balanced_visual_mode
         visual_environment.glow_intensity = 0.28
         visual_environment.glow_strength = 0.72
         visual_environment.glow_bloom = 0.035
         visual_environment.glow_hdr_threshold = 1.25
-        visual_environment.ambient_light_energy = 0.78 if low_spec_mode else 0.62
+        visual_environment.ambient_light_energy = 0.78 if low_spec_mode else (0.69 if balanced_visual_mode else 0.62)
     if is_instance_valid(map_key_light):
-        map_key_light.shadow_enabled = not low_spec_mode
+        map_key_light.shadow_enabled = not low_spec_mode and not balanced_visual_mode
     for mote in ambient_dust_motes:
         if is_instance_valid(mote):
             mote.visible = not low_spec_mode
+
+
+func _visual_quality_label() -> String:
+    if low_spec_mode:
+        return "LOW"
+    if balanced_visual_mode:
+        return "BALANCED"
+    return "HIGH"
 
 
 func _create_perimeter_supply_crates() -> void:
