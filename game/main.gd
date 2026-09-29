@@ -1035,7 +1035,11 @@ func _fire() -> void:
     var tracer_color := Color(0.50, 0.88, 1.0) if str(weapon["id"]) == "ar_17" else Color(1.0, 0.68, 0.28)
     _spawn_shot_tracer(origin, tracer_end, tracer_color)
     if not hit.is_empty():
-        _spawn_impact_spark(hit.position, hit.get("normal", Vector3.UP), tracer_color)
+        var impact_normal: Vector3 = hit.get("normal", Vector3.UP)
+        _spawn_impact_spark(hit.position, impact_normal, tracer_color)
+        var impact_collider = hit.get("collider")
+        if impact_collider != null and not impact_collider.has_method("take_damage"):
+            _spawn_impact_mark(hit.position, impact_normal, tracer_color)
 
     if network_session != null and network_session.is_server and network_session.is_online:
         if network_session.process_host_fire(origin, direction, str(weapon["id"]), int(weapon["damage"])):
@@ -1138,6 +1142,39 @@ func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color
     spark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(spark)
     get_tree().create_timer(0.09).timeout.connect(spark.queue_free)
+
+
+func _spawn_impact_mark(position: Vector3, surface_normal: Vector3, tint: Color) -> void:
+    # A brief, flat scorch ring makes bullet impacts persist long enough to read
+    # against concrete and metal. It is render-only, capped by a short lifetime,
+    # and never changes collision or gameplay state.
+    var normal := surface_normal.normalized()
+    if normal.length_squared() < 0.01:
+        normal = Vector3.UP
+
+    var mark := MeshInstance3D.new()
+    mark.name = "ImpactMark"
+    var mark_mesh := CylinderMesh.new()
+    mark_mesh.top_radius = 0.075
+    mark_mesh.bottom_radius = 0.075
+    mark_mesh.height = 0.006
+    mark.mesh = mark_mesh
+    mark.global_position = position + normal * 0.012
+    mark.quaternion = Quaternion(Vector3.UP, normal)
+    mark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    var material := StandardMaterial3D.new()
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    material.albedo_color = Color(0.025, 0.032, 0.04, 0.78)
+    material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    material.roughness = 1.0
+    mark.material_override = material
+    add_child(mark)
+
+    var tween := create_tween()
+    tween.tween_property(material, "albedo_color:a", 0.0, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+    tween.finished.connect(mark.queue_free)
+
 
 func _reload() -> void:
     if ammo >= int(_current_weapon()["mag"]) or reserve <= 0:
