@@ -3152,6 +3152,7 @@ func _world() -> void:
     _setup_navigation_points()
     _setup_cover_points()
     _create_map_dressing()
+    _create_perimeter_supply_crates()
     _create_ambient_dust()
     _create_mid_lane_markings()
     _create_floor_panel_seams()
@@ -3951,6 +3952,55 @@ func _apply_visual_quality_mode() -> void:
     for mote in ambient_dust_motes:
         if is_instance_valid(mote):
             mote.visible = not low_spec_mode
+
+
+func _create_perimeter_supply_crates() -> void:
+    # Lightweight perimeter cargo props add scale and visual storytelling.
+    # They are mesh-only decorations: no collision, shadow casting, or pathing changes.
+    var crate_material := StandardMaterial3D.new()
+    crate_material.albedo_color = Color(0.12, 0.16, 0.18)
+    crate_material.metallic = 0.28
+    crate_material.roughness = 0.82
+
+    var frame_material := StandardMaterial3D.new()
+    frame_material.albedo_color = Color(0.26, 0.31, 0.33)
+    frame_material.metallic = 0.42
+    frame_material.roughness = 0.68
+
+    var marking_material := StandardMaterial3D.new()
+    marking_material.albedo_color = Color(0.86, 0.48, 0.14)
+    marking_material.roughness = 0.82
+
+    var crates := [
+        {"p": Vector3(-14.2, 0.70, -12.8), "s": Vector3(1.45, 1.40, 1.25)},
+        {"p": Vector3(14.2, 0.70, -12.8), "s": Vector3(1.45, 1.40, 1.25)},
+        {"p": Vector3(-14.2, 0.70, 12.8), "s": Vector3(1.45, 1.40, 1.25)},
+        {"p": Vector3(14.2, 0.70, 12.8), "s": Vector3(1.45, 1.40, 1.25)}
+    ]
+    for index in range(crates.size()):
+        var spec: Dictionary = crates[index]
+        var center: Vector3 = spec["p"]
+        var size: Vector3 = spec["s"]
+        _visual_box(center, size, crate_material)
+        # Reinforced top and bottom rails make each cargo unit read as a
+        # manufactured container rather than another plain cover block.
+        _visual_box(center + Vector3(0.0, size.y * 0.5 - 0.10, 0.0), Vector3(size.x + 0.06, 0.12, size.z + 0.06), frame_material)
+        _visual_box(center + Vector3(0.0, -size.y * 0.5 + 0.10, 0.0), Vector3(size.x + 0.06, 0.12, size.z + 0.06), frame_material)
+        for side in [-1.0, 1.0]:
+            _visual_box(center + Vector3(side * (size.x * 0.5 - 0.10), 0.0, -size.z * 0.5 - 0.025), Vector3(0.10, size.y * 0.72, 0.055), frame_material)
+        # Small numbered stencils provide a little visual variation between props.
+        var stencil := Label3D.new()
+        stencil.name = "CargoStencil_" + str(index + 1)
+        stencil.text = "OS-" + str(index + 1).pad_zeros(2)
+        stencil.position = center + Vector3(0.0, 0.08, -size.z * 0.5 - 0.04)
+        stencil.font_size = 26
+        stencil.pixel_size = 0.006
+        stencil.modulate = Color(0.92, 0.66, 0.30, 0.92)
+        stencil.outline_size = 4
+        stencil.outline_modulate = Color(0.025, 0.035, 0.04, 0.95)
+        stencil.shaded = false
+        add_child(stencil)
+        _visual_box(center + Vector3(0.0, -0.36, -size.z * 0.5 - 0.035), Vector3(0.58, 0.045, 0.035), marking_material)
 
 
 func _create_map_dressing() -> void:
