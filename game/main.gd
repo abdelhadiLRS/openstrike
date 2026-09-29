@@ -2416,6 +2416,7 @@ func _world() -> void:
     _create_map_dressing()
     _create_spawn_wayfinding()
     _create_wall_ribs()
+    _create_overhead_gantry()
     _create_wall_signage()
     _create_floor_grates()
     _create_cover_visual_details()
@@ -2474,6 +2475,36 @@ func _create_spawn_wayfinding() -> void:
     for side in [-1.0, 1.0]:
         _visual_box(Vector3(side * 3.8, 0.018, 14.8), Vector3(0.12, 0.025, 4.8), blue_trim)
         _visual_box(Vector3(side * 3.8, 0.018, -14.8), Vector3(0.12, 0.025, 4.8), red_trim)
+
+func _create_overhead_gantry() -> void:
+    # Raised industrial gantry frames the arena silhouette without entering
+    # player lanes. Every piece is visual-only and has shadows disabled.
+    var beam_material := StandardMaterial3D.new()
+    beam_material.albedo_color = Color(0.055, 0.075, 0.095)
+    beam_material.metallic = 0.58
+    beam_material.roughness = 0.52
+
+    var trim_material := StandardMaterial3D.new()
+    trim_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    trim_material.albedo_color = Color(0.04, 0.38, 0.52)
+    trim_material.emission_enabled = true
+    trim_material.emission = Color(0.02, 0.19, 0.30)
+    trim_material.emission_energy_multiplier = 0.9
+
+    # Continuous upper rails sit just above the perimeter wall caps.
+    for z in [-17.1, 17.1]:
+        _visual_box(Vector3(0.0, 4.18, z), Vector3(34.2, 0.18, 0.28), beam_material)
+        _visual_box(Vector3(0.0, 4.29, z - signf(z) * 0.15), Vector3(34.2, 0.035, 0.035), trim_material)
+    for x in [-17.1, 17.1]:
+        _visual_box(Vector3(x, 4.18, 0.0), Vector3(0.28, 0.18, 34.2), beam_material)
+        _visual_box(Vector3(x - signf(x) * 0.15, 4.29, 0.0), Vector3(0.035, 0.035, 34.2), trim_material)
+
+    # Repeating short braces create a readable modular frame at low geometry cost.
+    for coordinate in range(-12, 13, 8):
+        for z in [-16.9, 16.9]:
+            _visual_box(Vector3(float(coordinate), 3.98, z), Vector3(0.14, 0.42, 0.14), beam_material)
+        for x in [-16.9, 16.9]:
+            _visual_box(Vector3(x, 3.98, float(coordinate)), Vector3(0.14, 0.42, 0.14), beam_material)
 
 func _create_wall_ribs() -> void:
     # Vertical steel ribs add depth to the perimeter walls without changing
