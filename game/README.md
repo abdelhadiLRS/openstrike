@@ -117,6 +117,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F3: toggle the network diagnostics overlay (NetGraph)
 - F4: toggle visual quality between HIGH (fog + directional shadows, lower ambient fill) and LOW (fog/shadows off, brighter ambient fill) while playing; a brief on-screen notice confirms the active preset
 - TAB (hold): show the live match scoreboard with team score, round/time, player status, credits, and bot health
+- F6: toggle compact HUD mode to hide the large match-information panel while keeping health, ammo, crosshair, and objective cues visible.
 - F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway (including mouse-look counter-sway), strafe-linked camera roll, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay; a brief on-screen notice confirms ON/OFF
 - Tactical minimap: north-up orientation; cyan arrow is you, amber/cyan markers are Sites A/B, and the red marker identifies a dropped or planted bomb.
 - Dynamic center reticle: expands with movement and recoil, tightens while crouched, and changes color for friendly/enemy targets
