@@ -528,9 +528,9 @@ func _physics_process(delta: float) -> void:
         network_session.set_server_tick(combat_events.tick)
     _update_bomb_visual()
     player_snapshots.push(combat_events.tick, player.global_position, player.rotation.y, health)
-    var network_client := network_session != null and network_session.is_online and not network_session.is_server
+    var is_network_client := network_session != null and network_session.is_online and not network_session.is_server
     if dead:
-        if network_client:
+        if is_network_client:
             _update_hud()
             return
         respawn_timer = maxf(0.0, respawn_timer - delta)
@@ -539,12 +539,12 @@ func _physics_process(delta: float) -> void:
         _update_hud()
         return
 
-    if not network_client:
+    if not is_network_client:
         _update_round_state(delta)
-    if network_client and round_state == "LIVE" and pending_prediction_replay:
+    if is_network_client and round_state == "LIVE" and pending_prediction_replay:
         _replay_pending_prediction(delta)
     if round_state != "LIVE":
-        if network_client and (pending_buy_weapon_id != "" or pending_switch_weapon or pending_reload):
+        if is_network_client and (pending_buy_weapon_id != "" or pending_switch_weapon or pending_reload):
             var buy_command := prediction.build_command(
                 combat_events.tick,
                 Vector2.ZERO,
@@ -626,7 +626,7 @@ func _physics_process(delta: float) -> void:
     var direction := (player.transform.basis * Vector3(command.move.x, 0, command.move.y)).normalized()
     # Match the network server's movement constants while predicting online.
     # Offline movement continues to use each weapon's configured speed.
-    var move_speed := (3.4 if command.crouch else 5.6) if network_client else _current_speed()
+    var move_speed := (3.4 if command.crouch else 5.6) if is_network_client else _current_speed()
     player.velocity.x = move_toward(player.velocity.x, direction.x * move_speed, 25.0 * delta)
     player.velocity.z = move_toward(player.velocity.z, direction.z * move_speed, 25.0 * delta)
 
@@ -637,9 +637,9 @@ func _physics_process(delta: float) -> void:
     if want_crouch != crouched:
         _set_crouch(want_crouch)
 
-    if command.fire and not network_client:
+    if command.fire and not is_network_client:
         _fire()
-    if command.reload and not network_client:
+    if command.reload and not is_network_client:
         _reload()
 
     var was_on_floor := player.is_on_floor()
