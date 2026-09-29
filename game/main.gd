@@ -111,6 +111,7 @@ var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
 var camera_bob_time := 0.0
 var camera_bob_offset := Vector2.ZERO
+var damage_camera_kick := Vector2.ZERO
 var camera_fov_kick := 0.0
 var landing_camera_kick := 0.0
 var view_weapon_recoil := 0.0
@@ -348,9 +349,10 @@ func _update_view_weapon_motion(delta: float) -> void:
         absf(sin(camera_bob_time)) * camera_bob_strength
     )
     camera_bob_offset = camera_bob_offset.lerp(camera_target_offset, minf(delta * 8.0, 1.0))
+    damage_camera_kick = damage_camera_kick.lerp(Vector2.ZERO, minf(delta * 11.0, 1.0))
     if is_instance_valid(camera):
-        camera.position.x = camera_bob_offset.x
-        camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y - landing_camera_kick
+        camera.position.x = camera_bob_offset.x + damage_camera_kick.x
+        camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y - landing_camera_kick + damage_camera_kick.y
         # A tiny speed-based FOV lift and short shot pulse add motion feedback
         # without changing aim direction, movement, or network state.
         var target_fov := CAMERA_BASE_FOV + speed_ratio * (1.8 if not crouched else 0.6) + camera_fov_kick
@@ -2565,6 +2567,8 @@ func _apply_damage(amount: int) -> void:
     if dead or round_state != "LIVE":
         return
     damage_feedback_timer = 0.18
+    # A brief, damped camera impulse reinforces incoming damage without changing aim input or movement state.
+    damage_camera_kick = Vector2(randf_range(-0.028, 0.028), -0.055)
     health = maxi(0, health - amount)
     if health == 0:
         _kill_player()
