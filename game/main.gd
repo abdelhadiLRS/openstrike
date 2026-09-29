@@ -381,15 +381,19 @@ func _update_view_weapon_motion(delta: float) -> void:
     var idle_sway_x := 0.0 if reduced_motion_mode else sin(view_weapon_bob_time * 0.62) * 0.0035
     var idle_sway_y := 0.0 if reduced_motion_mode else cos(view_weapon_bob_time * 0.62) * 0.0025
     var idle_sway_roll := 0.0 if reduced_motion_mode else sin(view_weapon_bob_time * 0.42) * 0.006
+    # Crouching lowers and slightly rolls the viewmodel so the weapon posture
+    # matches the camera stance; this remains presentation-only.
+    var crouch_weapon_drop := 0.055 if crouched else 0.0
+    var crouch_weapon_roll := 0.045 if crouched else 0.0
     var target_position := view_weapon_base_position + Vector3(
         sway_x + bob_x + idle_sway_x + 0.12 * inspect_amount,
-        bob_y + idle_sway_y - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
+        bob_y + idle_sway_y - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
         view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount + 0.08 * switch_amount
     )
     var target_rotation := Vector3(
         sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + landing_camera_kick * 0.55,
         0.38 * inspect_amount,
-        (0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
+        (0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + crouch_weapon_roll + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
     )
     view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
     view_weapon_root.rotation = view_weapon_root.rotation.lerp(target_rotation, minf(delta * 9.0, 1.0))
