@@ -1234,6 +1234,8 @@ func _fire() -> void:
     # Local weapon kick adds a readable, lightweight firing response without
     # changing the authoritative shot direction or player movement.
     view_weapon_recoil = minf(view_weapon_recoil + 0.045 + float(weapon["recoil"]) * 0.16, 0.16)
+    if is_instance_valid(view_weapon_bolt):
+        view_weapon_bolt_timer = VIEW_WEAPON_BOLT_DURATION
     camera_fov_kick = minf(camera_fov_kick + 0.85 + float(weapon["recoil"]) * 0.55, 2.8)
     view_weapon_shot_pitch = maxf(view_weapon_shot_pitch - 0.035 - float(weapon["recoil"]) * 0.08, -0.14)
     combat_events.advance_tick()
