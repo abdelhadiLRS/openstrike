@@ -89,6 +89,8 @@ var recoil_kick := 0.0
 var crouched := false
 var hud: Label
 var hud_layer: CanvasLayer
+var elimination_feedback_label: Label
+var elimination_feedback_timer := 0.0
 var crosshair_root: Control
 var crosshair_segments: Array[ColorRect] = []
 var network_debug_hud: Label
@@ -222,6 +224,7 @@ func _ready() -> void:
     _world()
     _hud()
     _create_crosshair()
+    _create_elimination_feedback()
     _create_network_debug_hud()
     _start_round()
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -270,6 +273,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
     _update_view_weapon_motion(delta)
     _update_crosshair()
+    _update_elimination_feedback(delta)
 
 func _update_view_weapon_motion(delta: float) -> void:
     if not is_instance_valid(view_weapon_root) or not is_instance_valid(player):
@@ -1341,6 +1345,45 @@ func _update_crosshair() -> void:
     crosshair_segments[4].size = Vector2(2.0, 2.0)
 
 
+func _create_elimination_feedback() -> void:
+    # A compact kill-confirmation banner reinforces successful eliminations
+    # without adding world-space objects or changing combat rules.
+    elimination_feedback_label = Label.new()
+    elimination_feedback_label.name = "EliminationFeedback"
+    elimination_feedback_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+    elimination_feedback_label.position = Vector2(-220.0, 92.0)
+    elimination_feedback_label.size = Vector2(440.0, 54.0)
+    elimination_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    elimination_feedback_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    elimination_feedback_label.text = "ELIMINATION  +$%d" % KILL_REWARD
+    elimination_feedback_label.add_theme_font_size_override("font_size", 25)
+    elimination_feedback_label.add_theme_color_override("font_color", Color(1.0, 0.78, 0.30, 1.0))
+    elimination_feedback_label.add_theme_color_override("font_outline_color", Color(0.015, 0.025, 0.04, 0.98))
+    elimination_feedback_label.add_theme_constant_override("outline_size", 5)
+    elimination_feedback_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    elimination_feedback_label.visible = false
+    hud_layer.add_child(elimination_feedback_label)
+
+func _show_elimination_feedback() -> void:
+    elimination_feedback_timer = 1.15
+    if elimination_feedback_label == null:
+        return
+    elimination_feedback_label.text = "ELIMINATION  +$%d" % KILL_REWARD
+    elimination_feedback_label.visible = true
+    elimination_feedback_label.modulate = Color.WHITE
+    elimination_feedback_label.scale = Vector2.ONE
+
+func _update_elimination_feedback(delta: float) -> void:
+    if elimination_feedback_label == null:
+        return
+    elimination_feedback_timer = maxf(0.0, elimination_feedback_timer - delta)
+    if elimination_feedback_timer <= 0.0:
+        elimination_feedback_label.visible = false
+        return
+    var progress := clampf(elimination_feedback_timer / 1.15, 0.0, 1.0)
+    elimination_feedback_label.modulate.a = minf(1.0, progress * 2.8)
+    elimination_feedback_label.scale = Vector2.ONE * (1.0 + 0.10 * (1.0 - progress))
+
 func _create_network_debug_hud() -> void:
     network_debug_hud = Label.new()
     network_debug_hud.position = Vector2(18, 226)
@@ -2220,6 +2263,7 @@ func _on_combat_event(event: OpenStrikeCombatEvent) -> void:
 
     if event.shooter_id == "player":
         credits = mini(MAX_CREDITS, credits + KILL_REWARD)
+        _show_elimination_feedback()
     elif network_session != null and network_session.is_server:
         var peer_id := int(event.shooter_id)
         var shooter = network_session.network_players.get(peer_id)
