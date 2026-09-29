@@ -404,3 +404,8 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Industrial side-wall detailing
 - Added low-poly ventilation panels, repeated metal louvers, cyan status strips, and ceiling-level service conduits along the side walls.
 - All additions are render-only: no new collision shapes, dynamic lights, or navigation changes. The details are designed to add depth while keeping the arena lightweight on integrated graphics.
+
+
+### Animated objective-site markers
+- Added slow-rotating, elevated amber/cyan twin-bar markers above Sites A and B to reinforce objective direction and visual identity.
+- The markers are emissive render-only meshes with shadows disabled; they add no lights, collision, or navigation cost.
