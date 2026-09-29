@@ -97,6 +97,7 @@ var elimination_feedback_label: Label
 var elimination_feedback_timer := 0.0
 var crosshair_root: Control
 var crosshair_segments: Array[ColorRect] = []
+var crosshair_spread_current := 5.0
 var objective_compass_a: Label
 var objective_compass_b: Label
 var network_debug_hud: Label
@@ -1534,9 +1535,15 @@ func _update_crosshair() -> void:
     var viewport_size := get_viewport().get_visible_rect().size
     var center := viewport_size * 0.5
     var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length() if is_instance_valid(player) else 0.0
-    var spread := 5.0 + clampf(horizontal_speed * 1.25, 0.0, 10.0) + clampf(recoil_kick * 16.0, 0.0, 8.0)
+    var target_spread := 5.0 + clampf(horizontal_speed * 1.25, 0.0, 10.0) + clampf(recoil_kick * 16.0, 0.0, 8.0)
+    if is_instance_valid(player) and not player.is_on_floor():
+        target_spread += 5.0
     if crouched:
-        spread *= 0.72
+        target_spread *= 0.72
+    # Smooth bloom recovery avoids a jittery reticle while retaining immediate
+    # feedback for movement, jumps, and recoil.
+    crosshair_spread_current = lerpf(crosshair_spread_current, target_spread, minf(get_process_delta_time() * 14.0, 1.0))
+    var spread := crosshair_spread_current
     var thickness := 2.0
     var length := 9.0
 
