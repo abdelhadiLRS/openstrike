@@ -323,6 +323,43 @@ func _create_bot_muzzle_flash() -> void:
     flash_material.emission_energy_multiplier = 2.6
     muzzle_flash.material_override = flash_material
     muzzle_flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    # A compact starburst makes enemy fire readable at a glance. These are
+    # child meshes of the existing timed flash: no particles, lights, or physics.
+    var ray_material := StandardMaterial3D.new()
+    ray_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    ray_material.albedo_color = Color(1.0, 0.86, 0.48, 0.94)
+    ray_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    ray_material.emission_enabled = true
+    ray_material.emission = Color(1.0, 0.42, 0.08)
+    ray_material.emission_energy_multiplier = 2.2
+
+    var horizontal_ray := MeshInstance3D.new()
+    var horizontal_mesh := BoxMesh.new()
+    horizontal_mesh.size = Vector3(0.28, 0.022, 0.022)
+    horizontal_ray.mesh = horizontal_mesh
+    horizontal_ray.material_override = ray_material
+    horizontal_ray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    muzzle_flash.add_child(horizontal_ray)
+
+    var vertical_ray := MeshInstance3D.new()
+    var vertical_mesh := BoxMesh.new()
+    vertical_mesh.size = Vector3(0.022, 0.19, 0.022)
+    vertical_ray.mesh = vertical_mesh
+    vertical_ray.material_override = ray_material
+    vertical_ray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    muzzle_flash.add_child(vertical_ray)
+
+    for diagonal_sign in [-1.0, 1.0]:
+        var diagonal_ray := MeshInstance3D.new()
+        var diagonal_mesh := BoxMesh.new()
+        diagonal_mesh.size = Vector3(0.18, 0.016, 0.020)
+        diagonal_ray.mesh = diagonal_mesh
+        diagonal_ray.rotation.z = deg_to_rad(32.0 * diagonal_sign)
+        diagonal_ray.material_override = ray_material
+        diagonal_ray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        muzzle_flash.add_child(diagonal_ray)
+
     muzzle_flash.visible = false
     add_child(muzzle_flash)
 
