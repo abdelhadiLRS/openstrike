@@ -133,6 +133,7 @@ var reduced_motion_mode := false
 var visual_environment: Environment
 var map_key_light: DirectionalLight3D
 var view_weapon_root: Node3D
+var view_weapon_visible := true
 var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
 var view_weapon_look_input := Vector2.ZERO
@@ -378,6 +379,11 @@ func _unhandled_input(event: InputEvent) -> void:
         elif event.keycode == KEY_F10:
             crosshair_palette_index = (crosshair_palette_index + 1) % CROSSHAIR_PALETTES.size()
             _show_visual_notice("RETICLE COLOR  /  " + _crosshair_palette_label(), Color(0.35, 0.86, 1.0))
+        elif event.keycode == KEY_F11:
+            view_weapon_visible = not view_weapon_visible
+            if is_instance_valid(view_weapon_root):
+                view_weapon_root.visible = view_weapon_visible
+            _show_visual_notice("VIEWMODEL  /  " + ("ON" if view_weapon_visible else "OFF"), Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_F9:
             cinematic_hud_mode = not cinematic_hud_mode
             if is_instance_valid(hud_layer):
