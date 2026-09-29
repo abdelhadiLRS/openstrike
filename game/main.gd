@@ -3394,6 +3394,26 @@ func _create_spawn_wayfinding() -> void:
         _visual_box(Vector3(side * 3.8, 0.018, 14.8), Vector3(0.12, 0.025, 4.8), blue_trim)
         _visual_box(Vector3(side * 3.8, 0.018, -14.8), Vector3(0.12, 0.025, 4.8), red_trim)
 
+    # Repeating floor chevrons make the first route into the arena obvious.
+    # These are thin, shadowless visual meshes and do not affect collision.
+    for lane_x in [-1.8, 0.0, 1.8]:
+        for lane_index in range(3):
+            var blue_z := 11.8 - float(lane_index) * 1.55
+            var red_z := -11.8 + float(lane_index) * 1.55
+            for side in [-1.0, 1.0]:
+                var blue_arm := _visual_box(
+                    Vector3(lane_x + side * 0.22, 0.026, blue_z),
+                    Vector3(0.82, 0.025, 0.075),
+                    blue_trim
+                )
+                blue_arm.rotation.y = side * deg_to_rad(38.0)
+                var red_arm := _visual_box(
+                    Vector3(lane_x + side * 0.22, 0.026, red_z),
+                    Vector3(0.82, 0.025, 0.075),
+                    red_trim
+                )
+                red_arm.rotation.y = -side * deg_to_rad(38.0)
+
 func _create_overhead_gantry() -> void:
     # Raised industrial gantry frames the arena silhouette without entering
     # player lanes. Every piece is visual-only and has shadows disabled.
