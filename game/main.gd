@@ -2599,6 +2599,7 @@ func _world() -> void:
     _create_wall_ribs()
     _create_wall_light_fixtures()
     _create_overhead_gantry()
+    _create_distant_skyline()
     _create_wall_signage()
     _create_floor_grates()
     _create_floor_service_panels()
@@ -2752,6 +2753,60 @@ func _create_overhead_gantry() -> void:
             _visual_box(Vector3(float(coordinate), 3.98, z), Vector3(0.14, 0.42, 0.14), beam_material)
         for x in [-16.9, 16.9]:
             _visual_box(Vector3(x, 3.98, float(coordinate)), Vector3(0.14, 0.42, 0.14), beam_material)
+
+func _create_distant_skyline() -> void:
+    # Distant industrial silhouettes rise above the arena walls to frame the
+    # skyline. They are deliberately outside the playable area and use only
+    # shadowless render meshes: no collision, navigation, or combat changes.
+    var tower_material := StandardMaterial3D.new()
+    tower_material.albedo_color = Color(0.035, 0.052, 0.075)
+    tower_material.roughness = 0.92
+    var tower_alt_material := StandardMaterial3D.new()
+    tower_alt_material.albedo_color = Color(0.065, 0.082, 0.105)
+    tower_alt_material.roughness = 0.88
+    var window_material := StandardMaterial3D.new()
+    window_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    window_material.albedo_color = Color(0.10, 0.36, 0.48)
+    window_material.emission_enabled = true
+    window_material.emission = Color(0.035, 0.18, 0.28)
+    window_material.emission_energy_multiplier = 0.65
+
+    var silhouettes := [
+        {"p": Vector3(-15.0, 6.4, -23.0), "s": Vector3(4.0, 5.2, 2.4)},
+        {"p": Vector3(-7.0, 8.0, -24.0), "s": Vector3(3.0, 8.4, 2.8)},
+        {"p": Vector3(1.0, 6.8, -23.5), "s": Vector3(5.0, 6.0, 2.5)},
+        {"p": Vector3(11.0, 9.0, -24.0), "s": Vector3(4.2, 10.4, 3.0)},
+        {"p": Vector3(20.5, 6.5, -15.0), "s": Vector3(2.5, 5.8, 4.5)},
+        {"p": Vector3(23.0, 8.0, -5.0), "s": Vector3(3.0, 8.8, 3.5)},
+        {"p": Vector3(23.0, 6.8, 7.0), "s": Vector3(3.5, 6.4, 4.0)},
+        {"p": Vector3(17.0, 7.2, 23.0), "s": Vector3(4.5, 6.8, 2.5)},
+        {"p": Vector3(7.0, 9.0, 24.0), "s": Vector3(3.4, 10.0, 3.0)},
+        {"p": Vector3(-4.0, 6.6, 23.5), "s": Vector3(5.0, 6.0, 2.6)},
+        {"p": Vector3(-14.0, 8.2, 23.0), "s": Vector3(4.0, 8.4, 3.0)},
+        {"p": Vector3(-23.0, 7.6, 12.0), "s": Vector3(3.0, 8.0, 4.0)},
+        {"p": Vector3(-23.0, 6.2, 0.0), "s": Vector3(3.0, 5.2, 3.5)},
+        {"p": Vector3(-22.0, 8.4, -12.0), "s": Vector3(4.0, 9.0, 4.0)}
+    ]
+    for index in silhouettes.size():
+        var data: Dictionary = silhouettes[index]
+        var position: Vector3 = data["p"]
+        var size: Vector3 = data["s"]
+        var material: StandardMaterial3D = tower_material if index % 2 == 0 else tower_alt_material
+        _visual_box(position, size, material)
+        # A narrow rooftop cap creates a readable stepped skyline at low cost.
+        _visual_box(
+            position + Vector3(0.0, size.y * 0.5 + 0.08, 0.0),
+            Vector3(size.x * 0.72, 0.16, size.z * 0.72),
+            tower_alt_material
+        )
+        if index % 2 == 0:
+            # Tiny vertical service-light strips add scale without adding
+            # dynamic lights or brightening the combat lanes.
+            _visual_box(
+                position + Vector3(0.0, 0.0, -size.z * 0.5 - 0.025),
+                Vector3(0.10, minf(size.y * 0.55, 3.0), 0.035),
+                window_material
+            )
 
 func _create_wall_light_fixtures() -> void:
     # Static wall-mounted light housings add visual depth and warm/cool contrast.
