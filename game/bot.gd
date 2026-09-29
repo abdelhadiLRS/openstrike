@@ -390,6 +390,9 @@ func _trigger_bot_muzzle_flash() -> void:
     if not is_instance_valid(muzzle_flash):
         return
     muzzle_flash_timer = MUZZLE_FLASH_DURATION
+    # Slight shot-to-shot variation gives AI fire a less repetitive visual burst.
+    muzzle_flash.scale = Vector3(0.65, 0.75, 1.65) * randf_range(0.88, 1.16)
+    muzzle_flash.rotation = Vector3(randf_range(-0.08, 0.08), randf_range(-0.12, 0.12), randf_range(-0.18, 0.18))
     muzzle_flash.visible = true
 
 func _physics_process(delta: float) -> void:
