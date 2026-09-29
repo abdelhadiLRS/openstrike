@@ -458,6 +458,23 @@ func _build_visual() -> void:
 	helmet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	visual_root.add_child(helmet)
 
+	# A small, depth-tested ally tag makes remote teammates easier to identify
+	# in motion without revealing enemies or changing collision/gameplay state.
+	var ally_tag := Label3D.new()
+	ally_tag.name = "AllyIdentifier"
+	ally_tag.text = "ALLY  %02d" % posmod(peer_id, 100)
+	ally_tag.position = Vector3(0.0, 1.23, 0.0)
+	ally_tag.font_size = 28
+	ally_tag.pixel_size = 0.0065
+	ally_tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	ally_tag.modulate = Color(0.32, 0.84, 1.0, 0.88)
+	ally_tag.outline_size = 5
+	ally_tag.outline_modulate = Color(0.015, 0.045, 0.075, 0.95)
+	ally_tag.shaded = false
+	ally_tag.no_depth_test = false
+	ally_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	visual_root.add_child(ally_tag)
+
 	# A compact rifle silhouette points along the avatar's forward (-Z) axis.
 	_add_visual_box(Vector3(0.20, -0.01, -0.34), Vector3(0.13, 0.12, 0.55), dark_material)
 	_add_visual_box(Vector3(0.20, -0.02, -0.70), Vector3(0.055, 0.055, 0.28), armor_material)
