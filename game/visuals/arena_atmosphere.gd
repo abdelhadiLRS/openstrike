@@ -15,6 +15,15 @@ func set_enabled(enabled: bool) -> void:
         particles.emitting = enabled
 
 
+func _process(_delta: float) -> void:
+    # Read the root's runtime quality toggle so F4 also controls this effect.
+    var root := get_parent()
+    if is_instance_valid(root) and root.get("low_spec_mode") != null:
+        var enabled := not bool(root.get("low_spec_mode"))
+        if particles.emitting != enabled:
+            particles.emitting = enabled
+
+
 func _build_particles() -> void:
     particles = GPUParticles3D.new()
     particles.name = "AmbientDust"
