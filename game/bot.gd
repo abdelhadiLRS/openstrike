@@ -117,7 +117,12 @@ var damage_popup_tween: Tween
 var damage_popup_total := 0
 const DAMAGE_HEALTH_BAR_DURATION := 1.65
 const MUZZLE_FLASH_DURATION := 0.055
+const BOT_MUZZLE_SMOKE_DURATION := 0.18
 const DAMAGE_FLASH_DURATION := 0.16
+
+var muzzle_smoke: MeshInstance3D
+var muzzle_smoke_material: StandardMaterial3D
+var muzzle_smoke_timer := 0.0
 
 func _ready() -> void:
     collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
@@ -129,6 +134,7 @@ func _ready() -> void:
     visual_left_leg = visual_rig.get_node_or_null("LeftLeg") as MeshInstance3D if is_instance_valid(visual_rig) else null
     visual_right_leg = visual_rig.get_node_or_null("RightLeg") as MeshInstance3D if is_instance_valid(visual_rig) else null
     _create_bot_muzzle_flash()
+    _create_bot_muzzle_smoke()
     _create_damage_flash_ring()
     _create_damage_health_bar()
 
@@ -386,10 +392,41 @@ func _create_bot_muzzle_flash() -> void:
     muzzle_flash.visible = false
     add_child(muzzle_flash)
 
+func _create_bot_muzzle_smoke() -> void:
+    # One reusable, low-poly smoke wisp softens the flash tail without spawning
+    # particles, lights, physics bodies, or per-shot nodes.
+    muzzle_smoke = MeshInstance3D.new()
+    muzzle_smoke.name = "BotMuzzleSmoke"
+    var smoke_mesh := SphereMesh.new()
+    smoke_mesh.radius = 0.075
+    smoke_mesh.height = 0.15
+    smoke_mesh.radial_segments = 8
+    smoke_mesh.rings = 4
+    muzzle_smoke.mesh = smoke_mesh
+    muzzle_smoke.position = Vector3(0.18, -0.02, -1.16)
+    muzzle_smoke.scale = Vector3(0.35, 0.28, 0.48)
+    muzzle_smoke_material = StandardMaterial3D.new()
+    muzzle_smoke_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    muzzle_smoke_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    muzzle_smoke_material.albedo_color = Color(0.48, 0.50, 0.52, 0.0)
+    muzzle_smoke_material.roughness = 1.0
+    muzzle_smoke.material_override = muzzle_smoke_material
+    muzzle_smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    muzzle_smoke.visible = false
+    add_child(muzzle_smoke)
+
+
 func _trigger_bot_muzzle_flash() -> void:
     if not is_instance_valid(muzzle_flash):
         return
     muzzle_flash_timer = MUZZLE_FLASH_DURATION
+    if is_instance_valid(muzzle_smoke) and main != null and not bool(main.get("low_spec_mode")):
+        muzzle_smoke_timer = BOT_MUZZLE_SMOKE_DURATION
+        muzzle_smoke.visible = true
+        muzzle_smoke.scale = Vector3(0.35, 0.28, 0.48) * randf_range(0.88, 1.12)
+        muzzle_smoke.position = Vector3(0.18, -0.02, -1.16) + Vector3(randf_range(-0.015, 0.015), 0.0, randf_range(-0.025, 0.025))
+        if is_instance_valid(muzzle_smoke_material):
+            muzzle_smoke_material.albedo_color.a = 0.20
     # Slight shot-to-shot variation gives AI fire a less repetitive visual burst.
     muzzle_flash.scale = Vector3(0.65, 0.75, 1.65) * randf_range(0.88, 1.16)
     muzzle_flash.rotation = Vector3(randf_range(-0.08, 0.08), randf_range(-0.12, 0.12), randf_range(-0.18, 0.18))
@@ -402,6 +439,17 @@ func _physics_process(delta: float) -> void:
     muzzle_flash_timer = maxf(0.0, muzzle_flash_timer - delta)
     if muzzle_flash_timer <= 0.0 and is_instance_valid(muzzle_flash):
         muzzle_flash.visible = false
+    muzzle_smoke_timer = maxf(0.0, muzzle_smoke_timer - delta)
+    if is_instance_valid(muzzle_smoke) and is_instance_valid(muzzle_smoke_material):
+        if muzzle_smoke_timer <= 0.0:
+            muzzle_smoke.visible = false
+        else:
+            var smoke_progress := 1.0 - muzzle_smoke_timer / BOT_MUZZLE_SMOKE_DURATION
+            muzzle_smoke.scale = muzzle_smoke.scale.lerp(Vector3(0.95, 0.78, 1.25), minf(delta * 8.0, 1.0))
+            muzzle_smoke.position.z -= delta * 0.10
+            var smoke_color: Color = muzzle_smoke_material.albedo_color
+            smoke_color.a = 0.20 * (1.0 - smoke_progress)
+            muzzle_smoke_material.albedo_color = smoke_color
     var network_session = main.get("network_session") if main != null else null
     if network_session != null and network_session.is_online and not network_session.is_server:
         _update_network_presentation(delta)
