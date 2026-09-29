@@ -116,7 +116,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F: hold to plant/defuse the bomb at an objective site
 - ESC: release mouse
 - F3: toggle the network diagnostics overlay (NetGraph)
-- F4: toggle visual quality between HIGH (fog + directional shadows, lower ambient fill) and LOW (fog/shadows off, brighter ambient fill) while playing; a brief on-screen notice confirms the active preset
+- F4: toggle visual quality between HIGH (fog, directional shadows, and restrained emissive glow) and LOW (fog/shadows/glow off, brighter ambient fill) while playing; a brief on-screen notice confirms the active preset
 - TAB (hold): show the live match scoreboard with team score, round/time, player status, credits, and bot health
 - F6: toggle compact HUD mode to hide the large match-information panel while keeping health, ammo, crosshair, and objective cues visible.
 - F7: toggle the tactical minimap in the upper-right corner.
@@ -164,7 +164,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 - Two wall-mounted ventilation fans rotate slowly as lightweight ambient animation; their meshes are visual-only, shadow-free, and add no collision, particles, or dynamic lights.
 
-- The `--low-spec` launch flag starts with atmospheric fog and directional shadows disabled. Press F4 during play to switch between HIGH and LOW visual quality without restarting; LOW removes fog/shadows and raises ambient fill to keep shadowed corners readable, while HIGH restores the atmospheric lighting balance. The toggle leaves map geometry, gameplay, and network simulation unchanged.
+- The `--low-spec` launch flag starts with atmospheric fog, directional shadows, and emissive glow disabled. Press F4 during play to switch between HIGH and LOW visual quality without restarting; LOW removes fog/shadows/glow and raises ambient fill to keep shadowed corners readable, while HIGH restores the atmospheric lighting balance and a restrained glow pass for emissive site beacons and warning strips. The toggle leaves map geometry, gameplay, and network simulation unchanged.
 
 - A compact top-center objective compass displays the screen-space bearing and distance to Sites A and B, hides markers outside the camera's horizontal field of view, and uses cyan/amber labels; it is HUD-only and does not affect movement, navigation, or objective rules.
 
