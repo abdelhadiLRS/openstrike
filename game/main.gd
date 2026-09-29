@@ -104,6 +104,8 @@ var muzzle_flash_timer := 0.0
 var shell_casing_material: StandardMaterial3D
 var hit_marker: Label
 var damage_flash: ColorRect
+var low_health_vignette: ColorRect
+var low_health_pulse_time := 0.0
 var objective_progress_bar: ProgressBar
 var objective_progress_label: Label
 var hit_feedback_timer := 0.0
@@ -1220,6 +1222,27 @@ func _create_crosshair() -> void:
     damage_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
     crosshair_root.add_child(damage_flash)
 
+    # Lightweight screen-space edge vignette warns at low health without
+    # obscuring the center aim point or adding world effects.
+    low_health_vignette = ColorRect.new()
+    low_health_vignette.name = "LowHealthVignette"
+    low_health_vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    low_health_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var vignette_shader := Shader.new()
+    vignette_shader.code = """shader_type canvas_item;
+uniform float strength : hint_range(0.0, 0.8) = 0.0;
+void fragment() {
+    float edge_distance = min(min(UV.x, 1.0 - UV.x), min(UV.y, 1.0 - UV.y));
+    float edge_mask = 1.0 - smoothstep(0.0, 0.34, edge_distance);
+    COLOR = vec4(0.58, 0.018, 0.012, edge_mask * strength);
+}
+"""
+    var vignette_material := ShaderMaterial.new()
+    vignette_material.shader = vignette_shader
+    vignette_material.set_shader_parameter("strength", 0.0)
+    low_health_vignette.material = vignette_material
+    crosshair_root.add_child(low_health_vignette)
+
     hit_marker = Label.new()
     hit_marker.name = "HitMarker"
     hit_marker.text = "×"
@@ -1338,6 +1361,14 @@ func _update_combat_feedback() -> void:
     if damage_flash != null:
         var damage_alpha := clampf(damage_feedback_timer / 0.18, 0.0, 1.0) * 0.30
         damage_flash.color = Color(0.72, 0.035, 0.025, damage_alpha)
+    if low_health_vignette != null:
+        low_health_pulse_time += get_process_delta_time()
+        var health_ratio := 1.0 - clampf(float(health) / 55.0, 0.0, 1.0)
+        var pulse := 0.82 + 0.18 * sin(low_health_pulse_time * 3.8) if health <= 30 else 1.0
+        var strength := clampf(health_ratio * 0.52 * pulse, 0.0, 0.52)
+        var vignette_material := low_health_vignette.material as ShaderMaterial
+        if vignette_material != null:
+            vignette_material.set_shader_parameter("strength", strength if not dead else 0.0)
     if hit_marker != null:
         hit_marker.visible = hit_feedback_timer > 0.0 and not dead
         if hit_marker.visible:
