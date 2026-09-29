@@ -26,6 +26,7 @@ func _process(delta: float) -> void:
 
 func _ready() -> void:
     _build_corner_plates()
+    _build_wall_service_runs()
 
 
 func _build_corner_plates() -> void:
@@ -118,3 +119,37 @@ func _add_status_led(parent: Node3D, local_position: Vector3, color: Color, phas
     status_materials.append(led_material)
     status_phases.append(phase)
     parent.add_child(led)
+
+
+func _build_wall_service_runs() -> void:
+    # Short elevated cable trays break up the long perimeter walls. These
+    # decorative meshes are shadow-free and do not affect collision/navigation.
+    var tray_material := StandardMaterial3D.new()
+    tray_material.albedo_color = Color(0.075, 0.105, 0.125)
+    tray_material.metallic = 0.62
+    tray_material.roughness = 0.58
+
+    var rail_material := StandardMaterial3D.new()
+    rail_material.albedo_color = Color(0.22, 0.29, 0.32)
+    rail_material.metallic = 0.72
+    rail_material.roughness = 0.46
+
+    var status_material := StandardMaterial3D.new()
+    status_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    status_material.albedo_color = Color(0.08, 0.62, 0.82)
+    status_material.emission_enabled = true
+    status_material.emission = Color(0.08, 0.62, 0.82) * 0.32
+    status_material.emission_energy_multiplier = 0.7
+    status_materials.append(status_material)
+    status_phases.append(0.6)
+
+    for side in [-1.0, 1.0]:
+        for segment in range(3):
+            var z := -9.0 + float(segment) * 9.0
+            var center := Vector3(side * 16.85, 2.85, z)
+            _add_box(self, center, Vector3(0.18, 0.22, 6.2), tray_material)
+            _add_box(self, center + Vector3(side * 0.11, 0.0, 0.0), Vector3(0.055, 0.28, 6.35), rail_material)
+            for clamp_index in range(4):
+                var clamp_z := z - 2.5 + float(clamp_index) * 1.65
+                _add_box(self, Vector3(side * 16.70, 2.85, clamp_z), Vector3(0.20, 0.34, 0.10), rail_material)
+            _add_box(self, Vector3(side * 16.68, 2.69, z), Vector3(0.045, 0.035, 1.05), status_material)
