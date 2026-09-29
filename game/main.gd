@@ -312,6 +312,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
     _update_site_beacon_pulse(delta)
     _update_rotating_site_markers(delta)
+    _update_ventilation_fans(delta)
     _update_view_weapon_motion(delta)
     _update_crosshair()
     _update_objective_compass()
