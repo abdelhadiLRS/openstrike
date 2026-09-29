@@ -2416,6 +2416,7 @@ func _world() -> void:
     _create_map_dressing()
     _create_spawn_wayfinding()
     _create_wall_ribs()
+    _create_wall_signage()
     _create_floor_grates()
     _create_cover_visual_details()
     _create_site_beacons()
@@ -2496,6 +2497,60 @@ func _create_wall_ribs() -> void:
         for wall_x in [-17.43, 17.43]:
             _visual_box(Vector3(wall_x, 1.9, coordinate), Vector3(0.12, 3.45, 0.28), rib_material)
             _visual_box(Vector3(wall_x - signf(wall_x) * 0.075, 3.62, coordinate), Vector3(0.035, 0.055, 0.38), edge_material)
+
+func _create_wall_signage() -> void:
+    # Compact sector plaques break up the long perimeter walls and add
+    # readable orientation landmarks. All meshes and labels are visual-only.
+    var panel_material := StandardMaterial3D.new()
+    panel_material.albedo_color = Color(0.025, 0.045, 0.065)
+    panel_material.metallic = 0.38
+    panel_material.roughness = 0.66
+
+    var frame_material := StandardMaterial3D.new()
+    frame_material.albedo_color = Color(0.12, 0.16, 0.20)
+    frame_material.metallic = 0.55
+    frame_material.roughness = 0.5
+
+    var cyan_material := StandardMaterial3D.new()
+    cyan_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    cyan_material.albedo_color = Color(0.06, 0.58, 0.82)
+    cyan_material.emission_enabled = true
+    cyan_material.emission = Color(0.025, 0.24, 0.42)
+    cyan_material.emission_energy_multiplier = 0.85
+
+    var amber_material := StandardMaterial3D.new()
+    amber_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    amber_material.albedo_color = Color(0.95, 0.48, 0.12)
+    amber_material.emission_enabled = true
+    amber_material.emission = Color(0.55, 0.19, 0.035)
+    amber_material.emission_energy_multiplier = 0.8
+
+    var plaques := [
+        {"x": -11.0, "code": "01", "text": "NORTH  /  ENTRY", "accent": cyan_material},
+        {"x": -3.7, "code": "02", "text": "SECTOR  /  A", "accent": amber_material},
+        {"x": 3.7, "code": "03", "text": "SECTOR  /  B", "accent": cyan_material},
+        {"x": 11.0, "code": "04", "text": "SOUTH  /  EXIT", "accent": amber_material}
+    ]
+    for side in [-1.0, 1.0]:
+        for plaque in plaques:
+            var x := float(plaque["x"])
+            var z := side * 17.36
+            _visual_box(Vector3(x, 2.75, z), Vector3(2.75, 1.12, 0.10), frame_material)
+            _visual_box(Vector3(x, 2.75, z - side * 0.065), Vector3(2.58, 0.94, 0.045), panel_material)
+            _visual_box(Vector3(x, 3.27, z - side * 0.095), Vector3(2.60, 0.055, 0.025), plaque["accent"])
+            _visual_box(Vector3(x - 1.12, 2.75, z - side * 0.095), Vector3(0.045, 0.72, 0.025), plaque["accent"])
+            var label := Label3D.new()
+            label.name = "WallPlaque_" + str(plaque["code"]) + ("_N" if side < 0.0 else "_S")
+            label.text = str(plaque["text"])
+            label.position = Vector3(x, 2.73, z - side * 0.105)
+            label.rotation.y = PI if side > 0.0 else 0.0
+            label.font_size = 38
+            label.pixel_size = 0.010
+            label.modulate = Color(0.78, 0.88, 0.94)
+            label.outline_size = 8
+            label.outline_modulate = Color(0.01, 0.02, 0.03, 0.98)
+            label.shaded = false
+            add_child(label)
 
 func _create_floor_grates() -> void:
     # Decorative drainage grates add industrial surface detail at the arena edges.
