@@ -86,8 +86,9 @@ func _draw() -> void:
 	# Perimeter walls and restrained grid lines establish a north-up map frame.
 	draw_rect(map_rect, Color(0.30, 0.42, 0.48, 0.95), false, 1.5)
 	for fraction in [0.25, 0.5, 0.75]:
-		var gx := map_rect.position.x + map_rect.size.x * fraction
-		var gy := map_rect.position.y + map_rect.size.y * fraction
+		var fraction_value: float = float(fraction)
+		var gx: float = map_rect.position.x + map_rect.size.x * fraction_value
+		var gy: float = map_rect.position.y + map_rect.size.y * fraction_value
 		draw_line(Vector2(gx, map_rect.position.y), Vector2(gx, map_rect.end.y), Color(0.18, 0.27, 0.32, 0.50), 1.0)
 		draw_line(Vector2(map_rect.position.x, gy), Vector2(map_rect.end.x, gy), Color(0.18, 0.27, 0.32, 0.50), 1.0)
 
