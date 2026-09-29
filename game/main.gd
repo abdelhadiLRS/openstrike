@@ -2403,7 +2403,17 @@ func _update_combat_status_hud(weapon: Dictionary) -> void:
         if ammo_fill != null:
             ammo_fill.bg_color = Color(0.92, 0.20, 0.16, 0.98) if ammo <= 4 else Color(0.96, 0.62, 0.20, 0.98)
     if ammo_hud_label != null:
-        ammo_hud_label.text = "AMMO  %02d / %02d" % [ammo, reserve]
+        var low_ammo := ammo <= 4
+        if ammo <= 0:
+            ammo_hud_label.text = "EMPTY  /  RELOAD  ·  %02d RESERVE" % reserve
+        elif low_ammo:
+            ammo_hud_label.text = "LOW AMMO  %02d / %02d" % [ammo, reserve]
+        else:
+            ammo_hud_label.text = "AMMO  %02d / %02d" % [ammo, reserve]
+        ammo_hud_label.add_theme_color_override(
+            "font_color",
+            Color(1.0, 0.28, 0.20, 1.0) if low_ammo else Color(0.96, 0.89, 0.69, 1.0)
+        )
 
 func _update_objective_progress_ui() -> void:
     if objective_progress_bar == null or objective_progress_label == null:
