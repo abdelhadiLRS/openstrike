@@ -2681,6 +2681,7 @@ func _world() -> void:
     _create_wall_light_fixtures()
     _create_overhead_gantry()
     _create_ceiling_light_banks()
+    _create_ceiling_cable_runs()
     _create_distant_skyline()
     _create_wall_signage()
     _create_wall_ventilation_details()
@@ -2728,6 +2729,41 @@ func _create_ceiling_light_banks() -> void:
         # extra lights or competing with the A/B objective colors.
         for side in [-1.0, 1.0]:
             _visual_box(Vector3(side * 6.15, 3.625, z), Vector3(0.32, 0.04, 0.30), amber_material)
+
+
+func _create_ceiling_cable_runs() -> void:
+    # Paired overhead service conduits add layered industrial depth above the
+    # combat lanes. They are render-only meshes with shadows disabled.
+    var conduit_material := StandardMaterial3D.new()
+    conduit_material.albedo_color = Color(0.065, 0.085, 0.105)
+    conduit_material.metallic = 0.48
+    conduit_material.roughness = 0.58
+
+    var clamp_material := StandardMaterial3D.new()
+    clamp_material.albedo_color = Color(0.20, 0.25, 0.28)
+    clamp_material.metallic = 0.52
+    clamp_material.roughness = 0.62
+
+    var status_material := StandardMaterial3D.new()
+    status_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    status_material.albedo_color = Color(0.10, 0.48, 0.62)
+    status_material.emission_enabled = true
+    status_material.emission = Color(0.025, 0.20, 0.32)
+    status_material.emission_energy_multiplier = 0.75
+
+    for x in [-9.4, 9.4]:
+        _visual_box(Vector3(x, 3.42, 0.0), Vector3(0.18, 0.18, 30.0), conduit_material)
+        _visual_box(Vector3(x, 3.53, 0.0), Vector3(0.055, 0.025, 29.6), status_material)
+        for z in range(-12, 13, 4):
+            _visual_box(Vector3(x, 3.28, float(z)), Vector3(0.34, 0.10, 0.18), clamp_material)
+            _visual_box(Vector3(x, 3.18, float(z)), Vector3(0.08, 0.10, 0.10), clamp_material)
+
+    # Small junction housings mark the service runs where they approach the
+    # central lighting banks, adding depth without extra lights or collision.
+    for x in [-9.4, 9.4]:
+        for z in [-6.0, 6.0]:
+            _visual_box(Vector3(x, 3.28, z), Vector3(0.42, 0.22, 0.62), clamp_material)
+            _visual_box(Vector3(x, 3.405, z), Vector3(0.22, 0.025, 0.30), status_material)
 
 
 func _create_floor_panel_seams() -> void:
