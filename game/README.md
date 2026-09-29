@@ -153,6 +153,7 @@ The prototype remains offline by default. Optional user arguments can start the 
   When connected to an authoritative server, the client's bot roster is synchronized from the server snapshot automatically; the snapshot also carries an explicit bot count so partial state arrays cannot silently collapse the roster to zero. Snapshot payloads are versioned. Clients validate raw field types before parsing to prevent silent coercion, then reject incompatible schemas, invalid peer/acknowledgement metadata, unknown round phases, out-of-range pitch, oversized metadata strings, non-finite positions/velocities/angles/timers, invalid health/ammo/credit ranges, malformed or duplicate owned-weapon IDs, and internally inconsistent bot rosters—including invalid bot health, dead-state, state/assignment types, and round mismatches—before applying authoritative state.
 - `--connect=127.0.0.1`: connect as a client to a host
 - `--low-spec`: disable environment fog and directional-light shadows and skip decorative shell-casing/impact-spark effects for lower-end integrated graphics; shot tracers and impact marks remain enabled.
+- `--balanced-visual`: start with atmospheric fog and ambient dust enabled, but disable glow and directional-light shadow maps for a middle ground between HIGH and LOW; ignored when `--low-spec` is also supplied.
 - `--help`: print the OpenStrike launch options
 
 `--server` and `--connect` are mutually exclusive. Invalid combinations are rejected at startup.
