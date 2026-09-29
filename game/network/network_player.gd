@@ -48,6 +48,9 @@ var snapshot_render_tick: float = 0.0
 var collision_shape: CollisionShape3D
 var mesh: MeshInstance3D
 var visual_root: Node3D
+var weapon_visual_root: Node3D
+var rifle_visual: Node3D
+var pistol_visual: Node3D
 
 func _physics_process(delta: float) -> void:
 	_update_visual_pose(delta)
@@ -339,6 +342,7 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	dead = snapshot.dead
 	crouched = snapshot.crouched
 	weapon_id = snapshot.weapon_id if not snapshot.weapon_id.is_empty() else weapon_id
+	_update_weapon_visual()
 	ammo = snapshot.ammo
 	reserve = snapshot.reserve
 	credits = snapshot.credits
@@ -484,10 +488,45 @@ func _build_visual() -> void:
 	ally_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	visual_root.add_child(ally_tag)
 
-	# A compact rifle silhouette points along the avatar's forward (-Z) axis.
-	_add_visual_box(Vector3(0.20, -0.01, -0.34), Vector3(0.13, 0.12, 0.55), dark_material)
-	_add_visual_box(Vector3(0.20, -0.02, -0.70), Vector3(0.055, 0.055, 0.28), armor_material)
-	_add_visual_box(Vector3(0.20, -0.15, -0.27), Vector3(0.085, 0.20, 0.12), dark_material)
+	# Weapon silhouettes now follow the authoritative weapon ID, so a remote
+	# player visibly carries the pistol or rifle actually selected in the match.
+	weapon_visual_root = Node3D.new()
+	weapon_visual_root.name = "WeaponVisual"
+	visual_root.add_child(weapon_visual_root)
+
+	rifle_visual = Node3D.new()
+	rifle_visual.name = "RifleVisual"
+	weapon_visual_root.add_child(rifle_visual)
+	_add_weapon_box(rifle_visual, Vector3(0.20, -0.01, -0.34), Vector3(0.13, 0.12, 0.55), dark_material)
+	_add_weapon_box(rifle_visual, Vector3(0.20, -0.02, -0.70), Vector3(0.055, 0.055, 0.28), armor_material)
+	_add_weapon_box(rifle_visual, Vector3(0.20, -0.15, -0.27), Vector3(0.085, 0.20, 0.12), dark_material)
+	_add_weapon_box(rifle_visual, Vector3(0.20, 0.075, -0.35), Vector3(0.08, 0.055, 0.30), armor_material)
+
+	pistol_visual = Node3D.new()
+	pistol_visual.name = "PistolVisual"
+	weapon_visual_root.add_child(pistol_visual)
+	_add_weapon_box(pistol_visual, Vector3(0.20, -0.015, -0.31), Vector3(0.12, 0.105, 0.31), dark_material)
+	_add_weapon_box(pistol_visual, Vector3(0.20, -0.005, -0.52), Vector3(0.065, 0.065, 0.18), armor_material)
+	_add_weapon_box(pistol_visual, Vector3(0.20, -0.135, -0.27), Vector3(0.085, 0.19, 0.105), dark_material)
+	_add_weapon_box(pistol_visual, Vector3(0.20, 0.055, -0.30), Vector3(0.075, 0.035, 0.22), armor_material)
+	_update_weapon_visual()
+
+func _update_weapon_visual() -> void:
+	if not is_instance_valid(rifle_visual) or not is_instance_valid(pistol_visual):
+		return
+	var rifle_selected := weapon_id == "ar_17"
+	rifle_visual.visible = rifle_selected
+	pistol_visual.visible = not rifle_selected
+
+func _add_weapon_box(parent: Node3D, box_position: Vector3, box_size: Vector3, material: StandardMaterial3D) -> void:
+	var detail := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = box_size
+	detail.mesh = box
+	detail.position = box_position
+	detail.material_override = material
+	detail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(detail)
 
 func _add_visual_box(box_position: Vector3, box_size: Vector3, material: StandardMaterial3D) -> void:
 	var detail := MeshInstance3D.new()
