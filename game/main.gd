@@ -106,6 +106,10 @@ var ammo_hud_label: Label
 var elimination_feedback_label: Label
 var elimination_feedback_panel: PanelContainer
 var elimination_feedback_timer := 0.0
+var kill_feed_label: Label
+var kill_feed_entries: Array[Dictionary] = []
+const KILL_FEED_MAX_ENTRIES := 4
+const KILL_FEED_ENTRY_DURATION := 4.5
 var crosshair_root: Control
 var crosshair_segments: Array[ColorRect] = []
 var crosshair_spread_current := 5.0
@@ -302,6 +306,7 @@ func _ready() -> void:
     _create_damage_direction_indicator()
     _create_objective_compass()
     _create_elimination_feedback()
+    _create_kill_feed()
     _create_network_debug_hud()
     _create_tactical_minimap()
     _create_scoreboard_overlay()
@@ -401,6 +406,7 @@ func _process(delta: float) -> void:
     _update_crosshair()
     _update_objective_compass()
     _update_elimination_feedback(delta)
+    _update_kill_feed(delta)
     _update_bomb_explosion_effect(delta)
     _update_round_banner(delta)
     _update_visual_notice(delta)
@@ -2088,6 +2094,89 @@ func _update_elimination_feedback(delta: float) -> void:
     elimination_feedback_panel.modulate.a = minf(1.0, progress * 2.8)
     elimination_feedback_panel.scale = Vector2.ONE * (1.0 + 0.10 * (1.0 - progress))
 
+func _create_kill_feed() -> void:
+    # A compact recent-elimination feed adds match context without covering the
+    # center reticle. It is screen-space only and does not affect combat state.
+    kill_feed_label = Label.new()
+    kill_feed_label.name = "RecentEliminationFeed"
+    kill_feed_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+    kill_feed_label.position = Vector2(-380.0, 205.0)
+    kill_feed_label.size = Vector2(350.0, 132.0)
+    kill_feed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    kill_feed_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+    kill_feed_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    kill_feed_label.add_theme_font_size_override("font_size", 15)
+    kill_feed_label.add_theme_color_override("font_color", Color(0.88, 0.95, 0.98, 1.0))
+    kill_feed_label.add_theme_color_override("font_outline_color", Color(0.01, 0.02, 0.03, 0.98))
+    kill_feed_label.add_theme_constant_override("outline_size", 4)
+    kill_feed_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    kill_feed_label.text = ""
+    kill_feed_label.visible = false
+    hud_layer.add_child(kill_feed_label)
+
+
+func _combatant_display_name(combatant_id: String) -> String:
+    if combatant_id == "player":
+        return "YOU"
+    var peer_id := combatant_id.to_int()
+    if peer_id > 0 and str(peer_id) == combatant_id:
+        return "PLAYER %02d" % peer_id
+    for index in bots.size():
+        var bot = bots[index]
+        if is_instance_valid(bot) and str(bot.get_instance_id()) == combatant_id:
+            return "RED BOT %02d" % (int(bot.get("combat_slot")) + 1)
+    return "UNIT"
+
+
+func _push_kill_feed(event: OpenStrikeCombatEvent) -> void:
+    if event == null or event.type != OpenStrikeCombatEvent.Type.ELIMINATION:
+        return
+    var weapon_label := event.weapon_id.to_upper().replace("_", "-")
+    if weapon_label.is_empty():
+        weapon_label = "UNKNOWN"
+    var line := "%s   ›   %s   ·   %s" % [
+        _combatant_display_name(event.shooter_id),
+        _combatant_display_name(event.target_id),
+        weapon_label
+    ]
+    kill_feed_entries.append({"text": line, "time_left": KILL_FEED_ENTRY_DURATION})
+    while kill_feed_entries.size() > KILL_FEED_MAX_ENTRIES:
+        kill_feed_entries.pop_front()
+    _refresh_kill_feed()
+
+
+func _update_kill_feed(delta: float) -> void:
+    if kill_feed_entries.is_empty():
+        if is_instance_valid(kill_feed_label):
+            kill_feed_label.visible = false
+        return
+    for index in range(kill_feed_entries.size() - 1, -1, -1):
+        var entry: Dictionary = kill_feed_entries[index]
+        entry["time_left"] = maxf(0.0, float(entry.get("time_left", 0.0)) - delta)
+        if float(entry["time_left"]) <= 0.0:
+            kill_feed_entries.remove_at(index)
+    _refresh_kill_feed()
+
+
+func _refresh_kill_feed() -> void:
+    if not is_instance_valid(kill_feed_label):
+        return
+    if kill_feed_entries.is_empty():
+        kill_feed_label.text = ""
+        kill_feed_label.visible = false
+        return
+    var lines: Array[String] = []
+    var newest_time := 0.0
+    for index in range(kill_feed_entries.size() - 1, -1, -1):
+        var entry: Dictionary = kill_feed_entries[index]
+        lines.append(str(entry.get("text", "")))
+        if index == kill_feed_entries.size() - 1:
+            newest_time = float(entry.get("time_left", 0.0))
+    kill_feed_label.text = "\n".join(lines)
+    kill_feed_label.modulate.a = clampf(newest_time / 0.55, 0.0, 1.0) if newest_time < 0.55 else 1.0
+    kill_feed_label.visible = true
+
+
 func _create_tactical_minimap() -> void:
     var minimap_script = load("res://ui/tactical_minimap.gd")
     if minimap_script == null:
@@ -3079,6 +3168,7 @@ func _on_combat_event(event: OpenStrikeCombatEvent) -> void:
     if processed_elimination_ids.has(elimination_key):
         return
     processed_elimination_ids[elimination_key] = true
+    _push_kill_feed(event)
 
     if event.shooter_id == "player":
         credits = mini(MAX_CREDITS, credits + KILL_REWARD)
