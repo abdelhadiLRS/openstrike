@@ -198,6 +198,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 - Runtime quality profiles now tune color grading and key-light energy together: HIGH adds restrained contrast/saturation, BALANCED keeps a middle grade, and LOW uses neutral grading with a softer key light for integrated GPUs; all changes are presentation-only.
 - Thin emissive cyan and amber strips accent the upper perimeter walls; they are unlit mesh effects with shadows disabled and add no collision, navigation, or dynamic-light cost.
 - Existing high and low cover blocks now have inset-looking dark face plates with restrained cyan trim; the details are visual-only, cast no shadows, and do not change collision or bot navigation.
+- Cover face plates now include three slim cyan ribs and a compact amber status tab, adding surface depth while remaining shadow-free and non-colliding.
 - Perimeter walls now include slim dark steel ribs with small cyan edge accents, adding architectural depth while remaining non-colliding, shadow-free, and independent of bot navigation.
 - Two edge drainage grates and rear service panels add a restrained industrial floor finish; all parts are mesh-only, cast no shadows, and do not alter collision or navigation.
 - Four subtle outer-lane service-panel outlines and amber registration marks add a manufactured floor finish; they are thin, shadow-free visual meshes and do not change collision, cover, or navigation.
