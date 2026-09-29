@@ -138,6 +138,8 @@ const VIEW_WEAPON_SWITCH_DURATION := 0.30
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 var shell_casing_material: StandardMaterial3D
+var shell_casings: Array[MeshInstance3D] = []
+const MAX_SHELL_CASINGS := 12
 var impact_marks: Array[MeshInstance3D] = []
 var hit_marker: Label
 var damage_flash: ColorRect
@@ -1230,10 +1232,17 @@ func _spawn_shot_tracer(start_position: Vector3, end_position: Vector3, tint: Co
     get_tree().create_timer(0.065).timeout.connect(tracer.queue_free)
 
 func _spawn_shell_casing() -> void:
-    # A tiny brass casing ejects to the right and fades out. It is a render-only
-    # effect: no collision, rigid body, particles, or additional light.
+    # Eject a tiny brass casing with restrained per-shot variation. The effect
+    # is render-only and bounded so sustained fire cannot grow the scene tree.
     if not is_instance_valid(camera):
         return
+    for index in range(shell_casings.size() - 1, -1, -1):
+        if not is_instance_valid(shell_casings[index]):
+            shell_casings.remove_at(index)
+    while shell_casings.size() >= MAX_SHELL_CASINGS:
+        var oldest := shell_casings.pop_front()
+        if is_instance_valid(oldest):
+            oldest.queue_free()
     if shell_casing_material == null:
         shell_casing_material = StandardMaterial3D.new()
         shell_casing_material.albedo_color = Color(0.72, 0.48, 0.16, 1.0)
@@ -1251,17 +1260,30 @@ func _spawn_shell_casing() -> void:
     casing.material_override = shell_casing_material
     casing.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var basis := camera.global_transform.basis
-    var start := camera.global_position + basis.x * 0.30 - basis.y * 0.22 - basis.z * 0.42
+    var eject_side := randf_range(0.62, 0.82)
+    var start := camera.global_position + basis.x * randf_range(0.27, 0.34) - basis.y * randf_range(0.19, 0.25) - basis.z * 0.42
     casing.global_position = start
-    casing.global_rotation = camera.global_rotation + Vector3(0.8, 0.4, 0.6)
+    casing.global_rotation = camera.global_rotation + Vector3(
+        randf_range(0.55, 1.05),
+        randf_range(-0.5, 0.65),
+        randf_range(-0.85, 0.85)
+    )
     add_child(casing)
+    shell_casings.append(casing)
 
-    var end_position := start + basis.x * 0.72 - basis.y * 0.92 + basis.z * 0.28
+    var end_position := start + basis.x * eject_side - basis.y * randf_range(0.78, 1.02) + basis.z * randf_range(0.16, 0.38)
+    var spin := Vector3(randf_range(4.2, 6.2), randf_range(2.8, 4.5), randf_range(5.8, 8.2))
     var tween := create_tween().set_parallel(true)
     tween.tween_property(casing, "global_position", end_position, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-    tween.tween_property(casing, "rotation", casing.rotation + Vector3(5.2, 3.6, 7.0), 0.62)
+    tween.tween_property(casing, "rotation", casing.rotation + spin, 0.62)
     tween.tween_property(casing, "scale", Vector3.ZERO, 0.22).set_delay(0.40)
-    tween.finished.connect(casing.queue_free)
+    tween.finished.connect(_on_shell_casing_finished.bind(casing))
+
+
+func _on_shell_casing_finished(casing: MeshInstance3D) -> void:
+    shell_casings.erase(casing)
+    if is_instance_valid(casing):
+        casing.queue_free()
 
 func _spawn_landing_dust(impact_speed: float) -> void:
     # A brief floor ring sells a hard landing without particles, physics, or
