@@ -964,13 +964,16 @@ func _fire() -> void:
 
     var origin := camera.global_position
     var direction := -camera.global_transform.basis.z
-    if network_session != null and network_session.is_server and network_session.is_online:
-        if network_session.process_host_fire(origin, direction, str(weapon["id"]), int(weapon["damage"])):
-            return
-
     var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * 120.0)
     query.exclude = [player]
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    var tracer_end: Vector3 = hit.position if not hit.is_empty() else origin + direction * 75.0
+    var tracer_color := Color(0.50, 0.88, 1.0) if str(weapon["id"]) == "ar_17" else Color(1.0, 0.68, 0.28)
+    _spawn_shot_tracer(origin, tracer_end, tracer_color)
+
+    if network_session != null and network_session.is_server and network_session.is_online:
+        if network_session.process_host_fire(origin, direction, str(weapon["id"]), int(weapon["damage"])):
+            return
 
     if hit and hit.collider.has_method("take_damage"):
         var target_team := str(hit.collider.get("team"))
@@ -981,6 +984,35 @@ func _fire() -> void:
             var target_id := str(hit.collider.get_instance_id())
             combat_events.emit_hit("player", target_id, str(weapon["id"]), int(weapon["damage"]), hit.position, false)
             _show_hit_feedback()
+
+func _spawn_shot_tracer(start_position: Vector3, end_position: Vector3, tint: Color) -> void:
+    # A short-lived, emissive streak gives each shot a readable direction cue.
+    # It is render-only and deliberately avoids particles, physics, and lights.
+    var segment := end_position - start_position
+    var length := segment.length()
+    if length < 0.15:
+        return
+
+    var tracer := MeshInstance3D.new()
+    tracer.name = "ShotTracer"
+    var tracer_mesh := CylinderMesh.new()
+    tracer_mesh.top_radius = 0.014
+    tracer_mesh.bottom_radius = 0.014
+    tracer_mesh.height = length
+    tracer.mesh = tracer_mesh
+    tracer.global_position = (start_position + end_position) * 0.5
+    tracer.quaternion = Quaternion(Vector3.UP, segment / length)
+
+    var tracer_material := StandardMaterial3D.new()
+    tracer_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    tracer_material.albedo_color = tint
+    tracer_material.emission_enabled = true
+    tracer_material.emission = tint
+    tracer_material.emission_energy_multiplier = 2.0
+    tracer.material_override = tracer_material
+    tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(tracer)
+    get_tree().create_timer(0.065).timeout.connect(tracer.queue_free)
 
 func _reload() -> void:
     if ammo >= int(_current_weapon()["mag"]) or reserve <= 0:
