@@ -109,13 +109,23 @@ func _draw() -> void:
             var yaw := float(player_node.rotation.y)
             var forward := Vector2(-sin(yaw), cos(yaw))
             var side := Vector2(-forward.y, forward.x)
+            # A faint facing wedge gives immediate orientation at a glance;
+            # the brighter arrow remains the precise player heading marker.
+            var cone_tip := player_point + forward * 18.0
+            var cone_left := player_point + forward * 2.0 + side * 9.0
+            var cone_right := player_point + forward * 2.0 - side * 9.0
+            draw_colored_polygon(PackedVector2Array([cone_tip, cone_left, cone_right]), Color(0.25, 0.88, 0.68, 0.12))
             var tip := player_point + forward * 7.0
             var left := player_point - forward * 4.0 + side * 4.0
             var right := player_point - forward * 4.0 - side * 4.0
             draw_colored_polygon(PackedVector2Array([tip, left, right]), Color(0.36, 0.96, 0.74, 1.0))
-            draw_circle(player_point, 3.0, Color(0.92, 1.0, 0.96, 1.0))
+            draw_circle(player_point, 4.0, Color(0.92, 1.0, 0.96, 1.0))
+            draw_arc(player_point, 6.0, 0.0, TAU, 20, Color(0.36, 0.96, 0.74, 0.62), 1.0, true)
 
-    draw_string(ThemeDB.fallback_font, Vector2(10.0, size.y - 8.0), "TACTICAL MAP  /  N", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.62, 0.78, 0.83, 0.95))
+    # Cardinal cues and a north tick make the north-up map easier to read.
+    draw_string(ThemeDB.fallback_font, Vector2(center.x - 4.0, 12.0), "N", HORIZONTAL_ALIGNMENT_CENTER, -1, 11, Color(0.78, 0.90, 0.95, 0.96))
+    draw_line(Vector2(center.x, 18.0), Vector2(center.x, 25.0), MAP_BORDER, 1.5)
+    draw_string(ThemeDB.fallback_font, Vector2(10.0, size.y - 8.0), "TACTICAL MAP  /  NORTH UP", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.62, 0.78, 0.83, 0.95))
 
 func _map_point(center: Vector2, scale_factor: float, world_xz: Vector2) -> Vector2:
     return center + world_xz * scale_factor
@@ -127,6 +137,24 @@ func _draw_map_rect(center: Vector2, scale_factor: float, world_center: Vector2,
 
 func _draw_objective(center: Vector2, scale_factor: float, world_position: Vector2, label: String, color: Color) -> void:
     var point := _map_point(center, scale_factor, world_position)
+    var planted_here := false
+    if is_instance_valid(game_root):
+        planted_here = str(game_root.get("objective_state")) == "PLANTED" and str(game_root.get("planted_site")) == label
+
+    if planted_here:
+        var pulse := (sin(float(Time.get_ticks_msec()) * 0.006) + 1.0) * 0.5
+        var alert_color := Color(1.0, 0.20, 0.13, 0.98)
+        draw_circle(point, 10.0 + pulse * 3.0, Color(1.0, 0.12, 0.08, 0.12 + pulse * 0.10))
+        draw_arc(point, 10.0 + pulse * 3.0, 0.0, TAU, 28, alert_color, 2.0, true)
+        draw_colored_polygon(PackedVector2Array([
+            point + Vector2(0.0, -4.0),
+            point + Vector2(4.0, 0.0),
+            point + Vector2(0.0, 4.0),
+            point + Vector2(-4.0, 0.0)
+        ]), alert_color)
+        draw_string(ThemeDB.fallback_font, point + Vector2(11.0, 4.0), label + "  PLANTED", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, alert_color)
+        return
+
     draw_circle(point, 7.0, Color(color.r, color.g, color.b, 0.18))
     draw_arc(point, 7.0, 0.0, TAU, 24, color, 1.6, true)
     draw_circle(point, 2.4, color)
