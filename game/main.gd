@@ -1446,9 +1446,33 @@ func _spawn_impact_mark(position: Vector3, surface_normal: Vector3) -> void:
     rim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     mark.add_child(rim)
 
+    # A tiny, short-lived three-ray spark burst makes hard-surface impacts
+    # easier to read. It is unshaded, shadow-free, and contains no particles,
+    # lights, collision, or persistent nodes.
+    var spark_material := StandardMaterial3D.new()
+    spark_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    spark_material.albedo_color = Color(1.0, 0.66, 0.24, 0.92)
+    spark_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    spark_material.emission_enabled = true
+    spark_material.emission = Color(0.95, 0.28, 0.055)
+    spark_material.emission_energy_multiplier = 1.2
+    for spark_index in range(3):
+        var spark := MeshInstance3D.new()
+        spark.name = "ImpactSpark_%d" % spark_index
+        var spark_mesh := BoxMesh.new()
+        spark_mesh.size = Vector3(0.095, 0.008, 0.018)
+        spark.mesh = spark_mesh
+        spark.position = Vector3(0.075, 0.006, 0.0)
+        spark.rotation.y = deg_to_rad(float(spark_index) * 60.0)
+        spark.material_override = spark_material
+        spark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        mark.add_child(spark)
+
     add_child(mark)
     impact_marks.append(mark)
 
+    var spark_tween := create_tween()
+    spark_tween.tween_property(spark_material, "albedo_color:a", 0.0, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
     var tween := create_tween()
     tween.tween_property(material, "albedo_color:a", 0.0, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
     tween.parallel().tween_property(rim_material, "albedo_color:a", 0.0, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
