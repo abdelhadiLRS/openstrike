@@ -2422,9 +2422,15 @@ func _update_combat_status_hud(weapon: Dictionary) -> void:
             ammo_hud_label.text = "LOW AMMO  %02d / %02d" % [ammo, reserve]
         else:
             ammo_hud_label.text = "AMMO  %02d / %02d" % [ammo, reserve]
+        var warning_pulse := 0.0
+        if low_ammo and not reduced_motion_mode:
+            warning_pulse = (sin(float(Time.get_ticks_msec()) / 1000.0 * 6.5) + 1.0) * 0.5
+        var warning_color := Color(1.0, lerpf(0.20, 0.42, warning_pulse), 0.16, 1.0)
+        if low_ammo and ammo <= 0:
+            warning_color = Color(1.0, 0.12, 0.08, 1.0)
         ammo_hud_label.add_theme_color_override(
             "font_color",
-            Color(1.0, 0.28, 0.20, 1.0) if low_ammo else Color(0.96, 0.89, 0.69, 1.0)
+            warning_color if low_ammo else Color(0.96, 0.89, 0.69, 1.0)
         )
 
 func _update_objective_progress_ui() -> void:
