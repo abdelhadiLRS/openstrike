@@ -131,6 +131,8 @@ var shell_casing_material: StandardMaterial3D
 var impact_marks: Array[MeshInstance3D] = []
 var hit_marker: Label
 var damage_flash: ColorRect
+var damage_direction_indicator: Label
+var damage_direction_timer := 0.0
 var low_health_vignette: ColorRect
 var low_health_pulse_time := 0.0
 var objective_progress_bar: ProgressBar
@@ -260,6 +262,7 @@ func _ready() -> void:
     _world()
     _hud()
     _create_crosshair()
+    _create_damage_direction_indicator()
     _create_objective_compass()
     _create_elimination_feedback()
     _create_network_debug_hud()
@@ -1413,6 +1416,42 @@ func _make_status_bar(bar_name: String, offset: Vector2, bar_size: Vector2, fill
     hud_layer.add_child(bar)
     return bar
 
+func _create_damage_direction_indicator() -> void:
+    # A brief screen-space arrow points toward the attacker without changing
+    # aim, camera rotation, hit registration, or network state.
+    damage_direction_indicator = Label.new()
+    damage_direction_indicator.name = "DamageDirectionIndicator"
+    damage_direction_indicator.text = "▲"
+    damage_direction_indicator.set_anchors_preset(Control.PRESET_CENTER)
+    damage_direction_indicator.position = Vector2(-18.0, -118.0)
+    damage_direction_indicator.size = Vector2(36.0, 36.0)
+    damage_direction_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    damage_direction_indicator.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    damage_direction_indicator.add_theme_font_size_override("font_size", 30)
+    damage_direction_indicator.add_theme_color_override("font_color", Color(1.0, 0.22, 0.14, 0.96))
+    damage_direction_indicator.add_theme_color_override("font_outline_color", Color(0.025, 0.015, 0.015, 0.95))
+    damage_direction_indicator.add_theme_constant_override("outline_size", 4)
+    damage_direction_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    damage_direction_indicator.visible = false
+    hud_layer.add_child(damage_direction_indicator)
+
+
+func _show_damage_direction(source_position: Vector3) -> void:
+    if damage_direction_indicator == null or not is_finite(source_position.x) or not is_finite(source_position.y) or not is_finite(source_position.z):
+        return
+    var direction := source_position - player.global_position
+    direction.y = 0.0
+    if direction.length_squared() < 0.001:
+        return
+    var local_direction := player.global_transform.basis.inverse() * direction.normalized()
+    var angle := atan2(local_direction.x, -local_direction.z)
+    damage_direction_indicator.position = Vector2(sin(angle) * 112.0 - 18.0, -cos(angle) * 112.0 - 18.0)
+    damage_direction_indicator.rotation = angle
+    damage_direction_timer = 0.65
+    damage_direction_indicator.visible = true
+    damage_direction_indicator.modulate.a = 1.0
+
+
 func _create_objective_compass() -> void:
     # Compact top-center site bearings help players orient toward both
     # objectives without adding world geometry or changing match rules.
@@ -1702,6 +1741,10 @@ func _show_hit_feedback() -> void:
         hit_marker.modulate.a = 1.0
 
 func _update_combat_feedback() -> void:
+    if damage_direction_indicator != null:
+        damage_direction_timer = maxf(0.0, damage_direction_timer - get_process_delta_time())
+        damage_direction_indicator.visible = damage_direction_timer > 0.0 and not dead
+        damage_direction_indicator.modulate.a = clampf(damage_direction_timer / 0.65, 0.0, 1.0)
     if damage_flash != null:
         var damage_alpha := clampf(damage_feedback_timer / 0.18, 0.0, 1.0) * 0.30
         damage_flash.color = Color(0.72, 0.035, 0.025, damage_alpha)
@@ -2608,10 +2651,11 @@ func _spawn_player() -> void:
     player.visible = true
     camera.current = true
 
-func _apply_damage(amount: int) -> void:
+func _apply_damage(amount: int, source_position: Vector3 = Vector3.INF) -> void:
     if dead or round_state != "LIVE":
         return
     damage_feedback_timer = 0.18
+    _show_damage_direction(source_position)
     # A brief, damped camera impulse reinforces incoming damage without changing aim input or movement state.
     damage_camera_kick = Vector2(randf_range(-0.028, 0.028), -0.055)
     health = maxi(0, health - amount)
