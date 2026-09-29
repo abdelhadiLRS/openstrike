@@ -4446,8 +4446,15 @@ func _apply_visual_quality_mode() -> void:
         visual_environment.glow_bloom = 0.035
         visual_environment.glow_hdr_threshold = 1.25
         visual_environment.ambient_light_energy = 0.78 if low_spec_mode else (0.69 if balanced_visual_mode else 0.62)
+        # Keep the same industrial palette across profiles while applying a
+        # restrained grade: HIGH has clearer material separation, BALANCED
+        # stays neutral, and LOW favors clean readability on integrated GPUs.
+        visual_environment.adjustment_brightness = 1.0 if not low_spec_mode else 1.025
+        visual_environment.adjustment_contrast = 1.06 if not low_spec_mode and not balanced_visual_mode else (1.035 if balanced_visual_mode else 1.0)
+        visual_environment.adjustment_saturation = 1.10 if not low_spec_mode and not balanced_visual_mode else (1.05 if balanced_visual_mode else 1.0)
     if is_instance_valid(map_key_light):
         map_key_light.shadow_enabled = not low_spec_mode and not balanced_visual_mode
+        map_key_light.light_energy = 1.05 if not low_spec_mode and not balanced_visual_mode else (1.0 if balanced_visual_mode else 0.92)
     for mote in ambient_dust_motes:
         if is_instance_valid(mote):
             mote.visible = not low_spec_mode
