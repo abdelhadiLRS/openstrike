@@ -530,3 +530,16 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Animated arena status lighting
 - Cyan and amber wall-fixture strips now use a very slow, low-amplitude emissive pulse to make the industrial perimeter feel active.
 - The effect reuses two existing materials, adds no real-time lights, shadows, particles, collision, or gameplay changes, and is skipped in low-spec mode.
+
+
+### Next visual-development targets
+
+The current arena uses procedural low-poly geometry and lightweight render-only effects. The next art pass should prioritize, in order:
+
+1. Replace repeated blockout silhouettes with a coherent modular industrial environment kit (walls, doors, cover, props) while preserving existing collision and navigation volumes.
+2. Add authored material variation—concrete, painted metal, worn edges, and readable team/objective markings—using shared materials and texture atlases to control memory use.
+3. Improve character and weapon silhouettes with consistent proportions and team-color readability before adding high-cost surface detail.
+4. Add a second compact arena layout and verify sightlines, cover, objective visibility, and bot navigation before increasing visual density.
+5. Keep HIGH/BALANCED/LOW profiles, reduced-motion mode, and integrated-GPU performance as acceptance criteria for every visual change.
+
+These are planned art tasks, not completed features. Existing collision, damage, and network state must remain independent of decorative meshes.
