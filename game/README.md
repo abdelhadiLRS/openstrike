@@ -148,6 +148,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 - Both bomb sites now have four low-cost emissive corner beacons and a matching center marker: cool cyan for Site A and amber for Site B.
 - Floating billboarded `SITE A / ALPHA` and `SITE B / BRAVO` labels make both objectives readable from different approach angles; labels use outlined `Label3D` text and add no collision or dynamic lights.
+- Remote teammate avatars now ease into a compact crouched silhouette when crouch state arrives, while the authoritative collision capsule remains separate and unchanged by visual scaling.
 - First-person AR-17/PX-9 viewmodels now emit a brief, unlit emissive muzzle flash on accepted shots; the effect uses a single visual mesh and a short timer, with no particles or extra dynamic lights.
 - The dropped/planted bomb has a visible status LED whose blink rate accelerates as the planted timer runs down; the light and LED share the urgency cue, with no particle system or extra dynamic lights.
 - Bomb presentation now adds a gentle hover/slow turn while dropped and a restrained, countdown-accelerated scale pulse while planted; the animation is visual-only and adds no physics or particles.
