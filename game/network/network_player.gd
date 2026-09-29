@@ -158,6 +158,7 @@ func _select_weapon(requested_id: String) -> bool:
 		return false
 	weapon_id = requested_id
 	_sync_active_weapon()
+	_update_weapon_visual()
 	return true
 
 func _sync_active_weapon() -> void:
