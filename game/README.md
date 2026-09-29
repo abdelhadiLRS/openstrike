@@ -125,7 +125,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F7: toggle the tactical minimap in the upper-right corner.
 - F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway (including mouse-look counter-sway), strafe-linked camera roll, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay; a brief on-screen notice confirms ON/OFF
 - Tactical minimap: north-up orientation; cyan arrow is you, blue dots are living allies, amber/cyan markers are Sites A/B, and the red marker identifies a dropped or planted bomb. Enemy positions are never shown.
-- Dynamic center reticle: expands with movement and recoil, tightens while crouched, and changes color for friendly/enemy targets
+- Dynamic center reticle: expands with movement and recoil, tightens while crouched and smoothly contracts/dims its outer bars while aiming down sights; it changes color for friendly/enemy targets. ADS reticle styling is cosmetic and does not alter weapon spread or hit registration.
 - Landing feedback: a short, decaying camera and viewmodel dip on touchdown adds weight to jumps and drops; it is visual-only and does not alter movement or network state.
 - Reduced-motion mode (F5) removes continuous movement-driven camera and weapon motion plus landing/damage camera impulses for comfort; it does not change player movement, recoil input, hit registration, or network simulation.
 
