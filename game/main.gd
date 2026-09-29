@@ -3369,6 +3369,33 @@ func _create_cover_visual_details() -> void:
                 trim_material
             )
 
+        # Bottom hazard rail and four inset fasteners make each cover panel
+        # read as a bolted modular armor plate. These are render-only meshes.
+        var hazard_material := StandardMaterial3D.new()
+        hazard_material.albedo_color = Color(0.78, 0.43, 0.12)
+        hazard_material.metallic = 0.18
+        hazard_material.roughness = 0.74
+        _visual_box(
+            panel_center + Vector3(0.0, -panel_height * 0.5 + 0.035, 0.032),
+            Vector3(panel_width - 0.10, 0.035, 0.024),
+            hazard_material
+        )
+        var fastener_material := StandardMaterial3D.new()
+        fastener_material.albedo_color = Color(0.30, 0.37, 0.41)
+        fastener_material.metallic = 0.72
+        fastener_material.roughness = 0.42
+        for side in [-1.0, 1.0]:
+            for vertical in [-1.0, 1.0]:
+                _visual_box(
+                    panel_center + Vector3(
+                        side * (panel_width * 0.5 - 0.12),
+                        vertical * (panel_height * 0.5 - 0.10),
+                        0.055
+                    ),
+                    Vector3(0.055, 0.055, 0.018),
+                    fastener_material
+                )
+
 func _create_ventilation_fans() -> void:
 	# Slow wall-mounted rotors add subtle industrial motion without physics,
 	# collision, particles, or dynamic lights.
