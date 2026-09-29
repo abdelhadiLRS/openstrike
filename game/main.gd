@@ -94,6 +94,7 @@ var hud: Label
 var hud_layer: CanvasLayer
 var match_info_panel: PanelContainer
 var compact_hud_mode := false
+var cinematic_hud_mode := false
 var round_banner_label: Label
 var visual_notice_label: Label
 var visual_notice_timer := 0.0
@@ -365,6 +366,12 @@ func _unhandled_input(event: InputEvent) -> void:
             camera_fov_preset_index = (camera_fov_preset_index + 1) % CAMERA_FOV_PRESETS.size()
             var selected_fov := float(CAMERA_FOV_PRESETS[camera_fov_preset_index])
             _show_visual_notice("FIELD OF VIEW  /  %d°" % int(selected_fov), Color(0.35, 0.86, 1.0))
+        elif event.keycode == KEY_F9:
+            cinematic_hud_mode = not cinematic_hud_mode
+            if is_instance_valid(hud_layer):
+                hud_layer.visible = not cinematic_hud_mode
+            if not cinematic_hud_mode:
+                _show_visual_notice("CLEAN SCREEN  /  OFF", Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_1 and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_buy_weapon_id = str(weapons[0]["id"])
