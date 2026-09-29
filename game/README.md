@@ -499,6 +499,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - RED bot eliminations now trigger a brief amber-red expanding ring and core pulse at the defeat position, visible in offline play and when a client receives the authoritative dead state.
 - The effect is a short-lived, unshaded mesh-only cue with no particles, dynamic lights, collision, hitbox, or gameplay/network changes.
 
+### Reinforced cover geometry
+- Existing cover blocks now have slim steel corner rails, a top cap, and a restrained amber lower marker, giving the modular cover a stronger silhouette without changing its collider, hitbox, or bot navigation.
+- The details use a small set of shared materials and render-only meshes to keep the visual pass lightweight.
+
 ### Remote avatar visual pass
 - Remote player avatars now use team-colored chest and shoulder identifiers, reinforced shoulder details, a rear equipment pack, and a belt accent to improve silhouette and team recognition.
 - The additions are lightweight render-only meshes; the existing capsule remains the sole collider, and movement, hitboxes, and networking are unchanged.
