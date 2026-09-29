@@ -456,7 +456,7 @@ func _build_visual() -> void:
 	helmet.position = Vector3(0.0, 0.83, 0.0)
 	helmet.material_override = armor_material
 	helmet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(helmet)
+	visual_root.add_child(helmet)
 
 	# A compact rifle silhouette points along the avatar's forward (-Z) axis.
 	_add_visual_box(Vector3(0.20, -0.01, -0.34), Vector3(0.13, 0.12, 0.55), dark_material)
@@ -471,7 +471,7 @@ func _add_visual_box(box_position: Vector3, box_size: Vector3, material: Standar
 	detail.position = box_position
 	detail.material_override = material
 	detail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(detail)
+	visual_root.add_child(detail)
 
 func _update_collider() -> void:
 	if collision_shape == null:
