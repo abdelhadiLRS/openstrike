@@ -444,7 +444,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Visual combat feedback
 - Hard-surface bullet impacts now emit a brief three-ray amber spark burst around the existing scorch mark; it fades in 0.22 seconds and uses only capped, shadow-free meshes (no particles, lights, or collision).
 - Player and host shots now render a short-lived, emissive tracer from the firing camera toward the first raycast impact (or a capped distant endpoint).
-- RED bot shots now render a very thin amber tracer from the bot's firing line to the raycast impact or aim endpoint, making incoming fire direction easier to read. The transient mesh is shadow-free, expires after 75 ms, and is skipped in low-spec mode.
+- RED bot shots now render a layered amber tracer from the bot's firing line to the raycast impact or aim endpoint: a translucent outer streak and a narrow emissive hot core improve contrast at range. Both meshes are shadow-free, expire after 75 ms, and are skipped in low-spec mode.
 - Incoming bot fire now displays a short-lived red direction arrow around the reticle, pointing toward the attacker; the cue fades quickly and does not affect aim, damage, or network simulation.
 - Rifle and sidearm tracers use distinct cool/amber tints. The effect is visual-only and uses a tiny temporary mesh rather than particles or dynamic lights.
 - First-person muzzle flashes now include a compact diagonal starburst in addition to the horizontal and vertical rays, improving shot readability while remaining mesh-only, shadow-free, and free of particles or dynamic lights.
