@@ -4476,9 +4476,13 @@ func _create_bot(index: int) -> CharacterBody3D:
     var left_shoulder := _bot_detail(Vector3(0.25, 0.22, 0.30), Vector3(-0.36, 0.22, 0.0), armor_material)
     var right_shoulder := _bot_detail(Vector3(0.25, 0.22, 0.30), Vector3(0.36, 0.22, 0.0), armor_material)
     var left_arm := _bot_detail(Vector3(0.18, 0.48, 0.20), Vector3(-0.39, -0.13, -0.015), dark_material)
+    left_arm.name = "LeftArm"
     var right_arm := _bot_detail(Vector3(0.18, 0.48, 0.20), Vector3(0.39, -0.13, -0.015), dark_material)
+    right_arm.name = "RightArm"
     var left_leg := _bot_detail(Vector3(0.24, 0.48, 0.28), Vector3(-0.17, -0.63, 0.015), armor_material)
+    left_leg.name = "LeftLeg"
     var right_leg := _bot_detail(Vector3(0.24, 0.48, 0.28), Vector3(0.17, -0.63, 0.015), armor_material)
+    right_leg.name = "RightLeg"
     var backpack := _bot_detail(Vector3(0.42, 0.52, 0.20), Vector3(0.0, 0.02, 0.25), dark_material)
     var chest_rig := _bot_detail(Vector3(0.48, 0.12, 0.36), Vector3(0.0, 0.16, -0.205), armor_material)
 
