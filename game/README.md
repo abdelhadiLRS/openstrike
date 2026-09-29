@@ -444,6 +444,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - All additions are render-only: no new collision shapes, dynamic lights, or navigation changes. The details are designed to add depth while keeping the arena lightweight on integrated graphics.
 
 
+### Operations wall displays
+- Added paired west/east wall-mounted operations screens with cyan/amber status bars and a compact Site A / Mid / Site B readout.
+- The displays strengthen the arena's industrial visual identity while remaining decorative: no collision, navigation, dynamic lights, or gameplay changes.
+
 ### Animated objective-site markers
 - Added slow-rotating, elevated amber/cyan twin-bar markers above Sites A and B to reinforce objective direction and visual identity.
 - The markers are emissive render-only meshes with shadows disabled; they add no lights, collision, or navigation cost.
