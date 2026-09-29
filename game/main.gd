@@ -100,7 +100,9 @@ var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
 var view_weapon_recoil := 0.0
 var view_weapon_reload_timer := 0.0
+var view_weapon_inspect_timer := 0.0
 const VIEW_WEAPON_RELOAD_DURATION := 0.62
+const VIEW_WEAPON_INSPECT_DURATION := 1.10
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
 var shell_casing_material: StandardMaterial3D
@@ -256,6 +258,9 @@ func _unhandled_input(event: InputEvent) -> void:
                 pending_switch_weapon = true
             else:
                 _switch_weapon()
+        elif event.keycode == KEY_T and not dead:
+            if view_weapon_inspect_timer <= 0.0 and view_weapon_reload_timer <= 0.0:
+                view_weapon_inspect_timer = VIEW_WEAPON_INSPECT_DURATION
         elif event.keycode == KEY_R and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_reload = true
@@ -284,14 +289,25 @@ func _update_view_weapon_motion(delta: float) -> void:
     view_weapon_bob_time += delta * (2.0 + speed_ratio * 7.5)
     view_weapon_recoil = move_toward(view_weapon_recoil, 0.0, delta * 0.72)
     view_weapon_reload_timer = maxf(0.0, view_weapon_reload_timer - delta)
+    view_weapon_inspect_timer = maxf(0.0, view_weapon_inspect_timer - delta)
     var reload_phase := 1.0 - view_weapon_reload_timer / VIEW_WEAPON_RELOAD_DURATION
     var reload_amount := sin(clampf(reload_phase, 0.0, 1.0) * PI)
+    var inspect_phase := 1.0 - view_weapon_inspect_timer / VIEW_WEAPON_INSPECT_DURATION
+    var inspect_amount := sin(clampf(inspect_phase, 0.0, 1.0) * PI)
     var bob_amount := speed_ratio * (0.012 if not crouched else 0.006)
     var bob_x := cos(view_weapon_bob_time * 0.5) * bob_amount * 0.65
     var bob_y := absf(sin(view_weapon_bob_time)) * bob_amount
     var sway_x := clampf(-local_velocity.x * 0.006, -0.035, 0.035)
-    var target_position := view_weapon_base_position + Vector3(sway_x + bob_x, bob_y - 0.20 * reload_amount, view_weapon_recoil + 0.06 * reload_amount)
-    var target_rotation := Vector3(sin(view_weapon_bob_time) * bob_amount * 0.65 - 0.18 * reload_amount, 0.0, -local_velocity.x * 0.006 + 0.22 * reload_amount)
+    var target_position := view_weapon_base_position + Vector3(
+        sway_x + bob_x + 0.12 * inspect_amount,
+        bob_y - 0.20 * reload_amount - 0.10 * inspect_amount,
+        view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount
+    )
+    var target_rotation := Vector3(
+        sin(view_weapon_bob_time) * bob_amount * 0.65 - 0.18 * reload_amount + 0.10 * inspect_amount,
+        0.38 * inspect_amount,
+        -local_velocity.x * 0.006 + 0.22 * reload_amount - 0.48 * inspect_amount
+    )
     view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
     view_weapon_root.rotation = view_weapon_root.rotation.lerp(target_rotation, minf(delta * 9.0, 1.0))
 
