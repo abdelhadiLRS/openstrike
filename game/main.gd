@@ -110,6 +110,7 @@ var view_weapon_bob_time := 0.0
 var camera_bob_time := 0.0
 var camera_bob_offset := Vector2.ZERO
 var camera_fov_kick := 0.0
+var landing_camera_kick := 0.0
 var view_weapon_recoil := 0.0
 var view_weapon_shot_pitch := 0.0
 var view_weapon_reload_timer := 0.0
@@ -310,6 +311,7 @@ func _update_view_weapon_motion(delta: float) -> void:
     view_weapon_bob_time += delta * (2.0 + speed_ratio * 7.5)
     view_weapon_recoil = move_toward(view_weapon_recoil, 0.0, delta * 1.35)
     camera_fov_kick = move_toward(camera_fov_kick, 0.0, delta * 5.0)
+    landing_camera_kick = move_toward(landing_camera_kick, 0.0, delta * 3.8)
     view_weapon_shot_pitch = move_toward(view_weapon_shot_pitch, 0.0, delta * 2.2)
     view_weapon_reload_timer = maxf(0.0, view_weapon_reload_timer - delta)
     view_weapon_inspect_timer = maxf(0.0, view_weapon_inspect_timer - delta)
@@ -334,7 +336,7 @@ func _update_view_weapon_motion(delta: float) -> void:
     camera_bob_offset = camera_bob_offset.lerp(camera_target_offset, minf(delta * 8.0, 1.0))
     if is_instance_valid(camera):
         camera.position.x = camera_bob_offset.x
-        camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y
+        camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y - landing_camera_kick
         # A tiny speed-based FOV lift and short shot pulse add motion feedback
         # without changing aim direction, movement, or network state.
         var target_fov := CAMERA_BASE_FOV + speed_ratio * (1.8 if not crouched else 0.6) + camera_fov_kick
@@ -343,11 +345,11 @@ func _update_view_weapon_motion(delta: float) -> void:
     var sway_x := clampf(-local_velocity.x * 0.006, -0.035, 0.035)
     var target_position := view_weapon_base_position + Vector3(
         sway_x + bob_x + 0.12 * inspect_amount,
-        bob_y - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount,
+        bob_y - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
         view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount + 0.08 * switch_amount
     )
     var target_rotation := Vector3(
-        sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount,
+        sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + landing_camera_kick * 0.55,
         0.38 * inspect_amount,
         -local_velocity.x * 0.006 + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
     )
@@ -474,7 +476,11 @@ func _physics_process(delta: float) -> void:
     if command.reload and not network_client:
         _reload()
 
+    var was_on_floor := player.is_on_floor()
+    var landing_speed := player.velocity.y
     player.move_and_slide()
+    if not was_on_floor and player.is_on_floor():
+        landing_camera_kick = clampf(absf(landing_speed) * 0.025, 0.045, 0.22)
     camera.rotation.x = pitch + recoil_kick
     _update_hud()
 
