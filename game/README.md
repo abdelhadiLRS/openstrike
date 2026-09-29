@@ -458,3 +458,8 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Planted-site visual urgency
 - When the bomb is planted, the active site's elevated marker switches to a pulsing red/orange warning and accelerates its rotation; the inactive site's marker dims so the objective location reads clearly at a distance.
 - The effect is render-only and reuses the existing marker meshes/materials. It adds no dynamic lights, particles, collision, or gameplay/network changes.
+
+### Tactical minimap
+- The north-up minimap now displays living friendly network players as blue markers, alongside the local player's heading and bomb objective.
+- Enemy positions are never read or drawn by the minimap, preserving the existing no-wallhack information boundary.
+- The markers are UI-only and do not affect combat, navigation, or network authority.
