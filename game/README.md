@@ -366,3 +366,6 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Player and host shots now render a short-lived, emissive tracer from the firing camera toward the first raycast impact (or a capped distant endpoint).
 - Rifle and sidearm tracers use distinct cool/amber tints. The effect is visual-only and uses a tiny temporary mesh rather than particles or dynamic lights.
 
+### Objective-site visual readability
+- Site A and Site B use distinct amber/cyan floor-zone tints and matching outlined 3D labels, making the two bomb locations easier to distinguish at a glance.
+- Objective markers are render-only, do not cast shadows, and do not change collision, movement, or bot navigation.
