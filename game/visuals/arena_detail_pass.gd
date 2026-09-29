@@ -4,10 +4,10 @@ extends Node3D
 ## Everything is render-only: no collision, shadows, lights, or navigation data.
 
 const PLATE_POSITIONS := [
-    Vector3(-13.2, 0.025, -13.2),
-    Vector3(13.2, 0.025, -13.2),
-    Vector3(-13.2, 0.025, 13.2),
-    Vector3(13.2, 0.025, 13.2)
+    Vector3(-13.2, 0.013, -13.2),
+    Vector3(13.2, 0.013, -13.2),
+    Vector3(-13.2, 0.013, 13.2),
+    Vector3(13.2, 0.013, 13.2)
 ]
 
 func _ready() -> void:
@@ -50,8 +50,8 @@ func _build_corner_plates() -> void:
             var stripe_x := -0.82 + float(stripe_index) * 0.27
             var stripe := _add_box(
                 plate,
-                Vector3(stripe_x, 0.024, 0.0),
-                Vector3(0.10, 0.008, 1.05),
+                Vector3(stripe_x, 0.024, -0.18),
+                Vector3(0.10, 0.008, 0.72),
                 stripe_material
             )
             stripe.rotation.y = -0.42 if index % 2 == 0 else 0.42
@@ -59,7 +59,7 @@ func _build_corner_plates() -> void:
         var label := Label3D.new()
         label.name = "ServiceLabel"
         label.text = "SERVICE  /  %02d" % (index + 1)
-        label.position = Vector3(0.0, 0.035, 0.0)
+        label.position = Vector3(0.0, 0.035, 0.43)
         label.rotation_degrees.x = -90.0
         label.font_size = 26
         label.pixel_size = 0.008
