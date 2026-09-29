@@ -2451,6 +2451,7 @@ func _world() -> void:
     _setup_navigation_points()
     _setup_cover_points()
     _create_map_dressing()
+    _create_mid_lane_markings()
     _create_spawn_wayfinding()
     _create_wall_ribs()
     _create_overhead_gantry()
@@ -2464,6 +2465,47 @@ func _world() -> void:
     _create_bomb_visual()
 
 
+
+func _create_mid_lane_markings() -> void:
+    # A restrained floor-stencil treatment gives the central combat lane a
+    # distinct visual identity. These pieces are render-only and stay flush
+    # with the floor so they do not affect movement, collision, or navigation.
+    var stencil_material := StandardMaterial3D.new()
+    stencil_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    stencil_material.albedo_color = Color(0.22, 0.48, 0.58, 0.82)
+    stencil_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    stencil_material.roughness = 0.92
+
+    var amber_material := StandardMaterial3D.new()
+    amber_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    amber_material.albedo_color = Color(0.92, 0.56, 0.20, 0.88)
+    amber_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    amber_material.roughness = 0.9
+
+    # Broken centerline and paired lane ticks improve spatial orientation
+    # without creating a bright, distracting stripe through the whole arena.
+    for z in [-3.0, 3.0]:
+        _visual_box(Vector3(0.0, 0.018, z), Vector3(0.10, 0.018, 1.45), stencil_material)
+    for side in [-1.0, 1.0]:
+        for z in [-4.0, 0.0, 4.0]:
+            _visual_box(Vector3(side * 6.8, 0.018, z), Vector3(0.62, 0.018, 0.10), amber_material)
+        # Three short chevrons point toward the central engagement lane.
+        for offset in [-0.48, 0.0, 0.48]:
+            var mark := _visual_box(Vector3(side * 8.0, 0.018, offset), Vector3(0.62, 0.018, 0.075), stencil_material)
+            mark.rotation.y = PI / 4.0 if side < 0.0 else -PI / 4.0
+
+    var sector_label := Label3D.new()
+    sector_label.name = "MidControlFloorStencil"
+    sector_label.text = "MID  /  CONTROL"
+    sector_label.position = Vector3(0.0, 0.035, 0.0)
+    sector_label.rotation_degrees.x = -90.0
+    sector_label.font_size = 44
+    sector_label.pixel_size = 0.009
+    sector_label.modulate = Color(0.36, 0.62, 0.70, 0.72)
+    sector_label.outline_size = 5
+    sector_label.outline_modulate = Color(0.025, 0.04, 0.05, 0.72)
+    sector_label.shaded = false
+    add_child(sector_label)
 
 func _create_spawn_wayfinding() -> void:
     # Large, color-coded deployment signs and floor-edge guides make each
