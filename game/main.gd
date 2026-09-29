@@ -3381,6 +3381,10 @@ func _world() -> void:
     _create_cover_visual_details()
     _create_site_perimeter_lights()
     _create_site_floor_stencils()
+    var objective_floor_stencils := Node3D.new()
+    objective_floor_stencils.name = "ObjectiveFloorStencils"
+    objective_floor_stencils.set_script(load("res://visuals/objective_floor_stencils.gd"))
+    add_child(objective_floor_stencils)
     _create_site_beacons()
     _create_rotating_site_markers()
     _spawn_bots()
