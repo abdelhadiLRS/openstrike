@@ -107,6 +107,7 @@ var objective_compass_b: Label
 var network_debug_hud: Label
 var network_debug_visible := false
 var low_spec_mode := false
+var reduced_motion_mode := false
 var visual_environment: Environment
 var map_key_light: DirectionalLight3D
 var view_weapon_root: Node3D
@@ -287,6 +288,9 @@ func _unhandled_input(event: InputEvent) -> void:
         elif event.keycode == KEY_F4:
             low_spec_mode = not low_spec_mode
             _apply_visual_quality_mode()
+        elif event.keycode == KEY_F5:
+            reduced_motion_mode = not reduced_motion_mode
+            camera_bob_offset = Vector2.ZERO
         elif event.keycode == KEY_1 and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_buy_weapon_id = str(weapons[0]["id"])
@@ -350,13 +354,13 @@ func _update_view_weapon_motion(delta: float) -> void:
     var switch_phase := 1.0 - view_weapon_switch_timer / VIEW_WEAPON_SWITCH_DURATION
     var switch_amount := sin(clampf(switch_phase, 0.0, 1.0) * PI)
     var inspect_amount := sin(clampf(inspect_phase, 0.0, 1.0) * PI)
-    var bob_amount := speed_ratio * (0.012 if not crouched else 0.006)
+    var bob_amount := 0.0 if reduced_motion_mode else speed_ratio * (0.012 if not crouched else 0.006)
     var bob_x := cos(view_weapon_bob_time * 0.5) * bob_amount * 0.65
 
     # Subtle camera head-bob and lateral sway make movement feel grounded.
     # The offset is cosmetic and remains local to the first-person camera.
     camera_bob_time += delta * (2.0 + speed_ratio * (7.0 if not crouched else 5.0))
-    var camera_bob_strength := speed_ratio * (0.024 if not crouched else 0.010)
+    var camera_bob_strength := 0.0 if reduced_motion_mode else speed_ratio * (0.024 if not crouched else 0.010)
     var camera_target_offset := Vector2(
         -local_velocity.x * 0.0018 + sin(camera_bob_time * 0.5) * camera_bob_strength * 0.32,
         absf(sin(camera_bob_time)) * camera_bob_strength
@@ -368,10 +372,10 @@ func _update_view_weapon_motion(delta: float) -> void:
         camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y - landing_camera_kick + damage_camera_kick.y
         # A tiny speed-based FOV lift and short shot pulse add motion feedback
         # without changing aim direction, movement, or network state.
-        var target_fov := CAMERA_BASE_FOV + speed_ratio * (1.8 if not crouched else 0.6) + camera_fov_kick
+        var target_fov := CAMERA_BASE_FOV + (0.0 if reduced_motion_mode else speed_ratio * (1.8 if not crouched else 0.6)) + camera_fov_kick
         camera.fov = lerpf(camera.fov, target_fov, minf(delta * 8.0, 1.0))
     var bob_y := absf(sin(view_weapon_bob_time)) * bob_amount
-    var sway_x := clampf(-local_velocity.x * 0.006, -0.035, 0.035)
+    var sway_x := 0.0 if reduced_motion_mode else clampf(-local_velocity.x * 0.006, -0.035, 0.035)
     var target_position := view_weapon_base_position + Vector3(
         sway_x + bob_x + 0.12 * inspect_amount,
         bob_y - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
@@ -1791,10 +1795,11 @@ func _update_hud() -> void:
             weapons[0]["name"], weapons[0]["cost"], weapons[1]["name"], weapons[1]["cost"]
         ]
 
-    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse   F3 netgraph   F4 visuals %s" % [
+    hud.text = "ROUND %02d  %s  %03d\nTEAM %s  %02d - %02d    CREDITS $%04d\n%s\n%s\n%s    %s    AMMO %02d / %02d\nHP %03d    ENEMIES %02d\nWASD move   CTRL crouch   SPACE jump   LMB fire   R reload   E switch   F objective   ESC mouse   F3 netgraph   F4 visuals %s   F5 motion %s" % [
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
         credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive,
-        "LOW" if low_spec_mode else "HIGH"
+        "LOW" if low_spec_mode else "HIGH",
+        "REDUCED" if reduced_motion_mode else "FULL"
     ]
     _update_network_debug_hud()
     _update_objective_progress_ui()
