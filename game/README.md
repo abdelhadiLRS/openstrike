@@ -141,6 +141,7 @@ The server validates input packet field types before parsing, rejects malformed 
 The flags are parsed only at startup; without them the existing offline flow is unchanged.
 
 ### Visual polish
+- RED bot models now use a lightweight procedural locomotion pass: a subtle stride bob and lateral body lean follow horizontal movement. The animation runs on a visual-only child rig, leaving the CharacterBody3D collider, navigation, and network transform unchanged.
 - RED bot rifle shots now trigger a brief amber emissive muzzle flash at the barrel; it is visual-only, shadow-free, and uses no particles, extra lights, collision, or physics.
 - A 28-particle GPU ambient-dust layer adds subtle depth to the arena; it is non-colliding, casts no shadows, adds no lights, and is automatically disabled by `--low-spec` or the F4 LOW setting.
 
