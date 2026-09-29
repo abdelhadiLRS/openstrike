@@ -93,7 +93,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Blue and red deployment wall signs plus matching inward-facing floor guide bars make the starting sides easier to identify; they are render-only and do not alter collision, cover, or navigation.
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
 - Holding TAB opens a centered, translucent scoreboard showing the current score, phase/time, connected players, local credits/health, and each bot's alive/health state; releasing TAB closes it. The overlay is HUD-only and does not pause or alter simulation.
-- Bottom-corner HUD bars display current health and magazine/reserve ammunition; the health fill shifts from green to amber/red at low health, and the ammo fill warns when the magazine is nearly empty.
+- Bottom-corner HUD bars display current health and magazine/reserve ammunition; the health fill shifts from green to amber/red at low health, and the ammo fill warns when the magazine is nearly empty. The ammo readout switches to a red `LOW AMMO` warning at four rounds or fewer and shows `EMPTY / RELOAD` when the magazine is empty.
 - Lightweight north-up tactical minimap in the upper-right corner shows the player's heading, A/B sites, and the dropped/planted bomb; it deliberately does not reveal enemy positions and uses only CanvasItem drawing.
 - Minimal crosshair and hit feedback
 - Animated center-top round transition banner announces BUY, LIVE, VICTORY, and DEFEAT states with a brief fade/scale cue; screen-space only and does not affect gameplay.
