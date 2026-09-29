@@ -1409,6 +1409,27 @@ func _spawn_bot_tracer(start_position: Vector3, end_position: Vector3) -> void:
     tracer_material.emission_energy_multiplier = 1.35
     tracer.material_override = tracer_material
     tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    # A narrow hot core layered inside the amber tracer improves contrast at
+    # range while keeping the effect to two shadow-free meshes and no lights.
+    var core := MeshInstance3D.new()
+    core.name = "BotShotTracerCore"
+    var core_mesh := CylinderMesh.new()
+    core_mesh.top_radius = 0.0035
+    core_mesh.bottom_radius = 0.0035
+    core_mesh.height = length
+    core.mesh = core_mesh
+    var core_material := StandardMaterial3D.new()
+    core_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    core_material.albedo_color = Color(1.0, 0.88, 0.58, 0.92)
+    core_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    core_material.emission_enabled = true
+    core_material.emission = Color(1.0, 0.52, 0.16)
+    core_material.emission_energy_multiplier = 1.7
+    core.material_override = core_material
+    core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    tracer.add_child(core)
+
     main.add_child(tracer)
     get_tree().create_timer(0.075).timeout.connect(tracer.queue_free)
 
