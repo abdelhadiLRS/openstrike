@@ -76,7 +76,7 @@ func _configure_from_command_line() -> void:
 			max_clients = clampi(int(arg.trim_prefix("--max-clients=")), 1, MAX_CLIENTS)
 
 	if show_help:
-		print("OpenStrike flags: --server | --connect=<address> | --port=<1..65535> | --max-clients=<1..16> | --bots=<0..15> | --low-spec")
+		print("OpenStrike flags: --server | --connect=<address> | --port=<1..65535> | --max-clients=<1..16> | --bots=<0..15> | --low-spec | --balanced-visual")
 		return
 	if launch_server and not connect_address.is_empty():
 		push_error("OpenStrike: --server and --connect cannot be used together.")
