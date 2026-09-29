@@ -178,6 +178,31 @@ func _create_damage_health_bar() -> void:
     damage_health_bar_fill.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     damage_health_bar_root.add_child(damage_health_bar_fill)
 
+func _spawn_damage_number(amount: int) -> void:
+    # Floating damage text gives a quick, readable hit result without adding
+    # physics, particles, lights, or persistent scene nodes.
+    if amount <= 0 or dead:
+        return
+    var popup := Label3D.new()
+    popup.name = "DamageNumber"
+    popup.text = "-%d" % amount
+    popup.font_size = 38
+    popup.pixel_size = 0.008
+    popup.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    popup.modulate = Color(1.0, 0.76, 0.34, 1.0)
+    popup.outline_size = 7
+    popup.outline_modulate = Color(0.055, 0.025, 0.01, 0.95)
+    popup.position = Vector3(randf_range(-0.18, 0.18), 1.85, randf_range(-0.12, 0.12))
+    popup.no_depth_test = false
+    add_child(popup)
+    var tween := create_tween()
+    tween.set_parallel(true)
+    tween.tween_property(popup, "position:y", popup.position.y + 0.72, 0.62).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+    tween.tween_property(popup, "modulate:a", 0.0, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+    tween.set_parallel(false)
+    tween.tween_callback(popup.queue_free)
+
+
 func _show_damage_health_bar() -> void:
     if not is_instance_valid(damage_health_bar_root) or not is_instance_valid(damage_health_bar_fill):
         return
@@ -1199,6 +1224,7 @@ func apply_network_snapshot(snapshot: Dictionary) -> void:
 	health = int(snapshot.get("health", health))
 	if health < previous_health:
 		_trigger_damage_flash()
+		_spawn_damage_number(previous_health - health)
 	var snapshot_dead := bool(snapshot.get("dead", false))
 	state = str(snapshot.get("state", state))
 	combat_assignment = str(snapshot.get("assignment", combat_assignment))
@@ -1283,8 +1309,10 @@ func take_damage(amount: int, source_id: String = "player") -> void:
     if dead:
         return
     last_damage_source_id = source_id
+    var previous_health := health
     health = maxi(0, health - amount)
     _trigger_damage_flash()
+    _spawn_damage_number(previous_health - health)
     _show_damage_health_bar()
     recently_hit_timer = RECENT_HIT_REACTION_TIME
     combat_reposition_timer = 0.0
