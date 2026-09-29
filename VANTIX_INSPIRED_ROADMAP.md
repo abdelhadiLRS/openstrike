@@ -30,6 +30,34 @@ This document adapts *systems ideas* observed in [VANTIX](https://github.com/van
 | Smoke, penetration, per-limb damage | Add as separate gameplay systems only after authoritative hitscan, collision/material rules, and tests are stable | P2 |
 | Dedicated server and launch flags | Add headless server, listen-server, connect-address, port, and bot-count options with clear startup validation | P1 (listen-server/launch flags implemented; headless remains) |
 
+## Visual production backlog
+
+The current arena has a coherent procedural industrial look, but it is still a graybox-style prototype. The next visual milestone is to replace placeholder shapes in controlled stages—not to add more decorative meshes indiscriminately.
+
+### Visual pass V1 — Material and lighting consistency
+1. Audit the floor, perimeter walls, cover, metal props, and objective surfaces for roughness/metallic consistency and excessive emissive accents.
+2. Create a small set of reusable original material profiles: concrete, painted metal, dark rubber, hazard paint, and emissive signage. Keep shader complexity low and preserve the existing LOW/BALANCED/HIGH profiles.
+3. Improve material scale and surface variation without adding unique materials per prop; use shared materials and restrained tiling.
+4. Check readability from player eye height: enemy silhouettes, cover edges, bomb sites, and muzzle/impact effects must remain distinct under all quality profiles.
+
+### Visual pass V2 — Modular environment art
+1. Replace the most prominent flat wall and cover blocks with a small modular kit: wall panels, corner pieces, door frames, support columns, crates, and cover variants.
+2. Keep render meshes separate from simplified collision/navigation geometry so visual detail cannot create invisible gameplay blockers.
+3. Use original meshes and textures or assets with compatible licenses; do not import another game's map, models, or branding.
+4. Prioritize the central lane and both bomb sites first, then expand to the perimeter after the new pieces are validated in the live map.
+
+### Visual pass V3 — Character and weapon art
+1. Replace procedural box/capsule character details with a small original low-poly character mesh and a compact skeleton/animation set.
+2. Keep the existing capsule hitbox independent from the render rig; validate crouch, death, respawn, and network interpolation with the new rig.
+3. Replace the geometric AR-17/PX-9 viewmodels with original low-poly models, keeping muzzle positions and sight alignment consistent with the current camera-centered hit registration.
+4. Add original animation/audio only after the rig and weapon transforms are stable.
+
+### Performance and acceptance gates
+- Keep a low-spec path suitable for integrated graphics: no mandatory high-resolution textures, expensive real-time lights, or dense particle effects.
+- Prefer shared materials, limited texture atlases, shadow-free small props, and a small number of shadow-casting lights.
+- Compare HIGH, BALANCED, and LOW at the same map locations and during sustained combat; record frame time and memory before increasing visual complexity.
+- Each asset pass must preserve movement, collision, bot navigation, weapon alignment, and authoritative multiplayer state. Treat screenshots and an in-engine smoke test as required review artifacts before calling the art pass complete.
+
 ## Delivery sequence
 
 ### Phase 0 — Stability and boundaries
