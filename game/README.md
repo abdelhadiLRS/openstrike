@@ -464,3 +464,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - The north-up minimap now displays living friendly network players as blue markers, alongside the local player's heading and bomb objective.
 - Enemy positions are never read or drawn by the minimap, preserving the existing no-wallhack information boundary.
 - The markers are UI-only and do not affect combat, navigation, or network authority.
+
+### Elimination visual feedback
+- RED bot eliminations now trigger a brief amber-red expanding ring and core pulse at the defeat position, visible in offline play and when a client receives the authoritative dead state.
+- The effect is a short-lived, unshaded mesh-only cue with no particles, dynamic lights, collision, hitbox, or gameplay/network changes.
