@@ -358,3 +358,8 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Bot combat assignments now refresh immediately when the bomb objective changes state or planted site, rather than waiting for the periodic assignment interval.
 - A dropped-bomb position change of at least 0.5 world units also triggers a refresh, keeping the designated recovery/guard role aligned with a newly dropped objective.
 - Contact and threat revision triggers remain unchanged, and the cached objective signature is reset at round start.
+
+### Visual combat feedback
+- Player and host shots now render a short-lived, emissive tracer from the firing camera toward the first raycast impact (or a capped distant endpoint).
+- Rifle and sidearm tracers use distinct cool/amber tints. The effect is visual-only and uses a tiny temporary mesh rather than particles or dynamic lights.
+
