@@ -1112,7 +1112,11 @@ func _fire() -> void:
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
     var tracer_end: Vector3 = hit.position if not hit.is_empty() else origin + direction * 75.0
     var tracer_color := Color(0.50, 0.88, 1.0) if str(weapon["id"]) == "ar_17" else Color(1.0, 0.68, 0.28)
-    _spawn_shot_tracer(origin, tracer_end, tracer_color)
+    # Keep hit registration camera-centered, but render the streak from the
+    # actual first-person barrel so shots visually leave the weapon, not the
+    # middle of the screen.
+    var tracer_start := _weapon_muzzle_world_position()
+    _spawn_shot_tracer(tracer_start, tracer_end, tracer_color)
     if not hit.is_empty():
         var impact_normal: Vector3 = hit.get("normal", Vector3.UP)
         _spawn_impact_spark(hit.position, impact_normal, tracer_color)
@@ -1133,6 +1137,15 @@ func _fire() -> void:
             var target_id := str(hit.collider.get_instance_id())
             combat_events.emit_hit("player", target_id, str(weapon["id"]), int(weapon["damage"]), hit.position, false)
             _show_hit_feedback()
+
+func _weapon_muzzle_world_position() -> Vector3:
+    if not is_instance_valid(view_weapon_root):
+        return camera.global_position if is_instance_valid(camera) else Vector3.ZERO
+    var is_rifle := str(_current_weapon().get("id", "")) == "ar_17"
+    # Coordinates match the procedural rifle/pistol barrel tips in
+    # _refresh_view_weapon(); the viewmodel is parented to the camera.
+    return view_weapon_root.to_global(Vector3(0.0, 0.0, -0.82 if is_rifle else -0.50))
+
 
 func _spawn_shot_tracer(start_position: Vector3, end_position: Vector3, tint: Color) -> void:
     # A short-lived, emissive streak gives each shot a readable direction cue.
