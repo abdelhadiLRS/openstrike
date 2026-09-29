@@ -104,6 +104,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Hit confirmation now shows a brief centered marker that fades and scales down with a quick impact pulse; taking damage produces a short, restrained red screen flash. Both effects are screen-space UI only and use no particles or dynamic lights.
 - A soft red edge vignette fades in below 55 HP and gently pulses at 30 HP or less; it stays away from the center reticle and uses a tiny CanvasItem shader with no world geometry, particles, or lights.
 - Shot tracers now originate at the active first-person weapon's barrel while hit registration remains camera-centered, aligning the visual streak with the muzzle without changing aim or damage.
+- Shot tracers now use a thin bright core with a faint translucent outer halo for improved contrast; the halo is skipped in LOW visual mode, and both layers self-clean after a brief flash.
 - Bullet impacts now produce a tiny emissive spark at the ray-hit point, color-matched to the weapon tracer; the effect self-cleans quickly and adds no physics, particles, persistent decals, or dynamic lights.
 - Bullet impact marks now use subtle randomized roll and scale, so repeated shots leave less uniform scorch patterns while marks stay aligned to the struck surface.
 - World impact marks are capped at 32 active marks; the oldest mark is removed when the cap is reached, and each mark is freed after its fade. This prevents sustained firing from accumulating visual nodes indefinitely.
