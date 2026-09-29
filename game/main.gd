@@ -208,6 +208,9 @@ var landing_dust_material: StandardMaterial3D
 var landing_dust_timer := 0.0
 var player_was_airborne := false
 var site_beacon_time := 0.0
+var arena_status_time := 0.0
+var arena_status_materials: Array[StandardMaterial3D] = []
+var arena_status_base_energy: Array[float] = []
 var bomb_time_left := 0.0
 var objective_action := ""
 var objective_action_time_left := 0.0
@@ -383,6 +386,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
     _update_site_beacon_pulse(delta)
+    _update_arena_status_lights(delta)
     _update_rotating_site_markers(delta)
     _update_ventilation_fans(delta)
     _update_ambient_dust(delta)
@@ -3520,6 +3524,9 @@ func _create_wall_light_fixtures() -> void:
     amber_lens.emission = Color(0.62, 0.22, 0.035)
     amber_lens.emission_energy_multiplier = 1.0
 
+    arena_status_materials = [cyan_lens, amber_lens]
+    arena_status_base_energy = [cyan_lens.emission_energy_multiplier, amber_lens.emission_energy_multiplier]
+
     # Alternating fixture colors reinforce the industrial arena's sector language.
     for index in range(5):
         var coordinate := float(-12 + index * 6)
@@ -3532,6 +3539,20 @@ func _create_wall_light_fixtures() -> void:
             var x := side * 17.25
             _visual_box(Vector3(x, 3.25, coordinate), Vector3(0.28, 0.30, 1.65), housing_material)
             _visual_box(Vector3(x - side * 0.16, 3.25, coordinate), Vector3(0.035, 0.075, 1.28), lens_material)
+
+func _update_arena_status_lights(delta: float) -> void:
+    # A restrained emissive breathing cycle gives static wall fixtures a little
+    # life without adding real lights, shadows, particles, or physics work.
+    if low_spec_mode or arena_status_materials.is_empty():
+        return
+    arena_status_time = fmod(arena_status_time + delta, TAU)
+    for index in range(arena_status_materials.size()):
+        var material := arena_status_materials[index]
+        if not is_instance_valid(material):
+            continue
+        var pulse := 0.92 + (sin(arena_status_time * 0.72 + float(index) * PI) + 1.0) * 0.04
+        material.emission_energy_multiplier = arena_status_base_energy[index] * pulse
+
 
 func _create_wall_ribs() -> void:
     # Vertical steel ribs add depth to the perimeter walls without changing
