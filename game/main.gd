@@ -3291,10 +3291,12 @@ func _create_visual_environment() -> void:
         _visual_box(Vector3(17.40, 3.55, z), Vector3(0.055, 0.045, 3.0), perimeter_warning)
 
 func _apply_visual_quality_mode() -> void:
-    # Runtime quality switching changes only two expensive rendering effects.
-    # Geometry, combat state, navigation, and network simulation remain intact.
+    # Runtime quality switching changes rendering only; gameplay, collision,
+    # navigation, and network simulation remain intact. Low mode removes fog
+    # and dynamic shadows while lifting ambient fill to keep dark corners legible.
     if is_instance_valid(visual_environment):
         visual_environment.fog_enabled = not low_spec_mode
+        visual_environment.ambient_light_energy = 0.78 if low_spec_mode else 0.62
     if is_instance_valid(map_key_light):
         map_key_light.shadow_enabled = not low_spec_mode
 
