@@ -135,6 +135,8 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 ### Visual polish
 
+- Two wall-mounted ventilation fans rotate slowly as lightweight ambient animation; their meshes are visual-only, shadow-free, and add no collision, particles, or dynamic lights.
+
 - The `--low-spec` launch flag starts with atmospheric fog and directional shadows disabled. Press F4 during play to switch between HIGH and LOW visual quality without restarting; the toggle only changes those two effects and leaves map geometry, gameplay, and network simulation unchanged.
 
 - A compact top-center objective compass displays the screen-space bearing and distance to Sites A and B, hides markers outside the camera's horizontal field of view, and uses cyan/amber labels; it is HUD-only and does not affect movement, navigation, or objective rules.
