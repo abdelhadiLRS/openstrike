@@ -89,6 +89,10 @@ var recoil_kick := 0.0
 var crouched := false
 var hud: Label
 var hud_layer: CanvasLayer
+var health_bar: ProgressBar
+var ammo_bar: ProgressBar
+var health_hud_label: Label
+var ammo_hud_label: Label
 var elimination_feedback_label: Label
 var elimination_feedback_timer := 0.0
 var crosshair_root: Control
@@ -1281,6 +1285,59 @@ func _hud() -> void:
     panel.add_child(hud)
     hud_layer.add_child(panel)
     add_child(hud_layer)
+    _create_combat_status_hud()
+
+func _create_combat_status_hud() -> void:
+    # Compact bottom-corner status bars keep health and ammunition readable.
+    health_hud_label = Label.new()
+    health_hud_label.name = "HealthStatusLabel"
+    health_hud_label.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+    health_hud_label.position = Vector2(20.0, -94.0)
+    health_hud_label.size = Vector2(250.0, 26.0)
+    health_hud_label.add_theme_font_size_override("font_size", 16)
+    health_hud_label.add_theme_color_override("font_color", Color(0.78, 0.94, 0.98, 1.0))
+    health_hud_label.add_theme_color_override("font_outline_color", Color(0.01, 0.02, 0.03, 0.95))
+    health_hud_label.add_theme_constant_override("outline_size", 3)
+    health_hud_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud_layer.add_child(health_hud_label)
+    health_bar = _make_status_bar("HealthStatusBar", Vector2(20.0, -66.0), Vector2(250.0, 15.0), Color(0.18, 0.82, 0.56, 0.98))
+
+    ammo_hud_label = Label.new()
+    ammo_hud_label.name = "AmmoStatusLabel"
+    ammo_hud_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+    ammo_hud_label.position = Vector2(-276.0, -94.0)
+    ammo_hud_label.size = Vector2(256.0, 26.0)
+    ammo_hud_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    ammo_hud_label.add_theme_font_size_override("font_size", 16)
+    ammo_hud_label.add_theme_color_override("font_color", Color(0.96, 0.89, 0.69, 1.0))
+    ammo_hud_label.add_theme_color_override("font_outline_color", Color(0.01, 0.02, 0.03, 0.95))
+    ammo_hud_label.add_theme_constant_override("outline_size", 3)
+    ammo_hud_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud_layer.add_child(ammo_hud_label)
+    ammo_bar = _make_status_bar("AmmoStatusBar", Vector2(-276.0, -66.0), Vector2(256.0, 15.0), Color(0.96, 0.62, 0.20, 0.98), true)
+
+func _make_status_bar(bar_name: String, offset: Vector2, bar_size: Vector2, fill_color: Color, right_anchored: bool = false) -> ProgressBar:
+    var bar := ProgressBar.new()
+    bar.name = bar_name
+    bar.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT if right_anchored else Control.PRESET_BOTTOM_LEFT)
+    bar.position = offset
+    bar.size = bar_size
+    bar.min_value = 0.0
+    bar.max_value = 100.0
+    bar.show_percentage = false
+    bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var background := StyleBoxFlat.new()
+    background.bg_color = Color(0.015, 0.025, 0.04, 0.88)
+    background.border_color = Color(0.30, 0.42, 0.50, 0.95)
+    background.set_border_width_all(1)
+    background.set_corner_radius_all(3)
+    bar.add_theme_stylebox_override("background", background)
+    var fill := StyleBoxFlat.new()
+    fill.bg_color = fill_color
+    fill.set_corner_radius_all(3)
+    bar.add_theme_stylebox_override("fill", fill)
+    hud_layer.add_child(bar)
+    return bar
 
 func _create_objective_compass() -> void:
     # Compact top-center site bearings help players orient toward both
@@ -1570,6 +1627,7 @@ func _update_hud() -> void:
 
     if dead:
         hud.text = "ROUND %02d  %s\nYOU ARE DOWN — RESPAWNING %0.1fs" % [round_number, phase, respawn_timer]
+        _update_combat_status_hud(weapon)
         return
 
     var buy_line := ""
@@ -1584,6 +1642,24 @@ func _update_hud() -> void:
     ]
     _update_network_debug_hud()
     _update_objective_progress_ui()
+    _update_combat_status_hud(weapon)
+
+func _update_combat_status_hud(weapon: Dictionary) -> void:
+    if health_bar != null:
+        health_bar.value = clampf(float(health), 0.0, float(MAX_HEALTH))
+        var health_fill := health_bar.get_theme_stylebox("fill") as StyleBoxFlat
+        if health_fill != null:
+            health_fill.bg_color = Color(0.92, 0.20, 0.16, 0.98) if health <= 30 else (Color(0.96, 0.60, 0.18, 0.98) if health <= 55 else Color(0.18, 0.82, 0.56, 0.98))
+    if health_hud_label != null:
+        health_hud_label.text = "HEALTH  %03d / %03d" % [maxi(0, health), MAX_HEALTH]
+    var magazine_size := maxi(1, int(weapon.get("mag", 1)))
+    if ammo_bar != null:
+        ammo_bar.value = clampf(float(ammo) / float(magazine_size) * 100.0, 0.0, 100.0)
+        var ammo_fill := ammo_bar.get_theme_stylebox("fill") as StyleBoxFlat
+        if ammo_fill != null:
+            ammo_fill.bg_color = Color(0.92, 0.20, 0.16, 0.98) if ammo <= 4 else Color(0.96, 0.62, 0.20, 0.98)
+    if ammo_hud_label != null:
+        ammo_hud_label.text = "AMMO  %02d / %02d" % [ammo, reserve]
 
 func _update_objective_progress_ui() -> void:
     if objective_progress_bar == null or objective_progress_label == null:
