@@ -132,6 +132,7 @@ var planted_site := ""
 var dropped_bomb_position := Vector3.ZERO
 var bomb_visual: MeshInstance3D
 var bomb_light: OmniLight3D
+var bomb_status_material: StandardMaterial3D
 var bomb_time_left := 0.0
 var objective_action := ""
 var objective_action_time_left := 0.0
@@ -847,10 +848,14 @@ func _update_bomb_visual() -> void:
         bomb_position = bomb_site_a if planted_site == "A" else bomb_site_b
 
     bomb_visual.global_position = bomb_position + Vector3(0, 0.35, 0)
-    var blink_phase := fmod(Time.get_ticks_msec() / 1000.0, 1.0)
-    var active_blink := blink_phase < 0.5 if objective_state == "PLANTED" else true
+    var urgency := clampf(1.0 - bomb_time_left / BOMB_TIME, 0.0, 1.0) if objective_state == "PLANTED" else 0.0
+    var blink_rate := lerpf(1.4, 5.0, urgency)
+    var blink_phase := sin(Time.get_ticks_msec() / 1000.0 * TAU * blink_rate)
+    var active_blink := blink_phase > 0.0 if objective_state == "PLANTED" else true
+    if bomb_status_material != null:
+        bomb_status_material.emission_energy_multiplier = 2.8 if active_blink else 0.12
     if bomb_light != null:
-        bomb_light.light_energy = 2.5 if active_blink else 0.35
+        bomb_light.light_energy = lerpf(1.8, 3.2, urgency) if active_blink else 0.18
 
 func _objective_carrier_label() -> String:
     if objective_state != "CARRIED":
@@ -2539,6 +2544,26 @@ func _create_bomb_visual() -> void:
     bomb_visual.material_override = bomb_material
     bomb_visual.visible = false
     add_child(bomb_visual)
+
+    # A compact status LED makes the objective readable at close range. Its
+    # emission is driven by the planted-bomb timer below; no particles or
+    # additional lights are needed.
+    var status_led := MeshInstance3D.new()
+    status_led.name = "BombStatusLED"
+    var led_mesh := SphereMesh.new()
+    led_mesh.radius = 0.055
+    led_mesh.height = 0.11
+    status_led.mesh = led_mesh
+    status_led.position = Vector3(0.0, 0.205, 0.0)
+    bomb_status_material = StandardMaterial3D.new()
+    bomb_status_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    bomb_status_material.albedo_color = Color(1.0, 0.18, 0.06)
+    bomb_status_material.emission_enabled = true
+    bomb_status_material.emission = Color(1.0, 0.12, 0.025)
+    bomb_status_material.emission_energy_multiplier = 2.8
+    status_led.material_override = bomb_status_material
+    status_led.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    bomb_visual.add_child(status_led)
 
     bomb_light = OmniLight3D.new()
     bomb_light.name = "BombLight"
