@@ -1412,11 +1412,33 @@ func _spawn_impact_mark(position: Vector3, surface_normal: Vector3) -> void:
     material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     material.roughness = 1.0
     mark.material_override = material
+
+    # A thin outer scorch rim adds a little material definition to the impact
+    # without textures, particles, extra lights, or collision.
+    var rim := MeshInstance3D.new()
+    rim.name = "ImpactRim"
+    var rim_mesh := TorusMesh.new()
+    rim_mesh.inner_radius = 0.078
+    rim_mesh.outer_radius = 0.098
+    rim_mesh.rings = 8
+    rim_mesh.ring_segments = 5
+    rim.mesh = rim_mesh
+    var rim_material := StandardMaterial3D.new()
+    rim_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    rim_material.albedo_color = Color(0.11, 0.075, 0.045, 0.72)
+    rim_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    rim_material.roughness = 1.0
+    rim.material_override = rim_material
+    rim.position.y = 0.004
+    rim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    mark.add_child(rim)
+
     add_child(mark)
     impact_marks.append(mark)
 
     var tween := create_tween()
     tween.tween_property(material, "albedo_color:a", 0.0, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+    tween.parallel().tween_property(rim_material, "albedo_color:a", 0.0, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
     tween.finished.connect(_on_impact_mark_fade_finished.bind(mark))
 
 
