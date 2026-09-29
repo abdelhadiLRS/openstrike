@@ -102,7 +102,10 @@ var visual_rig: Node3D
 var visual_motion_time := 0.0
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
+var damage_flash_ring: MeshInstance3D
+var damage_flash_timer := 0.0
 const MUZZLE_FLASH_DURATION := 0.055
+const DAMAGE_FLASH_DURATION := 0.16
 
 func _ready() -> void:
     collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
@@ -110,6 +113,46 @@ func _ready() -> void:
     health = max_health
     target = main.get("player")
     _create_bot_muzzle_flash()
+    _create_damage_flash_ring()
+
+func _create_damage_flash_ring() -> void:
+    # A short red ring gives immediate hit feedback without particles or lights.
+    damage_flash_ring = MeshInstance3D.new()
+    damage_flash_ring.name = "BotDamageFlashRing"
+    var ring_mesh := TorusMesh.new()
+    ring_mesh.inner_radius = 0.48
+    ring_mesh.outer_radius = 0.60
+    ring_mesh.ring_segments = 12
+    ring_mesh.radial_segments = 4
+    damage_flash_ring.mesh = ring_mesh
+    damage_flash_ring.position = Vector3(0.0, 0.10, 0.0)
+    var ring_material := StandardMaterial3D.new()
+    ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    ring_material.albedo_color = Color(1.0, 0.16, 0.08, 0.92)
+    ring_material.emission_enabled = true
+    ring_material.emission = Color(1.0, 0.055, 0.015)
+    ring_material.emission_energy_multiplier = 1.4
+    damage_flash_ring.material_override = ring_material
+    damage_flash_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    damage_flash_ring.visible = false
+    add_child(damage_flash_ring)
+
+func _trigger_damage_flash() -> void:
+    if not is_instance_valid(damage_flash_ring):
+        return
+    damage_flash_timer = DAMAGE_FLASH_DURATION
+    damage_flash_ring.visible = true
+    damage_flash_ring.scale = Vector3.ONE * 0.82
+
+func _update_damage_flash(delta: float) -> void:
+    if not is_instance_valid(damage_flash_ring):
+        return
+    damage_flash_timer = maxf(0.0, damage_flash_timer - delta)
+    if damage_flash_timer <= 0.0:
+        damage_flash_ring.visible = false
+        return
+    var progress := 1.0 - damage_flash_timer / DAMAGE_FLASH_DURATION
+    damage_flash_ring.scale = Vector3.ONE * lerpf(0.82, 1.22, progress)
 
 func _update_visual_motion(delta: float) -> void:
     if not is_instance_valid(visual_rig):
@@ -166,6 +209,7 @@ func _trigger_bot_muzzle_flash() -> void:
 
 func _physics_process(delta: float) -> void:
     _update_visual_motion(delta)
+    _update_damage_flash(delta)
     muzzle_flash_timer = maxf(0.0, muzzle_flash_timer - delta)
     if muzzle_flash_timer <= 0.0 and is_instance_valid(muzzle_flash):
         muzzle_flash.visible = false
@@ -1087,7 +1131,10 @@ func apply_network_snapshot(snapshot: Dictionary) -> void:
 	network_target_yaw = float(snapshot.get("yaw", rotation.y))
 	network_snapshot_age = 0.0
 	network_snapshot_fresh = true
+	var previous_health := health
 	health = int(snapshot.get("health", health))
+	if health < previous_health:
+		_trigger_damage_flash()
 	var snapshot_dead := bool(snapshot.get("dead", false))
 	state = str(snapshot.get("state", state))
 	combat_assignment = str(snapshot.get("assignment", combat_assignment))
@@ -1173,6 +1220,7 @@ func take_damage(amount: int, source_id: String = "player") -> void:
         return
     last_damage_source_id = source_id
     health = maxi(0, health - amount)
+    _trigger_damage_flash()
     recently_hit_timer = RECENT_HIT_REACTION_TIME
     combat_reposition_timer = 0.0
     combat_reposition_goal = Vector3.ZERO
