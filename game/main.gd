@@ -4516,6 +4516,34 @@ func _refresh_view_weapon() -> void:
     flash_material.emission_energy_multiplier = 3.0
     muzzle_flash.material_override = flash_material
     muzzle_flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    # A compact four-ray starburst makes each shot legible against bright
+    # backgrounds. The rays share the parent visibility/timer and stay
+    # unshaded, shadowless, and free of particle or light allocations.
+    var flash_ray_material := StandardMaterial3D.new()
+    flash_ray_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    flash_ray_material.albedo_color = Color(1.0, 0.86, 0.48, 0.94)
+    flash_ray_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    flash_ray_material.emission_enabled = true
+    flash_ray_material.emission = Color(1.0, 0.42, 0.08)
+    flash_ray_material.emission_energy_multiplier = 2.4
+
+    var horizontal_ray := MeshInstance3D.new()
+    var horizontal_mesh := BoxMesh.new()
+    horizontal_mesh.size = Vector3(0.30 if is_rifle else 0.22, 0.025, 0.025)
+    horizontal_ray.mesh = horizontal_mesh
+    horizontal_ray.material_override = flash_ray_material
+    horizontal_ray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    muzzle_flash.add_child(horizontal_ray)
+
+    var vertical_ray := MeshInstance3D.new()
+    var vertical_mesh := BoxMesh.new()
+    vertical_mesh.size = Vector3(0.025, 0.20 if is_rifle else 0.15, 0.025)
+    vertical_ray.mesh = vertical_mesh
+    vertical_ray.material_override = flash_ray_material
+    vertical_ray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    muzzle_flash.add_child(vertical_ray)
+
     muzzle_flash.visible = false
     view_weapon_root.add_child(muzzle_flash)
 
