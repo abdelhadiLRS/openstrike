@@ -3211,6 +3211,7 @@ func _world() -> void:
     _create_floor_grates()
     _create_floor_service_panels()
     _create_cover_visual_details()
+    _create_site_perimeter_lights()
     _create_site_beacons()
     _create_rotating_site_markers()
     _spawn_bots()
@@ -4297,6 +4298,34 @@ func _create_map_dressing() -> void:
                 Vector3(1.1 - float(step) * 0.16, 0.025, 0.10),
                 warning_material
             )
+
+func _create_site_perimeter_lights() -> void:
+    # Segmented, emissive floor strips make each objective zone readable from
+    # its approaches. These are render-only meshes with no collision or lights.
+    var site_specs := [
+        {"position": BOMB_SITE_A, "color": Color(0.08, 0.72, 0.96)},
+        {"position": BOMB_SITE_B, "color": Color(1.0, 0.48, 0.12)}
+    ]
+    for spec in site_specs:
+        var center: Vector3 = spec["position"]
+        var site_color: Color = spec["color"]
+        var stripe_material := StandardMaterial3D.new()
+        stripe_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        stripe_material.albedo_color = site_color
+        stripe_material.emission_enabled = true
+        stripe_material.emission = site_color * 0.72
+        stripe_material.emission_energy_multiplier = 1.15
+        stripe_material.roughness = 0.9
+
+        for segment in range(8):
+            var angle := TAU * float(segment) / 8.0
+            var radial := Vector3(cos(angle), 0.0, sin(angle))
+            var strip := _visual_box(
+                center + radial * 2.95 + Vector3(0.0, 0.035, 0.0),
+                Vector3(1.05, 0.025, 0.075),
+                stripe_material
+            )
+            strip.rotation.y = -angle
 
 func _create_site_beacons() -> void:
     # Small emissive pylons make both bomb sites readable from a distance.
