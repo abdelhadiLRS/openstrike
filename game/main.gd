@@ -3389,6 +3389,7 @@ func _world() -> void:
     _create_cover_corner_reinforcement()
     _create_site_perimeter_lights()
     _create_site_floor_stencils()
+    _create_site_overhead_signage()
     var objective_floor_stencils := Node3D.new()
     objective_floor_stencils.name = "ObjectiveFloorStencils"
     objective_floor_stencils.set_script(load("res://visuals/objective_floor_stencils.gd"))
@@ -4695,6 +4696,51 @@ func _create_site_floor_stencils() -> void:
         stencil.outline_modulate = Color(0.015, 0.025, 0.035, 0.88)
         stencil.shaded = false
         add_child(stencil)
+
+
+func _create_site_overhead_signage() -> void:
+	# Elevated A/B identifiers improve objective recognition from the approach
+	# lanes. The panels are lightweight, shadow-free decoration with no collision.
+	var housing := StandardMaterial3D.new()
+	housing.albedo_color = Color(0.025, 0.045, 0.060)
+	housing.metallic = 0.46
+	housing.roughness = 0.62
+
+	var cyan := StandardMaterial3D.new()
+	cyan.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	cyan.albedo_color = Color(0.08, 0.66, 0.88)
+	cyan.emission_enabled = true
+	cyan.emission = Color(0.025, 0.30, 0.52)
+	cyan.emission_energy_multiplier = 0.95
+
+	var amber := StandardMaterial3D.new()
+	amber.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	amber.albedo_color = Color(0.98, 0.58, 0.20)
+	amber.emission_enabled = true
+	amber.emission = Color(0.42, 0.16, 0.025)
+	amber.emission_energy_multiplier = 0.85
+
+	for site in [{"name": "A", "position": BOMB_SITE_A, "accent": amber}, {"name": "B", "position": BOMB_SITE_B, "accent": cyan}]:
+		var center: Vector3 = site["position"] + Vector3(0.0, 3.15, 0.0)
+		var accent: StandardMaterial3D = site["accent"]
+		_visual_box(center, Vector3(2.8, 0.78, 0.16), housing)
+		_visual_box(center + Vector3(0.0, 0.40, 0.0), Vector3(2.9, 0.055, 0.20), accent)
+		_visual_box(center + Vector3(0.0, -0.40, 0.0), Vector3(2.9, 0.055, 0.20), accent)
+		for side in [-1.0, 1.0]:
+			_visual_box(center + Vector3(side * 1.36, 0.0, 0.0), Vector3(0.08, 0.82, 0.20), accent)
+		for face in [-1.0, 1.0]:
+			var label := Label3D.new()
+			label.name = "ObjectiveSign_" + str(site["name"]) + ("_Front" if face > 0.0 else "_Back")
+			label.text = "SITE  " + str(site["name"])
+			label.position = center + Vector3(0.0, 0.0, face * 0.09)
+			label.rotation.y = 0.0 if face > 0.0 else PI
+			label.font_size = 52
+			label.pixel_size = 0.010
+			label.modulate = Color(0.90, 0.94, 0.98)
+			label.outline_size = 7
+			label.outline_modulate = Color(0.01, 0.02, 0.03, 0.98)
+			label.shaded = false
+			add_child(label)
 
 
 func _create_site_beacons() -> void:
