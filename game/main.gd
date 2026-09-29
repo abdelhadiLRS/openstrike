@@ -2107,6 +2107,7 @@ func _world() -> void:
     _setup_navigation_points()
     _setup_cover_points()
     _create_map_dressing()
+    _create_wall_ribs()
     _create_floor_grates()
     _create_cover_visual_details()
     _create_site_beacons()
