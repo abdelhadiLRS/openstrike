@@ -1337,11 +1337,43 @@ func _fire() -> void:
     var query := PhysicsRayQueryParameters3D.create(origin, aim)
     query.exclude = [self]
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    var tracer_end: Vector3 = hit.position if not hit.is_empty() else aim
+    _spawn_bot_tracer(origin, tracer_end)
     if not hit.is_empty() and hit.collider == target:
         main.call("_apply_damage", DAMAGE, global_position)
 
     if burst_remaining <= 0:
         burst_pause = BURST_PAUSE
+
+func _spawn_bot_tracer(start_position: Vector3, end_position: Vector3) -> void:
+    # A brief, thin tracer makes incoming bot fire readable. It is a single
+    # shadow-free mesh, capped by its short lifetime, and skipped in low-spec.
+    if main == null or bool(main.get("low_spec_mode")):
+        return
+    var segment := end_position - start_position
+    var length := segment.length()
+    if length < 0.08:
+        return
+    var tracer := MeshInstance3D.new()
+    tracer.name = "BotShotTracer"
+    var tracer_mesh := CylinderMesh.new()
+    tracer_mesh.top_radius = 0.008
+    tracer_mesh.bottom_radius = 0.008
+    tracer_mesh.height = length
+    tracer.mesh = tracer_mesh
+    tracer.global_position = (start_position + end_position) * 0.5
+    tracer.quaternion = Quaternion(Vector3.UP, segment / length)
+    var tracer_material := StandardMaterial3D.new()
+    tracer_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    tracer_material.albedo_color = Color(1.0, 0.48, 0.20, 0.78)
+    tracer_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    tracer_material.emission_enabled = true
+    tracer_material.emission = Color(1.0, 0.24, 0.06)
+    tracer_material.emission_energy_multiplier = 1.35
+    tracer.material_override = tracer_material
+    tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    main.add_child(tracer)
+    get_tree().create_timer(0.075).timeout.connect(tracer.queue_free)
 
 func take_damage(amount: int, source_id: String = "player") -> void:
     if dead:
