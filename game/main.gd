@@ -2663,6 +2663,9 @@ func _apply_damage(amount: int, source_position: Vector3 = Vector3.INF) -> void:
         _kill_player()
 
 func _kill_player() -> void:
+    damage_direction_timer = 0.0
+    if damage_direction_indicator != null:
+        damage_direction_indicator.visible = false
     if objective_state == "CARRIED":
         objective_state = "DROPPED"
         bomb_carrier_peer_id = 0
