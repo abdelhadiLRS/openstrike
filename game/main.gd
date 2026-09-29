@@ -653,7 +653,7 @@ func _physics_process(delta: float) -> void:
     _update_hud()
 
 func _on_network_input_rejected(_peer_id: int, _command: OpenStrikeInputCommand) -> void:
-	network_diagnostics.record_rejected_input()
+    network_diagnostics.record_rejected_input()
 
 func _on_network_input_rejected_reason(_peer_id: int, _command: OpenStrikeInputCommand, reason: String) -> void:
 	network_diagnostics.record_rejection_reason(reason)
