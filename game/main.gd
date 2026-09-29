@@ -109,6 +109,9 @@ var objective_compass_a: Label
 var objective_compass_b: Label
 var network_debug_hud: Label
 var network_debug_visible := false
+var scoreboard_panel: PanelContainer
+var scoreboard_label: Label
+var scoreboard_visible := false
 var low_spec_mode := false
 var reduced_motion_mode := false
 var visual_environment: Environment
@@ -276,6 +279,7 @@ func _ready() -> void:
     _create_objective_compass()
     _create_elimination_feedback()
     _create_network_debug_hud()
+    _create_scoreboard_overlay()
     _start_round()
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -291,6 +295,11 @@ func _unhandled_input(event: InputEvent) -> void:
             network_debug_visible = not network_debug_visible
             if network_debug_hud != null:
                 network_debug_hud.visible = network_debug_visible
+        elif event.keycode == KEY_TAB:
+            scoreboard_visible = true
+            _update_scoreboard_overlay()
+            if scoreboard_panel != null:
+                scoreboard_panel.visible = true
         elif event.keycode == KEY_F4:
             low_spec_mode = not low_spec_mode
             _apply_visual_quality_mode()
@@ -329,6 +338,10 @@ func _unhandled_input(event: InputEvent) -> void:
                 pending_objective = true
             else:
                 _begin_objective_action()
+    elif event is InputEventKey and event.keycode == KEY_TAB and not event.pressed:
+        scoreboard_visible = false
+        if scoreboard_panel != null:
+            scoreboard_panel.visible = false
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not dead:
         Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -1886,6 +1899,76 @@ func _create_network_debug_hud() -> void:
     else:
         add_child(network_debug_hud)
 
+func _create_scoreboard_overlay() -> void:
+    scoreboard_panel = PanelContainer.new()
+    scoreboard_panel.name = "ScoreboardOverlay"
+    scoreboard_panel.set_anchors_preset(Control.PRESET_CENTER)
+    scoreboard_panel.position = Vector2(-260.0, -190.0)
+    scoreboard_panel.custom_minimum_size = Vector2(520.0, 380.0)
+    scoreboard_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    scoreboard_panel.visible = false
+    var style := StyleBoxFlat.new()
+    style.bg_color = Color(0.012, 0.025, 0.04, 0.94)
+    style.border_color = Color(0.10, 0.66, 0.78, 0.98)
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(10)
+    style.content_margin_left = 20.0
+    style.content_margin_right = 20.0
+    style.content_margin_top = 18.0
+    style.content_margin_bottom = 18.0
+    scoreboard_panel.add_theme_stylebox_override("panel", style)
+    scoreboard_label = Label.new()
+    scoreboard_label.name = "ScoreboardContent"
+    scoreboard_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    scoreboard_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+    scoreboard_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+    scoreboard_label.add_theme_font_size_override("font_size", 18)
+    scoreboard_label.add_theme_color_override("font_color", Color(0.88, 0.94, 0.98))
+    scoreboard_panel.add_child(scoreboard_label)
+    if hud_layer != null:
+        hud_layer.add_child(scoreboard_panel)
+    else:
+        add_child(scoreboard_panel)
+    _update_scoreboard_overlay()
+
+
+func _update_scoreboard_overlay() -> void:
+    if scoreboard_label == null:
+        return
+    var phase := round_state
+    if round_state == "POST":
+        phase = "VICTORY" if round_won else "DEFEAT"
+    var lines := PackedStringArray()
+    lines.append("OPENSTRIKE  /  MATCH SCOREBOARD")
+    lines.append("BLUE  %02d   —   %02d  RED" % [team_score, enemy_score])
+    lines.append("ROUND %02d   |   %s   |   %03d SEC" % [round_number, phase, ceili(round_state_time_left if round_state != "LIVE" else round_time_left)])
+    lines.append("")
+    lines.append("BLUE TEAM")
+    lines.append("YOU  ·  %s  ·  HP %03d  ·  $%04d" % ["DOWN" if dead else "ALIVE", maxi(0, health), credits])
+    var remote_count := 0
+    if network_session != null:
+        for peer_value in network_session.network_players.keys():
+            var remote = network_session.network_players.get(peer_value)
+            if not is_instance_valid(remote):
+                continue
+            remote_count += 1
+            lines.append("PLAYER #%d  ·  %s  ·  HP %03d" % [int(peer_value), "DOWN" if bool(remote.get("dead")) else "ALIVE", maxi(0, int(remote.get("health")))])
+    if remote_count == 0:
+        lines.append("NO CONNECTED BLUE PLAYERS")
+    lines.append("")
+    lines.append("RED TEAM  ·  %02d BOTS" % bots.size())
+    for bot in bots:
+        if not is_instance_valid(bot):
+            continue
+        var bot_id := int(bot.get("network_bot_id"))
+        if bot_id <= 0:
+            bot_id = int(bot.get("combat_slot")) + 1
+        lines.append("BOT #%02d  ·  %s  ·  HP %03d" % [bot_id, "DOWN" if bool(bot.get("dead")) else "ALIVE", maxi(0, int(bot.get("health")))])
+    lines.append("")
+    lines.append("HOLD TAB TO CLOSE")
+    scoreboard_label.text = "\n".join(lines)
+
+
 func _show_hit_feedback() -> void:
     hit_feedback_timer = 0.14
     if hit_marker != null:
@@ -1922,6 +2005,7 @@ func _update_combat_feedback() -> void:
 
 func _update_hud() -> void:
     _refresh_round_banner()
+    _update_scoreboard_overlay()
     var weapon := _current_weapon()
     var state := "CROUCH" if crouched else "STAND"
     var phase := round_state
