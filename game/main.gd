@@ -1435,7 +1435,13 @@ func _spawn_impact_mark(position: Vector3, surface_normal: Vector3) -> void:
     mark_mesh.height = 0.006
     mark.mesh = mark_mesh
     mark.global_position = position + normal * 0.012
-    mark.quaternion = Quaternion(Vector3.UP, normal)
+    # Small per-impact variation prevents repeated shots from stamping a
+    # perfectly identical pattern. Roll is around the surface normal, so the
+    # mark remains flush against floors, walls, and angled cover.
+    var impact_roll := randf_range(-PI, PI)
+    mark.quaternion = Quaternion(Vector3.UP, normal) * Quaternion(Vector3.UP, impact_roll)
+    var impact_scale := randf_range(0.84, 1.18)
+    mark.scale = Vector3.ONE * impact_scale
     mark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
     var material := StandardMaterial3D.new()
