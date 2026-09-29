@@ -1084,7 +1084,47 @@ func _hud() -> void:
     add_child(hud_layer)
 
 func _create_crosshair() -> void:
-    # Minimal four-piece reticle: screen-space only, with no physics or scene cost.
+    # Screen-space combat feedback is layered beneath the reticle and has no
+    # physics, particles, or dynamic-light cost.
+    crosshair_root = Control.new()
+    crosshair_root.name = "OpenStrikeCrosshair"
+    crosshair_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    crosshair_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud_layer.add_child(crosshair_root)
+
+    damage_flash = ColorRect.new()
+    damage_flash.name = "DamageFlash"
+    damage_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    damage_flash.color = Color(0.72, 0.035, 0.025, 0.0)
+    damage_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    crosshair_root.add_child(damage_flash)
+
+    hit_marker = Label.new()
+    hit_marker.name = "HitMarker"
+    hit_marker.text = "×"
+    hit_marker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    hit_marker.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    hit_marker.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    hit_marker.position = Vector2(-18.0, -24.0)
+    hit_marker.size = Vector2(36.0, 36.0)
+    hit_marker.add_theme_font_size_override("font_size", 32)
+    hit_marker.add_theme_color_override("font_color", Color(1.0, 0.88, 0.52, 1.0))
+    hit_marker.add_theme_color_override("font_outline_color", Color(0.02, 0.025, 0.03, 0.95))
+    hit_marker.add_theme_constant_override("outline_size", 3)
+    hit_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hit_marker.visible = false
+    crosshair_root.add_child(hit_marker)
+
+    for index in 5:
+        var segment := ColorRect.new()
+        segment.name = "ReticlePart%d" % index
+        segment.color = Color(0.78, 0.96, 1.0, 0.96) if index < 4 else Color(1.0, 0.68, 0.20, 1.0)
+        segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        crosshair_root.add_child(segment)
+        crosshair_segments.append(segment)
+    _update_crosshair()
+
+
     crosshair_root = Control.new()
     crosshair_root.name = "OpenStrikeCrosshair"
     crosshair_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1141,6 +1181,21 @@ func _create_network_debug_hud() -> void:
         hud_layer.add_child(network_debug_hud)
     else:
         add_child(network_debug_hud)
+
+func _show_hit_feedback() -> void:
+    hit_feedback_timer = 0.14
+    if hit_marker != null:
+        hit_marker.visible = true
+        hit_marker.modulate.a = 1.0
+
+func _update_combat_feedback() -> void:
+    if damage_flash != null:
+        var damage_alpha := clampf(damage_feedback_timer / 0.18, 0.0, 1.0) * 0.30
+        damage_flash.color = Color(0.72, 0.035, 0.025, damage_alpha)
+    if hit_marker != null:
+        hit_marker.visible = hit_feedback_timer > 0.0 and not dead
+        if hit_marker.visible:
+            hit_marker.modulate.a = clampf(hit_feedback_timer / 0.14, 0.0, 1.0)
 
 func _update_hud() -> void:
     var weapon := _current_weapon()
