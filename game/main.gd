@@ -3188,6 +3188,7 @@ func _world() -> void:
     _create_ceiling_cable_runs()
     _create_distant_skyline()
     _create_wall_signage()
+    _create_tactical_wall_displays()
     _create_wall_ventilation_details()
     _create_floor_grates()
     _create_floor_service_panels()
@@ -3577,6 +3578,64 @@ func _create_wall_signage() -> void:
             label.outline_modulate = Color(0.01, 0.02, 0.03, 0.98)
             label.shaded = false
             add_child(label)
+
+func _create_tactical_wall_displays() -> void:
+    # Wall-mounted operations displays give the arena a more deliberate
+    # industrial identity and reinforce the two-site layout. They are purely
+    # decorative meshes/labels: no collision, navigation, lights, or gameplay.
+    var frame_material := StandardMaterial3D.new()
+    frame_material.albedo_color = Color(0.075, 0.105, 0.13)
+    frame_material.metallic = 0.62
+    frame_material.roughness = 0.48
+
+    var screen_material := StandardMaterial3D.new()
+    screen_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    screen_material.albedo_color = Color(0.015, 0.045, 0.065)
+    screen_material.emission_enabled = true
+    screen_material.emission = Color(0.015, 0.085, 0.12)
+    screen_material.emission_energy_multiplier = 0.55
+
+    var cyan_material := StandardMaterial3D.new()
+    cyan_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    cyan_material.albedo_color = Color(0.08, 0.72, 0.92)
+    cyan_material.emission_enabled = true
+    cyan_material.emission = Color(0.025, 0.38, 0.62)
+    cyan_material.emission_energy_multiplier = 0.9
+
+    var amber_material := StandardMaterial3D.new()
+    amber_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    amber_material.albedo_color = Color(0.98, 0.58, 0.20)
+    amber_material.emission_enabled = true
+    amber_material.emission = Color(0.55, 0.20, 0.035)
+    amber_material.emission_energy_multiplier = 0.75
+
+    for side in [-1.0, 1.0]:
+        var center := Vector3(side * 17.34, 2.28, 0.0)
+        var inward := Vector3(-side * 0.085, 0.0, 0.0)
+        _visual_box(center, Vector3(0.16, 1.42, 2.85), frame_material)
+        _visual_box(center + inward, Vector3(0.055, 1.22, 2.63), screen_material)
+        _visual_box(center + inward + Vector3(0.0, 0.56, 0.0), Vector3(0.035, 0.045, 2.45), cyan_material)
+        _visual_box(center + inward + Vector3(0.0, -0.50, 0.0), Vector3(0.035, 0.035, 2.45), amber_material)
+        for index in range(5):
+            var bar_height := 0.10 + float((index * 3 + int(side + 1.0)) % 4) * 0.055
+            _visual_box(
+                center + inward + Vector3(0.0, -0.28 + bar_height * 0.5, -0.82 + float(index) * 0.40),
+                Vector3(0.035, bar_height, 0.13),
+                cyan_material if index % 2 == 0 else amber_material
+            )
+
+        var label := Label3D.new()
+        label.name = "OperationsDisplay_" + ("West" if side < 0.0 else "East")
+        label.text = "OPENSTRIKE  /  OPS\nSITE A   •   MID   •   SITE B"
+        label.position = center + inward + Vector3(-side * 0.035, 0.16, 0.0)
+        label.rotation.y = PI * 0.5 if side < 0.0 else -PI * 0.5
+        label.font_size = 24
+        label.pixel_size = 0.008
+        label.modulate = Color(0.62, 0.88, 0.96, 0.95)
+        label.outline_size = 5
+        label.outline_modulate = Color(0.005, 0.015, 0.025, 0.98)
+        label.shaded = false
+        add_child(label)
 
 func _create_wall_ventilation_details() -> void:
     # Recessed-looking vent panels and service conduits break up the long side
