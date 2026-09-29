@@ -3198,6 +3198,7 @@ func _world() -> void:
     _create_ambient_dust()
     _create_mid_lane_markings()
     _create_floor_panel_seams()
+    _create_floor_safety_markings()
     _create_spawn_wayfinding()
     _create_wall_ribs()
     _create_wall_light_fixtures()
@@ -3312,6 +3313,38 @@ func _create_floor_panel_seams() -> void:
         _visual_box(Vector3(0.0, 0.012, z), Vector3(27.0, 0.018, 0.12), service_material)
     for x in [-15.8, 15.8]:
         _visual_box(Vector3(x, 0.012, 0.0), Vector3(0.12, 0.018, 27.0), service_material)
+
+func _create_floor_safety_markings() -> void:
+    # High-contrast, low-profile hazard paint adds scale and industrial identity
+    # near the arena perimeter. These are visual-only strips: no collision,
+    # shadow casting, lighting, or navigation changes.
+    var hazard_material := StandardMaterial3D.new()
+    hazard_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    hazard_material.albedo_color = Color(0.88, 0.52, 0.16, 0.88)
+    hazard_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    hazard_material.roughness = 0.95
+
+    var dark_material := StandardMaterial3D.new()
+    dark_material.albedo_color = Color(0.055, 0.065, 0.075)
+    dark_material.roughness = 0.98
+
+    # Short paired warning bands frame the two ends of the central lane.
+    for z in [-14.4, 14.4]:
+        for index in range(9):
+            var x := -2.4 + float(index) * 0.6
+            var stripe := _visual_box(
+                Vector3(x, 0.022, z),
+                Vector3(0.28, 0.014, 0.72),
+                hazard_material
+            )
+            stripe.rotation.y = -0.30 if z < 0.0 else 0.30
+        _visual_box(Vector3(0.0, 0.019, z + (0.52 if z < 0.0 else -0.52)), Vector3(6.0, 0.012, 0.06), dark_material)
+
+    # Small corner ticks help players read the playable boundary in motion.
+    for side in [-1.0, 1.0]:
+        for z in [-10.0, 10.0]:
+            _visual_box(Vector3(side * 15.1, 0.02, z), Vector3(0.10, 0.014, 2.2), hazard_material)
+
 
 func _create_mid_lane_markings() -> void:
     # A restrained floor-stencil treatment gives the central combat lane a
