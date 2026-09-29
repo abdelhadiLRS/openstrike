@@ -178,6 +178,9 @@ const BOMB_EXPLOSION_EFFECT_DURATION := 0.85
 var site_beacon_materials: Array[StandardMaterial3D] = []
 var rotating_site_markers: Array[Node3D] = []
 var ventilation_fan_rotors: Array[Node3D] = []
+var ambient_dust_motes: Array[MeshInstance3D] = []
+var ambient_dust_origins: Array[Vector3] = []
+var ambient_dust_time := 0.0
 var site_beacon_time := 0.0
 var bomb_time_left := 0.0
 var objective_action := ""
@@ -320,6 +323,7 @@ func _process(delta: float) -> void:
     _update_site_beacon_pulse(delta)
     _update_rotating_site_markers(delta)
     _update_ventilation_fans(delta)
+    _update_ambient_dust(delta)
     _update_view_weapon_motion(delta)
     _update_crosshair()
     _update_objective_compass()
@@ -2751,6 +2755,7 @@ func _world() -> void:
     _setup_navigation_points()
     _setup_cover_points()
     _create_map_dressing()
+    _create_ambient_dust()
     _create_mid_lane_markings()
     _create_floor_panel_seams()
     _create_spawn_wayfinding()
@@ -3383,6 +3388,54 @@ func _update_ventilation_fans(delta: float) -> void:
 			rotor.rotate_z(delta * 0.48)
 
 
+func _create_ambient_dust() -> void:
+    # A small set of slow, translucent motes adds depth to the arena without
+    # a particle system, dynamic lights, shadows, or collision.
+    var mote_mesh := SphereMesh.new()
+    mote_mesh.radius = 0.018
+    mote_mesh.height = 0.036
+    var mote_material := StandardMaterial3D.new()
+    mote_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    mote_material.albedo_color = Color(0.48, 0.72, 0.86, 0.18)
+    mote_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    mote_material.emission_enabled = true
+    mote_material.emission = Color(0.12, 0.32, 0.42)
+    mote_material.emission_energy_multiplier = 0.22
+
+    for i in range(18):
+        var phase := float(i) * 2.399963
+        var origin := Vector3(
+            sin(phase) * 14.0,
+            0.45 + float(i % 6) * 0.48,
+            cos(phase) * 14.0
+        )
+        var mote := MeshInstance3D.new()
+        mote.name = "AmbientDustMote_%02d" % i
+        mote.mesh = mote_mesh
+        mote.material_override = mote_material
+        mote.position = origin
+        mote.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        mote.visible = not low_spec_mode
+        add_child(mote)
+        ambient_dust_motes.append(mote)
+        ambient_dust_origins.append(origin)
+
+func _update_ambient_dust(delta: float) -> void:
+    if low_spec_mode or ambient_dust_motes.is_empty():
+        return
+    ambient_dust_time = fmod(ambient_dust_time + delta, TAU)
+    for i in range(ambient_dust_motes.size()):
+        var mote := ambient_dust_motes[i]
+        if not is_instance_valid(mote):
+            continue
+        var origin: Vector3 = ambient_dust_origins[i]
+        var phase := ambient_dust_time * 0.42 + float(i) * 1.7
+        mote.position = origin + Vector3(
+            sin(phase) * 0.16,
+            sin(phase * 0.73) * 0.12,
+            cos(phase * 0.61) * 0.14
+        )
+
 func _create_visual_environment() -> void:
     var environment_node := WorldEnvironment.new()
     environment_node.name = "OpenStrikeWorldEnvironment"
@@ -3459,6 +3512,9 @@ func _apply_visual_quality_mode() -> void:
         visual_environment.ambient_light_energy = 0.78 if low_spec_mode else 0.62
     if is_instance_valid(map_key_light):
         map_key_light.shadow_enabled = not low_spec_mode
+    for mote in ambient_dust_motes:
+        if is_instance_valid(mote):
+            mote.visible = not low_spec_mode
 
 
 func _create_map_dressing() -> void:
