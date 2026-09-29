@@ -119,6 +119,8 @@ var map_key_light: DirectionalLight3D
 var view_weapon_root: Node3D
 var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
+var view_weapon_look_input := Vector2.ZERO
+var view_weapon_look_sway := Vector2.ZERO
 var camera_bob_time := 0.0
 var camera_bob_offset := Vector2.ZERO
 var camera_roll_current := 0.0
@@ -288,6 +290,7 @@ func _unhandled_input(event: InputEvent) -> void:
         player.rotate_y(-event.relative.x * SENS)
         pitch = clamp(pitch - event.relative.y * SENS, -1.45, 1.45)
         pending_look_delta += event.relative
+        view_weapon_look_input += event.relative
     elif event is InputEventKey and event.pressed and not event.echo:
         if event.keycode == KEY_ESCAPE:
             Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -402,6 +405,17 @@ func _update_view_weapon_motion(delta: float) -> void:
         # without changing aim direction, movement, or network state.
         var target_fov := CAMERA_BASE_FOV + (0.0 if reduced_motion_mode else speed_ratio * (1.8 if not crouched else 0.6)) + camera_fov_kick
         camera.fov = lerpf(camera.fov, target_fov, minf(delta * 8.0, 1.0))
+    # The weapon lags slightly behind quick camera turns, then settles smoothly.
+    # This is viewmodel-only, is disabled by reduced-motion mode, and never
+    # feeds back into camera aim, hit registration, or network state.
+    var look_target := Vector2.ZERO
+    if not reduced_motion_mode:
+        look_target = Vector2(
+            clampf(-view_weapon_look_input.x * 0.00075, -0.028, 0.028),
+            clampf(view_weapon_look_input.y * 0.00055, -0.020, 0.020)
+        )
+    view_weapon_look_sway = view_weapon_look_sway.lerp(look_target, minf(delta * 13.0, 1.0))
+    view_weapon_look_input = Vector2.ZERO
     var bob_y := absf(sin(view_weapon_bob_time)) * bob_amount
     var sway_x := 0.0 if reduced_motion_mode else clampf(-local_velocity.x * 0.006, -0.035, 0.035)
     # Gentle idle breathing keeps the weapon from looking frozen while standing.
@@ -414,13 +428,13 @@ func _update_view_weapon_motion(delta: float) -> void:
     var crouch_weapon_drop := 0.055 if crouched else 0.0
     var crouch_weapon_roll := 0.045 if crouched else 0.0
     var target_position := view_weapon_base_position + Vector3(
-        sway_x + bob_x + idle_sway_x + 0.12 * inspect_amount,
-        bob_y + idle_sway_y - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
+        sway_x + bob_x + idle_sway_x + view_weapon_look_sway.x + 0.12 * inspect_amount,
+        bob_y + idle_sway_y + view_weapon_look_sway.y - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
         view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount + 0.08 * switch_amount
     )
     var target_rotation := Vector3(
         sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + landing_camera_kick * 0.55,
-        0.38 * inspect_amount,
+        -view_weapon_look_sway.x * 0.55 + 0.38 * inspect_amount,
         (0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + crouch_weapon_roll + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
     )
     view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
