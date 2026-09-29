@@ -1056,7 +1056,7 @@ func _spawn_shell_casing() -> void:
     var tween := create_tween().set_parallel(true)
     tween.tween_property(casing, "global_position", end_position, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
     tween.tween_property(casing, "rotation", casing.rotation + Vector3(5.2, 3.6, 7.0), 0.62)
-    tween.tween_property(casing, "modulate:a", 0.0, 0.24).set_delay(0.34)
+    tween.tween_property(casing, "scale", Vector3.ZERO, 0.22).set_delay(0.40)
     tween.finished.connect(casing.queue_free)
 
 func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color) -> void:
