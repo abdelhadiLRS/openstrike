@@ -393,3 +393,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Industrial overhead gantry
 - The arena now has a raised perimeter gantry with cyan edge strips and repeating support braces, giving the graybox a stronger industrial silhouette and clearer upper-wall framing.
 - The gantry uses lightweight render-only meshes with shadows disabled; it does not add collision or change player movement, cover, or bot navigation.
+
+### Industrial side-wall detailing
+- Added low-poly ventilation panels, repeated metal louvers, cyan status strips, and ceiling-level service conduits along the side walls.
+- All additions are render-only: no new collision shapes, dynamic lights, or navigation changes. The details are designed to add depth while keeping the arena lightweight on integrated graphics.
