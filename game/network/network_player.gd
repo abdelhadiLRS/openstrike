@@ -414,10 +414,11 @@ func _build_visual() -> void:
 	armor_material.albedo_color = Color(0.075, 0.12, 0.16)
 	armor_material.metallic = 0.08
 	armor_material.roughness = 0.88
+	var team_color := Color(0.08, 0.62, 0.92) if team == "BLUE" else Color(0.92, 0.25, 0.12)
 	var trim_material := StandardMaterial3D.new()
-	trim_material.albedo_color = Color(0.08, 0.48, 0.78)
+	trim_material.albedo_color = team_color
 	trim_material.emission_enabled = true
-	trim_material.emission = Color(0.015, 0.12, 0.30)
+	trim_material.emission = team_color * 0.30
 	trim_material.emission_energy_multiplier = 0.45
 	trim_material.roughness = 0.72
 	var skin_material := StandardMaterial3D.new()
@@ -429,9 +430,17 @@ func _build_visual() -> void:
 	dark_material.roughness = 0.86
 
 	_add_visual_box(Vector3(0.0, 0.02, -0.015), Vector3(0.56, 0.48, 0.34), armor_material)
+	# Colored chest stripe and shoulder identifiers improve team readability at
+	# a glance while remaining part of the render-only avatar silhouette.
+	_add_visual_box(Vector3(0.0, 0.12, -0.194), Vector3(0.42, 0.075, 0.045), trim_material)
 	_add_visual_box(Vector3(0.0, 0.29, -0.205), Vector3(0.50, 0.12, 0.055), trim_material)
 	_add_visual_box(Vector3(-0.34, 0.19, 0.0), Vector3(0.22, 0.24, 0.30), armor_material)
 	_add_visual_box(Vector3(0.34, 0.19, 0.0), Vector3(0.22, 0.24, 0.30), armor_material)
+	_add_visual_box(Vector3(-0.35, 0.19, -0.16), Vector3(0.16, 0.12, 0.055), trim_material)
+	_add_visual_box(Vector3(0.35, 0.19, -0.16), Vector3(0.16, 0.12, 0.055), trim_material)
+	# A compact rear equipment pack and belt break up the capsule-like torso.
+	_add_visual_box(Vector3(0.0, 0.02, 0.205), Vector3(0.36, 0.36, 0.16), armor_material)
+	_add_visual_box(Vector3(0.0, -0.245, -0.19), Vector3(0.48, 0.075, 0.055), dark_material)
 	_add_visual_box(Vector3(-0.35, -0.16, -0.01), Vector3(0.16, 0.42, 0.18), dark_material)
 	_add_visual_box(Vector3(0.35, -0.16, -0.01), Vector3(0.16, 0.42, 0.18), dark_material)
 	_add_visual_box(Vector3(-0.16, -0.63, 0.015), Vector3(0.22, 0.42, 0.26), armor_material)
