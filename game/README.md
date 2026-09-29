@@ -87,6 +87,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Bottom-corner HUD bars display current health and magazine/reserve ammunition; the health fill shifts from green to amber/red at low health, and the ammo fill warns when the magazine is nearly empty.
 - Lightweight north-up tactical minimap in the upper-right corner shows the player's heading, A/B sites, and the dropped/planted bomb; it deliberately does not reveal enemy positions and uses only CanvasItem drawing.
 - Minimal crosshair and hit feedback
+- Animated center-top round transition banner announces BUY, LIVE, VICTORY, and DEFEAT states with a brief fade/scale cue; screen-space only and does not affect gameplay.
 - Center reticle shifts to red when a damageable enemy is under the crosshair and cyan when a friendly is targeted; target checks are throttled to 12.5 Hz and do not affect hit registration or aim.
 - Player eliminations trigger a brief amber `ELIMINATION +$300` confirmation banner with a short scale/fade animation; it is HUD-only and does not affect combat or rewards.
 - Planting, defusing, and planted-bomb urgency now show a compact bottom-center progress bar with action-specific color; the HUD cue is screen-space only and adds no world geometry or lighting.
