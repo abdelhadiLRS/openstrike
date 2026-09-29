@@ -46,6 +46,17 @@ func _build_particles() -> void:
     process_material.scale_max = 1.1
     process_material.damping_min = 0.01
     process_material.damping_max = 0.04
+
+    # Fade each mote in and out over its lifetime so the dust reads as soft
+    # atmospheric depth instead of a constant-opacity square sprite.
+    var dust_gradient := Gradient.new()
+    dust_gradient.set_color(0, Color(0.72, 0.82, 0.9, 0.0))
+    dust_gradient.add_point(0.18, Color(0.72, 0.82, 0.9, 0.12))
+    dust_gradient.add_point(0.72, Color(0.72, 0.82, 0.9, 0.10))
+    dust_gradient.set_color(1, Color(0.72, 0.82, 0.9, 0.0))
+    var dust_ramp := GradientTexture1D.new()
+    dust_ramp.gradient = dust_gradient
+    process_material.color_ramp = dust_ramp
     particles.process_material = process_material
 
     var quad := QuadMesh.new()
