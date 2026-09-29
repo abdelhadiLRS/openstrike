@@ -2680,6 +2680,7 @@ func _world() -> void:
     _create_wall_ribs()
     _create_wall_light_fixtures()
     _create_overhead_gantry()
+    _create_ceiling_light_banks()
     _create_distant_skyline()
     _create_wall_signage()
     _create_wall_ventilation_details()
@@ -2694,6 +2695,39 @@ func _world() -> void:
     _create_bomb_visual()
     _create_bomb_explosion_visual()
 
+
+
+func _create_ceiling_light_banks() -> void:
+    # Ceiling-level industrial light banks add a stronger arena silhouette.
+    # They are emissive, shadow-free meshes only: no dynamic lights, collision,
+    # particles, or navigation changes, keeping the effect friendly to iGPUs.
+    var housing_material := StandardMaterial3D.new()
+    housing_material.albedo_color = Color(0.045, 0.065, 0.085)
+    housing_material.metallic = 0.38
+    housing_material.roughness = 0.66
+
+    var diffuser_material := StandardMaterial3D.new()
+    diffuser_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    diffuser_material.albedo_color = Color(0.34, 0.76, 0.88)
+    diffuser_material.emission_enabled = true
+    diffuser_material.emission = Color(0.12, 0.48, 0.72)
+    diffuser_material.emission_energy_multiplier = 1.15
+
+    var amber_material := StandardMaterial3D.new()
+    amber_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    amber_material.albedo_color = Color(0.95, 0.58, 0.20)
+    amber_material.emission_enabled = true
+    amber_material.emission = Color(0.62, 0.22, 0.045)
+    amber_material.emission_energy_multiplier = 0.75
+
+    for index in range(5):
+        var z := -12.0 + float(index) * 6.0
+        _visual_box(Vector3(0.0, 3.72, z), Vector3(12.8, 0.16, 0.72), housing_material)
+        _visual_box(Vector3(0.0, 3.625, z), Vector3(11.6, 0.035, 0.24), diffuser_material)
+        # Small amber end caps distinguish the fixture banks without adding
+        # extra lights or competing with the A/B objective colors.
+        for side in [-1.0, 1.0]:
+            _visual_box(Vector3(side * 6.15, 3.625, z), Vector3(0.32, 0.04, 0.30), amber_material)
 
 
 func _create_floor_panel_seams() -> void:
