@@ -426,7 +426,9 @@ func _trigger_bot_muzzle_flash() -> void:
         muzzle_smoke.scale = Vector3(0.35, 0.28, 0.48) * randf_range(0.88, 1.12)
         muzzle_smoke.position = Vector3(0.18, -0.02, -1.16) + Vector3(randf_range(-0.015, 0.015), 0.0, randf_range(-0.025, 0.025))
         if is_instance_valid(muzzle_smoke_material):
-            muzzle_smoke_material.albedo_color.a = 0.20
+            var smoke_color: Color = muzzle_smoke_material.albedo_color
+            smoke_color.a = 0.20
+            muzzle_smoke_material.albedo_color = smoke_color
     # Slight shot-to-shot variation gives AI fire a less repetitive visual burst.
     muzzle_flash.scale = Vector3(0.65, 0.75, 1.65) * randf_range(0.88, 1.16)
     muzzle_flash.rotation = Vector3(randf_range(-0.08, 0.08), randf_range(-0.12, 0.12), randf_range(-0.18, 0.18))
