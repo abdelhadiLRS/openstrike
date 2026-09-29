@@ -83,6 +83,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Bottom-corner HUD bars display current health and magazine/reserve ammunition; the health fill shifts from green to amber/red at low health, and the ammo fill warns when the magazine is nearly empty.
 - Lightweight north-up tactical minimap in the upper-right corner shows the player's heading, A/B sites, and the dropped/planted bomb; it deliberately does not reveal enemy positions and uses only CanvasItem drawing.
 - Minimal crosshair and hit feedback
+- Center reticle shifts to red when a damageable enemy is under the crosshair and cyan when a friendly is targeted; target checks are throttled to 12.5 Hz and do not affect hit registration or aim.
 - Player eliminations trigger a brief amber `ELIMINATION +$300` confirmation banner with a short scale/fade animation; it is HUD-only and does not affect combat or rewards.
 - Planting, defusing, and planted-bomb urgency now show a compact bottom-center progress bar with action-specific color; the HUD cue is screen-space only and adds no world geometry or lighting.
 - Hit confirmation now shows a brief centered marker that fades and scales down with a quick impact pulse; taking damage produces a short, restrained red screen flash. Both effects are screen-space UI only and use no particles or dynamic lights.
@@ -107,7 +108,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F3: toggle the network diagnostics overlay (NetGraph)
 - F4: toggle visual quality between HIGH (fog + directional shadows, lower ambient fill) and LOW (fog/shadows off, brighter ambient fill) while playing
 - Tactical minimap: north-up orientation; cyan arrow is you, amber/cyan markers are Sites A/B, and the red marker identifies a dropped or planted bomb.
-- Dynamic center reticle: expands with movement and recoil, tightens while crouched
+- Dynamic center reticle: expands with movement and recoil, tightens while crouched, and changes color for friendly/enemy targets
 - Landing feedback: a short, decaying camera and viewmodel dip on touchdown adds weight to jumps and drops; it is visual-only and does not alter movement or network state.
 
 This prototype uses original code and procedurally generated geometry. It does not use Counter-Strike proprietary code or assets.
