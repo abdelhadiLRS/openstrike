@@ -178,6 +178,7 @@ var bomb_explosion_effect_timer := 0.0
 const BOMB_EXPLOSION_EFFECT_DURATION := 0.85
 var site_beacon_materials: Array[StandardMaterial3D] = []
 var rotating_site_markers: Array[Node3D] = []
+var site_marker_materials: Dictionary = {}
 var ventilation_fan_rotors: Array[Node3D] = []
 var ambient_dust_motes: Array[MeshInstance3D] = []
 var ambient_dust_origins: Array[Vector3] = []
@@ -3791,15 +3792,16 @@ func _create_site_beacons() -> void:
         add_child(site_label)
 
 func _create_rotating_site_markers() -> void:
-    # Slow, elevated twin bars make each objective site identifiable at a glance.
-    # These are render-only markers: no collision, physics, or dynamic lights.
+    # Elevated twin bars identify each site and change state when the bomb is
+    # planted. Materials are shared per site; no lights, collision, or physics.
     var specs := [
-        {"position": BOMB_SITE_A, "color": Color(1.0, 0.54, 0.16)},
-        {"position": BOMB_SITE_B, "color": Color(0.10, 0.72, 0.98)}
+        {"id": "A", "position": BOMB_SITE_A, "color": Color(1.0, 0.54, 0.16)},
+        {"id": "B", "position": BOMB_SITE_B, "color": Color(0.10, 0.72, 0.98)}
     ]
     for spec in specs:
         var marker := Node3D.new()
-        marker.name = "RotatingSiteMarker_" + ("A" if spec["position"] == BOMB_SITE_A else "B")
+        var site_id := str(spec["id"])
+        marker.name = "RotatingSiteMarker_" + site_id
         marker.position = spec["position"] + Vector3(0.0, 3.15, 0.0)
         var material := StandardMaterial3D.new()
         material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -3807,6 +3809,7 @@ func _create_rotating_site_markers() -> void:
         material.emission_enabled = true
         material.emission = spec["color"] * 0.7
         material.emission_energy_multiplier = 1.0
+        site_marker_materials[site_id] = material
         for angle in [0.0, PI * 0.5]:
             var bar := MeshInstance3D.new()
             var bar_mesh := BoxMesh.new()
@@ -3820,9 +3823,33 @@ func _create_rotating_site_markers() -> void:
         rotating_site_markers.append(marker)
 
 func _update_rotating_site_markers(delta: float) -> void:
+    var planted := objective_state == "PLANTED"
+    var pulse := (sin(Time.get_ticks_msec() / 1000.0 * 5.5) + 1.0) * 0.5
     for marker in rotating_site_markers:
-        if is_instance_valid(marker):
-            marker.rotation.y = fmod(marker.rotation.y + delta * 0.38, TAU)
+        if not is_instance_valid(marker):
+            continue
+        marker.rotation.y = fmod(marker.rotation.y + delta * (0.62 if planted else 0.38), TAU)
+        var site_id := "A" if marker.name.ends_with("_A") else "B"
+        var material: StandardMaterial3D = site_marker_materials.get(site_id)
+        if not is_instance_valid(material):
+            continue
+        if planted and site_id == planted_site:
+            # The active plant site switches to urgent red and pulses faster
+            # as a persistent, distant-readable objective cue.
+            var urgency := clampf(1.0 - bomb_time_left / BOMB_TIME, 0.0, 1.0)
+            material.albedo_color = Color(1.0, 0.16 + pulse * 0.16, 0.08)
+            material.emission = Color(1.0, 0.08 + pulse * 0.12, 0.025)
+            material.emission_energy_multiplier = 1.25 + urgency * 1.25 + pulse * 0.55
+        elif planted:
+            var base_color: Color = Color(1.0, 0.54, 0.16) if site_id == "A" else Color(0.10, 0.72, 0.98)
+            material.albedo_color = base_color.darkened(0.48)
+            material.emission = base_color * 0.22
+            material.emission_energy_multiplier = 0.45
+        else:
+            var base_color: Color = Color(1.0, 0.54, 0.16) if site_id == "A" else Color(0.10, 0.72, 0.98)
+            material.albedo_color = base_color
+            material.emission = base_color * 0.7
+            material.emission_energy_multiplier = 1.0
 
 func _update_site_beacon_pulse(delta: float) -> void:
     if site_beacon_materials.is_empty():
