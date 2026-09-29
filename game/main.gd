@@ -525,7 +525,12 @@ func _update_view_weapon_motion(delta: float) -> void:
     if reduced_motion_mode:
         sprint_amount = 0.0
     sprint_amount *= 1.0 - aim_blend
-    var aim_offset := Vector3(-0.23, 0.13, 0.23)
+    # Give the rifle and sidearm distinct ADS alignments: the rifle settles
+    # farther toward its reflex optic, while the pistol uses a shorter, lower
+    # presentation. This is viewmodel-only; camera aim and hit registration
+    # remain unchanged.
+    var is_rifle_ads := str(_current_weapon().get("id", "")) == "ar_17"
+    var aim_offset := Vector3(-0.23, 0.13, 0.23) if is_rifle_ads else Vector3(-0.16, 0.085, 0.15)
     var target_position := view_weapon_base_position + aim_offset * aim_blend + Vector3(
         (sway_x + bob_x + idle_sway_x + view_weapon_look_sway.x + 0.12 * inspect_amount + 0.035 * inspect_twist) * (1.0 - aim_blend),
         (bob_y + idle_sway_y + view_weapon_look_sway.y) * (1.0 - aim_blend) - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount - 0.035 * inspect_twist + 0.18 * switch_amount - landing_camera_kick * 0.45 - 0.065 * sprint_amount,
