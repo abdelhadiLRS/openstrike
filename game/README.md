@@ -88,6 +88,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Switching weapons now uses a short eased dip-and-roll animation, including authoritative weapon changes received by network clients; the transition is cosmetic and does not delay firing or alter weapon state.
 - Accepted local shots eject a small brass casing with subtle per-shot variation in its ejection path and spin; casings fade quickly, are capped at 12 active instances, and use no collision, rigid bodies, particles, shadows, or extra lights.
 - First-person weapon silhouettes now include low-poly barrel tubes, muzzle collars, top rails, and contrasting iron sights; all viewmodel parts are visual-only and cast no shadows
+- First-person AR-17 and PX-9 viewmodels now add weapon-specific silhouette details: a reinforced rifle stock and handguard vents, plus a framed pistol trigger guard and side grip panels; all details are camera-only, shadow-free, and non-colliding.
 - The AR-17 first-person model now includes a compact reflex optic with a subtle emissive dot; it is cosmetic only and does not change aiming or hit registration.
 - First-person muzzle flashes now use a brief emissive core with a compact four-ray starburst, improving shot readability without particles, extra lights, or physics.
 - Team-colored spawn-side floor bands, modular concrete seams, and objective approach chevrons improve spatial orientation without changing collision or bot navigation
