@@ -157,6 +157,9 @@ const VIEW_WEAPON_INSPECT_DURATION := 1.10
 const VIEW_WEAPON_SWITCH_DURATION := 0.30
 var muzzle_flash: MeshInstance3D
 var muzzle_flash_timer := 0.0
+var muzzle_smoke_puffs: Array[Dictionary] = []
+const MAX_MUZZLE_SMOKE_PUFFS := 3
+const MUZZLE_SMOKE_DURATION := 0.20
 var shell_casing_material: StandardMaterial3D
 var shell_casings: Array[MeshInstance3D] = []
 const MAX_SHELL_CASINGS := 12
@@ -422,6 +425,7 @@ func _process(delta: float) -> void:
     _update_ventilation_fans(delta)
     _update_ambient_dust(delta)
     _update_landing_dust(delta)
+    _update_muzzle_smoke(delta)
     _update_view_weapon_motion(delta)
     _update_crosshair()
     _update_objective_compass()
@@ -6048,6 +6052,62 @@ func _trigger_muzzle_flash() -> void:
     muzzle_flash_timer = 0.060 if is_rifle else 0.042
     view_weapon_recoil = maxf(view_weapon_recoil, 0.075)
     muzzle_flash.visible = true
+    _spawn_muzzle_smoke()
+
+
+func _spawn_muzzle_smoke() -> void:
+    # A short, viewmodel-only smoke wisp adds a softer tail after the flash.
+    # It is capped, shadowless, and disabled in low-spec mode.
+    if low_spec_mode or not is_instance_valid(view_weapon_root):
+        return
+    while muzzle_smoke_puffs.size() >= MAX_MUZZLE_SMOKE_PUFFS:
+        var oldest: Dictionary = muzzle_smoke_puffs.pop_front()
+        var old_mesh = oldest.get("mesh")
+        if is_instance_valid(old_mesh):
+            old_mesh.queue_free()
+
+    var puff := MeshInstance3D.new()
+    puff.name = "MuzzleSmokePuff"
+    var puff_mesh := SphereMesh.new()
+    puff_mesh.radius = 0.075
+    puff_mesh.height = 0.15
+    puff_mesh.radial_segments = 8
+    puff_mesh.rings = 4
+    puff.mesh = puff_mesh
+    puff.position = Vector3(0.0, 0.015, -0.91 if str(_current_weapon().get("id", "")) == "ar_17" else -0.57)
+    puff.scale = Vector3(0.38, 0.30, 0.52)
+    var smoke_material := StandardMaterial3D.new()
+    smoke_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    smoke_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    smoke_material.albedo_color = Color(0.40, 0.43, 0.46, 0.22)
+    smoke_material.roughness = 1.0
+    puff.material_override = smoke_material
+    puff.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    view_weapon_root.add_child(puff)
+    muzzle_smoke_puffs.append({"mesh": puff, "material": smoke_material, "age": 0.0})
+
+
+func _update_muzzle_smoke(delta: float) -> void:
+    for index in range(muzzle_smoke_puffs.size() - 1, -1, -1):
+        var puff_data: Dictionary = muzzle_smoke_puffs[index]
+        var puff = puff_data.get("mesh")
+        var smoke_material = puff_data.get("material")
+        if not is_instance_valid(puff) or not is_instance_valid(smoke_material):
+            muzzle_smoke_puffs.remove_at(index)
+            continue
+        var age := float(puff_data.get("age", 0.0)) + delta
+        puff_data["age"] = age
+        var progress := clampf(age / MUZZLE_SMOKE_DURATION, 0.0, 1.0)
+        puff.scale = Vector3(0.38, 0.30, 0.52).lerp(Vector3(1.10, 0.82, 1.35), progress)
+        puff.position.y = 0.015 + progress * 0.045
+        var color: Color = smoke_material.albedo_color
+        color.a = 0.22 * (1.0 - progress)
+        smoke_material.albedo_color = color
+        muzzle_smoke_puffs[index] = puff_data
+        if progress >= 1.0:
+            puff.queue_free()
+            muzzle_smoke_puffs.remove_at(index)
+
 
 func _view_cylinder(pos: Vector3, radius: float, height: float, material: StandardMaterial3D) -> void:
     var mesh_instance := MeshInstance3D.new()
