@@ -66,6 +66,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - First-person weapon viewmodels now include low-poly tactical sleeves, cuffs, and gloves positioned around the grip and fore-end; they are visual-only, shadow-free, and add no collision or physics.
 - First-person weapon motion adds restrained movement bob, lateral counter-sway, and a short recoil kick; the animation is visual-only and uses no extra physics or lights
 - First-person camera adds a restrained walking bob and lateral sway, scaled down while crouching; it is cosmetic and does not alter player movement or network state
+- Camera field of view widens slightly with movement and gives a brief, restrained pulse on accepted shots; the effect is cosmetic, smoothly eased, and does not change aim, movement, or network state.
 - Pressing T plays a short eased weapon-inspection gesture with a gentle tilt and dip; it is cosmetic, does not block firing or change weapon state, and adds no physics, particles, or lights.
 - Reloading now dips and rolls the first-person weapon through a short, eased motion; it is visual-only and adds no physics, particles, or lights.
 - Switching weapons now uses a short eased dip-and-roll animation, including authoritative weapon changes received by network clients; the transition is cosmetic and does not delay firing or alter weapon state.
