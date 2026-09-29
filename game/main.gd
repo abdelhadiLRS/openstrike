@@ -5220,6 +5220,17 @@ func _refresh_view_weapon() -> void:
     _view_box(Vector3(0.0, 0.105, 0.055), Vector3(0.12, 0.055, 0.16 if is_rifle else 0.09), grip_material)
     _view_box(Vector3(0.025, -0.13, 0.055), Vector3(0.105, 0.22 if is_rifle else 0.17, 0.13), grip_material)
     _view_box(Vector3(0.0, -0.13, 0.005), Vector3(0.12, 0.18, 0.13), body_material)
+    # Materials are declared before both weapon branches so the optic and
+    # later receiver details share valid, stable material references.
+    var detail_material := StandardMaterial3D.new()
+    detail_material.albedo_color = Color(0.32, 0.39, 0.43) if is_rifle else Color(0.40, 0.43, 0.45)
+    detail_material.metallic = 0.72
+    detail_material.roughness = 0.34
+    var dark_detail_material := StandardMaterial3D.new()
+    dark_detail_material.albedo_color = Color(0.025, 0.032, 0.038)
+    dark_detail_material.metallic = 0.18
+    dark_detail_material.roughness = 0.86
+
     if is_rifle:
         _view_box(Vector3(0.0, -0.005, 0.30), Vector3(0.13, 0.12, 0.28), grip_material)
         _view_box(Vector3(0.0, 0.14, -0.02), Vector3(0.09, 0.07, 0.10), accent_material)
@@ -5263,15 +5274,6 @@ func _refresh_view_weapon() -> void:
 
     # Fine receiver details improve the first-person silhouette while keeping
     # the weapon fully procedural, low-poly, and free of extra physics.
-    var detail_material := StandardMaterial3D.new()
-    detail_material.albedo_color = Color(0.32, 0.39, 0.43) if is_rifle else Color(0.40, 0.43, 0.45)
-    detail_material.metallic = 0.72
-    detail_material.roughness = 0.34
-    var dark_detail_material := StandardMaterial3D.new()
-    dark_detail_material.albedo_color = Color(0.025, 0.032, 0.038)
-    dark_detail_material.metallic = 0.18
-    dark_detail_material.roughness = 0.86
-
     if is_rifle:
         # Top rail notches and side receiver plates.
         for rail_index in range(6):
