@@ -1125,21 +1125,6 @@ func _create_crosshair() -> void:
     _update_crosshair()
 
 
-    crosshair_root = Control.new()
-    crosshair_root.name = "OpenStrikeCrosshair"
-    crosshair_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    crosshair_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    hud_layer.add_child(crosshair_root)
-
-    for index in 5:
-        var segment := ColorRect.new()
-        segment.name = "ReticlePart%d" % index
-        segment.color = Color(0.78, 0.96, 1.0, 0.96) if index < 4 else Color(1.0, 0.68, 0.20, 1.0)
-        segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
-        crosshair_root.add_child(segment)
-        crosshair_segments.append(segment)
-    _update_crosshair()
-
 
 func _update_crosshair() -> void:
     if crosshair_root == null or crosshair_segments.size() < 5:
