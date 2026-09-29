@@ -16,6 +16,27 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	queue_redraw()
 
+func _process(_delta: float) -> void:
+	var game_root := get_tree().current_scene
+	if game_root == null:
+		return
+	var player_value = game_root.get("player")
+	if not is_instance_valid(player_value):
+		return
+	var objective_state := str(game_root.get("objective_state"))
+	var show_bomb := objective_state == "DROPPED" or objective_state == "PLANTED"
+	var objective_position: Vector3 = game_root.get("dropped_bomb_position")
+	if objective_state == "PLANTED":
+		var site := str(game_root.get("planted_site"))
+		objective_position = Vector3(-10.0, 0.0, -7.0) if site == "A" else Vector3(10.0, 0.0, 7.0)
+	set_match_state(
+		player_value.global_position,
+		player_value.rotation.y,
+		objective_position,
+		show_bomb,
+		str(game_root.get("planted_site"))
+	)
+
 func set_match_state(
 	position_value: Vector3,
 	yaw_value: float,
