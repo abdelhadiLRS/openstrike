@@ -51,6 +51,7 @@ var visual_root: Node3D
 var weapon_visual_root: Node3D
 var rifle_visual: Node3D
 var pistol_visual: Node3D
+var ally_health_fill: MeshInstance3D
 
 func _physics_process(delta: float) -> void:
 	_update_visual_pose(delta)
@@ -182,6 +183,7 @@ func begin_round(start_position: Vector3) -> void:
 	respawn_timer = 0.0
 	crouched = false
 	primary_owned = false
+	_update_ally_health_bar()
 	weapon_id = "px_9"
 	for state in weapon_states.values():
 		if state is OpenStrikeWeaponRuntimeState:
@@ -203,12 +205,14 @@ func begin_respawn(start_position: Vector3) -> void:
 	dead = false
 	respawn_timer = 0.0
 	crouched = false
+	_update_ally_health_bar()
 	_select_weapon("px_9")
 	_sync_active_weapon()
 
 func mark_eliminated() -> void:
 	dead = true
 	health = 0
+	_update_ally_health_bar()
 	velocity = Vector3.ZERO
 	respawn_timer = RESPAWN_DELAY
 
@@ -341,6 +345,7 @@ func apply_snapshot(snapshot: OpenStrikeSnapshot) -> void:
 	velocity = snapshot.velocity
 	health = snapshot.health
 	dead = snapshot.dead
+	_update_ally_health_bar()
 	crouched = snapshot.crouched
 	weapon_id = snapshot.weapon_id if not snapshot.weapon_id.is_empty() else weapon_id
 	_update_weapon_visual()
@@ -489,6 +494,33 @@ func _build_visual() -> void:
 	ally_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	visual_root.add_child(ally_tag)
 
+	# A compact health strip sits just above the ally identifier. It is depth
+	# tested, only exists on friendly remote avatars, and reflects authoritative
+	# health without exposing enemy health or changing combat state.
+	var ally_health_back := MeshInstance3D.new()
+	ally_health_back.name = "AllyHealthBack"
+	var ally_health_back_mesh := BoxMesh.new()
+	ally_health_back_mesh.size = Vector3(0.72, 0.055, 0.025)
+	ally_health_back.mesh = ally_health_back_mesh
+	ally_health_back.position = Vector3(0.0, 1.40, 0.0)
+	var ally_health_back_material := StandardMaterial3D.new()
+	ally_health_back_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ally_health_back_material.albedo_color = Color(0.015, 0.025, 0.035, 0.92)
+	ally_health_back_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ally_health_back.material_override = ally_health_back_material
+	ally_health_back.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	visual_root.add_child(ally_health_back)
+
+	ally_health_fill = MeshInstance3D.new()
+	ally_health_fill.name = "AllyHealthFill"
+	var ally_health_fill_mesh := BoxMesh.new()
+	ally_health_fill_mesh.size = Vector3(0.68, 0.032, 0.03)
+	ally_health_fill.mesh = ally_health_fill_mesh
+	ally_health_fill.position = Vector3(0.0, 1.40, -0.018)
+	ally_health_fill.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	visual_root.add_child(ally_health_fill)
+	_update_ally_health_bar()
+
 	# Weapon silhouettes now follow the authoritative weapon ID, so a remote
 	# player visibly carries the pistol or rifle actually selected in the match.
 	weapon_visual_root = Node3D.new()
@@ -511,6 +543,21 @@ func _build_visual() -> void:
 	_add_weapon_box(pistol_visual, Vector3(0.20, -0.135, -0.27), Vector3(0.085, 0.19, 0.105), dark_material)
 	_add_weapon_box(pistol_visual, Vector3(0.20, 0.055, -0.30), Vector3(0.075, 0.035, 0.22), armor_material)
 	_update_weapon_visual()
+
+func _update_ally_health_bar() -> void:
+	if not is_instance_valid(ally_health_fill):
+		return
+	var ratio := clampf(float(health) / 100.0, 0.0, 1.0)
+	ally_health_fill.visible = not dead and ratio > 0.0
+	ally_health_fill.scale.x = maxf(0.001, ratio)
+	ally_health_fill.position.x = -0.34 * (1.0 - ratio)
+	var fill_material := ally_health_fill.material_override as StandardMaterial3D
+	if fill_material == null:
+		fill_material = StandardMaterial3D.new()
+		fill_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		ally_health_fill.material_override = fill_material
+	fill_material.albedo_color = Color(0.22, 0.88, 0.54, 1.0) if ratio > 0.55 else (Color(1.0, 0.65, 0.20, 1.0) if ratio > 0.25 else Color(1.0, 0.22, 0.16, 1.0))
+
 
 func _update_weapon_visual() -> void:
 	if not is_instance_valid(rifle_visual) or not is_instance_valid(pistol_visual):
