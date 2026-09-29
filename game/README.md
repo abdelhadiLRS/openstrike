@@ -425,6 +425,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - The markings are render-only and cast no shadows; they do not alter collision, movement, cover, or bot navigation.
 
 ### Visual combat feedback
+- Hard-surface bullet impacts now emit a brief three-ray amber spark burst around the existing scorch mark; it fades in 0.22 seconds and uses only capped, shadow-free meshes (no particles, lights, or collision).
 - Player and host shots now render a short-lived, emissive tracer from the firing camera toward the first raycast impact (or a capped distant endpoint).
 - Incoming bot fire now displays a short-lived red direction arrow around the reticle, pointing toward the attacker; the cue fades quickly and does not affect aim, damage, or network simulation.
 - Rifle and sidearm tracers use distinct cool/amber tints. The effect is visual-only and uses a tiny temporary mesh rather than particles or dynamic lights.
