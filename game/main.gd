@@ -1908,7 +1908,7 @@ func _update_network_debug_hud() -> void:
         reason_text = "\nReject reasons: " + ", ".join(entries.slice(0, 4))
     var fps := Engine.get_frames_per_second()
     var frame_ms := 1000.0 / maxf(1.0, float(fps))
-    network_debug_hud.text = "NETGRAPH [%s]  FPS %d  FRAME %.1f ms\\nTX %d  RX %d  ACK %d  PENDING %d\\nREJECT %d  RXDROP %d  ROSTER %d  GAPS %d  CORR %d  TICK %d%s" % [
+    network_debug_hud.text = "NETGRAPH [%s]  FPS %d  FRAME %.1f ms\nTX %d  RX %d  ACK %d  PENDING %d\nREJECT %d  RXDROP %d  ROSTER %d  GAPS %d  CORR %d  TICK %d%s" % [
         mode,
         fps,
         frame_ms,
