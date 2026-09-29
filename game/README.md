@@ -129,6 +129,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F6: toggle compact HUD mode to hide the large match-information panel while keeping health, ammo, crosshair, and objective cues visible.
 - F7: toggle the tactical minimap in the upper-right corner.
 - F8: cycle the camera field of view through 75°, 85°, and 95°; the selected preset also applies while aiming down sights, with the existing ADS zoom offset preserved.
+- F9: toggle clean-screen mode to hide the HUD for clean screenshots or visual inspection; press F9 again to restore it.
 - F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway (including mouse-look counter-sway), strafe-linked camera roll, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay; a brief on-screen notice confirms ON/OFF
 - Tactical minimap: north-up orientation; cyan arrow is you, blue dots are living allies, amber/cyan markers are Sites A/B, and the red marker identifies a dropped or planted bomb. Enemy positions are never shown.
 - Dynamic center reticle: expands with movement and recoil, tightens while crouched and smoothly contracts/dims its outer bars while aiming down sights; it changes color for friendly/enemy targets. ADS reticle styling is cosmetic and does not alter weapon spread or hit registration.
