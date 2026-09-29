@@ -160,6 +160,12 @@ var dropped_bomb_position := Vector3.ZERO
 var bomb_visual: MeshInstance3D
 var bomb_light: OmniLight3D
 var bomb_status_material: StandardMaterial3D
+var bomb_explosion_core: MeshInstance3D
+var bomb_explosion_ring: MeshInstance3D
+var bomb_explosion_core_material: StandardMaterial3D
+var bomb_explosion_ring_material: StandardMaterial3D
+var bomb_explosion_effect_timer := 0.0
+const BOMB_EXPLOSION_EFFECT_DURATION := 0.85
 var site_beacon_materials: Array[StandardMaterial3D] = []
 var rotating_site_markers: Array[Node3D] = []
 var site_beacon_time := 0.0
@@ -303,6 +309,7 @@ func _process(delta: float) -> void:
     _update_crosshair()
     _update_objective_compass()
     _update_elimination_feedback(delta)
+    _update_bomb_explosion_effect(delta)
 
 func _update_view_weapon_motion(delta: float) -> void:
     if not is_instance_valid(view_weapon_root) or not is_instance_valid(player):
@@ -497,6 +504,7 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     if snapshot == null:
         return
     var was_dead := dead
+    var previous_objective_state := objective_state
     var previous_round_number := round_number
     network_diagnostics.record_snapshot(snapshot.peer_id, snapshot.tick, snapshot.round_number, snapshot.acknowledged_input_sequence)
     var acknowledged_sequence := mini(snapshot.acknowledged_input_sequence, input_sequence)
@@ -530,6 +538,8 @@ func _on_authoritative_snapshot(snapshot: OpenStrikeSnapshot) -> void:
     round_won = snapshot.round_won
     round_outcome_reason = snapshot.round_outcome_reason
     objective_state = snapshot.objective_state
+    if previous_objective_state != "EXPLODED" and objective_state == "EXPLODED":
+        _trigger_bomb_explosion_visual(snapshot.dropped_bomb_position if snapshot.planted_site == "" else (bomb_site_a if snapshot.planted_site == "A" else bomb_site_b))
     planted_site = snapshot.planted_site
     bomb_time_left = snapshot.bomb_time_left
     bomb_carrier_peer_id = snapshot.carrier_peer_id
@@ -806,6 +816,7 @@ func _update_objective(delta: float) -> void:
         _update_bot_defuse(delta)
 
         if bomb_time_left <= 0.0:
+            _trigger_bomb_explosion_visual(bomb_site_a if planted_site == "A" else bomb_site_b)
             objective_state = "EXPLODED"
             _request_round_outcome(true, "BOMB_EXPLODED")
             return
@@ -2656,6 +2667,7 @@ func _world() -> void:
     _objective_site(BOMB_SITE_A, "A")
     _objective_site(BOMB_SITE_B, "B")
     _create_bomb_visual()
+    _create_bomb_explosion_visual()
 
 
 
@@ -3418,6 +3430,75 @@ func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> M
     mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(mesh_instance)
     return mesh_instance
+
+func _create_bomb_explosion_visual() -> void:
+    # A tiny mesh-only blast cue avoids particle simulation and collision work.
+    bomb_explosion_core = MeshInstance3D.new()
+    bomb_explosion_core.name = "BombExplosionCore"
+    var core_mesh := SphereMesh.new()
+    core_mesh.radius = 0.8
+    core_mesh.height = 1.6
+    bomb_explosion_core.mesh = core_mesh
+    bomb_explosion_core_material = StandardMaterial3D.new()
+    bomb_explosion_core_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    bomb_explosion_core_material.albedo_color = Color(1.0, 0.34, 0.08, 0.72)
+    bomb_explosion_core_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    bomb_explosion_core_material.emission_enabled = true
+    bomb_explosion_core_material.emission = Color(1.0, 0.16, 0.025)
+    bomb_explosion_core_material.emission_energy_multiplier = 2.2
+    bomb_explosion_core.material_override = bomb_explosion_core_material
+    bomb_explosion_core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    bomb_explosion_core.visible = false
+    add_child(bomb_explosion_core)
+
+    bomb_explosion_ring = MeshInstance3D.new()
+    bomb_explosion_ring.name = "BombExplosionRing"
+    var ring_mesh := TorusMesh.new()
+    ring_mesh.inner_radius = 0.72
+    ring_mesh.outer_radius = 0.88
+    bomb_explosion_ring.mesh = ring_mesh
+    bomb_explosion_ring.rotation.x = PI * 0.5
+    bomb_explosion_ring_material = StandardMaterial3D.new()
+    bomb_explosion_ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    bomb_explosion_ring_material.albedo_color = Color(1.0, 0.58, 0.18, 0.9)
+    bomb_explosion_ring_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    bomb_explosion_ring_material.emission_enabled = true
+    bomb_explosion_ring_material.emission = Color(1.0, 0.28, 0.04)
+    bomb_explosion_ring_material.emission_energy_multiplier = 2.8
+    bomb_explosion_ring.material_override = bomb_explosion_ring_material
+    bomb_explosion_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    bomb_explosion_ring.visible = false
+    add_child(bomb_explosion_ring)
+
+func _trigger_bomb_explosion_visual(position: Vector3) -> void:
+    if not is_instance_valid(bomb_explosion_core) or not is_instance_valid(bomb_explosion_ring):
+        return
+    bomb_explosion_effect_timer = BOMB_EXPLOSION_EFFECT_DURATION
+    bomb_explosion_core.global_position = position + Vector3(0.0, 0.65, 0.0)
+    bomb_explosion_ring.global_position = position + Vector3(0.0, 0.12, 0.0)
+    bomb_explosion_core.scale = Vector3.ONE * 0.25
+    bomb_explosion_ring.scale = Vector3.ONE * 0.35
+    bomb_explosion_core.visible = true
+    bomb_explosion_ring.visible = true
+    bomb_explosion_core_material.albedo_color.a = 0.72
+    bomb_explosion_ring_material.albedo_color.a = 0.9
+
+func _update_bomb_explosion_effect(delta: float) -> void:
+    if bomb_explosion_effect_timer <= 0.0:
+        return
+    bomb_explosion_effect_timer = maxf(0.0, bomb_explosion_effect_timer - delta)
+    var progress := 1.0 - bomb_explosion_effect_timer / BOMB_EXPLOSION_EFFECT_DURATION
+    var fade := 1.0 - progress
+    if is_instance_valid(bomb_explosion_core):
+        bomb_explosion_core.scale = Vector3.ONE * lerpf(0.25, 4.0, progress)
+        bomb_explosion_core_material.albedo_color.a = 0.72 * fade
+        bomb_explosion_core_material.emission_energy_multiplier = 2.2 * fade
+        bomb_explosion_core.visible = bomb_explosion_effect_timer > 0.0
+    if is_instance_valid(bomb_explosion_ring):
+        bomb_explosion_ring.scale = Vector3.ONE * lerpf(0.35, 5.5, progress)
+        bomb_explosion_ring_material.albedo_color.a = 0.9 * fade
+        bomb_explosion_ring_material.emission_energy_multiplier = 2.8 * fade
+        bomb_explosion_ring.visible = bomb_explosion_effect_timer > 0.0
 
 func _create_bomb_visual() -> void:
     bomb_visual = MeshInstance3D.new()
