@@ -2518,6 +2518,7 @@ func _world() -> void:
     _setup_cover_points()
     _create_map_dressing()
     _create_mid_lane_markings()
+    _create_floor_panel_seams()
     _create_spawn_wayfinding()
     _create_wall_ribs()
     _create_wall_light_fixtures()
@@ -2533,6 +2534,29 @@ func _world() -> void:
     _create_bomb_visual()
 
 
+
+func _create_floor_panel_seams() -> void:
+    # Fine concrete expansion joints break up the broad gray floor plane.
+    # These are shallow render-only strips: no collider, shadow, or navigation cost.
+    var seam_material := StandardMaterial3D.new()
+    seam_material.albedo_color = Color(0.105, 0.125, 0.145)
+    seam_material.roughness = 0.98
+    seam_material.metallic = 0.02
+
+    # Main slab joints, with short cross-joints to suggest modular floor panels.
+    for z in [-12.0, -8.0, -4.0, 4.0, 8.0, 12.0]:
+        _visual_box(Vector3(0.0, 0.009, z), Vector3(31.5, 0.012, 0.035), seam_material)
+    for x in [-12.0, -8.0, -4.0, 4.0, 8.0, 12.0]:
+        _visual_box(Vector3(x, 0.009, 0.0), Vector3(0.035, 0.012, 31.5), seam_material)
+
+    # Small inset service strips near the perimeter add scale and direction cues.
+    var service_material := StandardMaterial3D.new()
+    service_material.albedo_color = Color(0.19, 0.23, 0.26)
+    service_material.roughness = 0.86
+    for z in [-15.8, 15.8]:
+        _visual_box(Vector3(0.0, 0.012, z), Vector3(27.0, 0.018, 0.12), service_material)
+    for x in [-15.8, 15.8]:
+        _visual_box(Vector3(x, 0.012, 0.0), Vector3(0.12, 0.018, 27.0), service_material)
 
 func _create_mid_lane_markings() -> void:
     # A restrained floor-stencil treatment gives the central combat lane a
