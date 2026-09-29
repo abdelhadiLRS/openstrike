@@ -285,7 +285,9 @@ var red_spawn_points := [
 ]
 
 func _ready() -> void:
-    low_spec_mode = OS.get_cmdline_user_args().has("--low-spec")
+    var launch_args := OS.get_cmdline_user_args()
+    low_spec_mode = launch_args.has("--low-spec")
+    balanced_visual_mode = launch_args.has("--balanced-visual") and not low_spec_mode
     _configure_bot_count_from_command_line()
     _load_weapon_catalog()
     combat_events = OpenStrikeCombatEvents.new()
