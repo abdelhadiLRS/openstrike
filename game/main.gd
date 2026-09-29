@@ -2520,7 +2520,7 @@ func _world() -> void:
     _create_mid_lane_markings()
     _create_spawn_wayfinding()
     _create_wall_ribs()
-_create_wall_light_fixtures()
+    _create_wall_light_fixtures()
     _create_overhead_gantry()
     _create_wall_signage()
     _create_floor_grates()
