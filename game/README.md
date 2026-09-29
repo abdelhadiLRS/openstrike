@@ -93,6 +93,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - First-person AR-17 and PX-9 viewmodels now add weapon-specific silhouette details: a reinforced rifle stock and handguard vents, plus a framed pistol trigger guard and side grip panels; all details are camera-only, shadow-free, and non-colliding.
 - The AR-17 first-person model now includes a compact reflex optic with a subtle emissive dot; it is cosmetic only and does not change aiming or hit registration.
 - First-person muzzle flashes now use a brief emissive core with a compact four-ray starburst, improving shot readability without particles, extra lights, or physics.
+- AR-17 and PX-9 now use distinct muzzle-flash signatures: the rifle has a brighter white-hot core and slightly longer burst, while the pistol uses a tighter amber flash; both remain camera-only, shadow-free, and free of extra lights or particles.
 - Team-colored spawn-side floor bands, modular concrete seams, and objective approach chevrons improve spatial orientation without changing collision or bot navigation
 - Blue and red deployment wall signs plus matching inward-facing floor guide bars make the starting sides easier to identify; they are render-only and do not alter collision, cover, or navigation.
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
