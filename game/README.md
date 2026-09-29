@@ -68,6 +68,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - New ceiling-level industrial light banks use emissive cyan diffusers with amber end caps; the fixture meshes are shadow-free and add no dynamic lights, collision, or navigation cost.
 - Paired overhead service conduits, support clamps, and small junction housings add layered industrial detail above the lanes; all are shadow-free visual meshes with no lights, collision, or navigation impact.
 - Industrial perimeter wall panels, hazard accents on cover, and segmented cyan/amber emissive perimeter strips around both objective sites (visual-only; no collision or navigation changes)
+- New compact cyan/amber perimeter warning beacons add depth to the industrial wall silhouette; emissive meshes only, with no dynamic lights, shadows, collision, or navigation cost.
 - New wall-mounted sector plaques with numbered wayfinding labels and restrained cyan/amber accents; render-only and non-colliding.
 - Team-colored blue/red deployment chevrons now mark the first movement lanes from each spawn side; they are emissive floor meshes with no collision, shadow, or navigation impact.
 - RED combatants use a layered low-poly silhouette with vest, head, helmet, and a readable team-color band
