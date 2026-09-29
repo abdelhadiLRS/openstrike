@@ -59,6 +59,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Bomb recovery uses a tighter pickup radius than the plant/defuse site radius
 - Damageable combat units
 - Procedural graybox training range with cool ambient lighting and directional shadows
+- Ambient GPU dust now fades smoothly across each particle's lifetime, softening the arena atmosphere without adding collision, lights, or shadow work; F4 low-spec mode still disables the layer.
 - Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
 - New ceiling-level industrial light banks use emissive cyan diffusers with amber end caps; the fixture meshes are shadow-free and add no dynamic lights, collision, or navigation cost.
 - Paired overhead service conduits, support clamps, and small junction housings add layered industrial detail above the lanes; all are shadow-free visual meshes with no lights, collision, or navigation impact.
