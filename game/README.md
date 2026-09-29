@@ -80,7 +80,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - First-person weapon viewmodels now respond to quick mouse turns with a subtle eased counter-sway and settle; the effect is cosmetic, tightly capped, and disabled by reduced-motion mode.
 - First-person camera adds a very subtle, eased roll while strafing; the effect is capped at a small angle, disabled by reduced-motion mode, and does not change aim, movement, or network state.
 - Camera field of view widens slightly with movement and gives a brief, restrained pulse on accepted shots; the effect is cosmetic, smoothly eased, and does not change aim, movement, or network state.
-- Pressing T plays a short eased weapon-inspection gesture with a gentle tilt and dip; it is cosmetic, does not block firing or change weapon state, and adds no physics, particles, or lights.
+- Pressing T plays a short eased weapon-inspection gesture with a staged turn-and-return twist, tilt, and dip; it is cosmetic, does not block firing or change weapon state, and adds no physics, particles, or lights.
 - Reloading now dips and rolls the first-person weapon through a short, eased motion; it is visual-only and adds no physics, particles, or lights.
 - Switching weapons now uses a short eased dip-and-roll animation, including authoritative weapon changes received by network clients; the transition is cosmetic and does not delay firing or alter weapon state.
 - Accepted local shots eject a small brass casing with subtle per-shot variation in its ejection path and spin; casings fade quickly, are capped at 12 active instances, and use no collision, rigid bodies, particles, shadows, or extra lights.
