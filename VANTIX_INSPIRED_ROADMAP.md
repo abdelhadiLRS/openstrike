@@ -58,6 +58,21 @@ The current arena has a coherent procedural industrial look, but it is still a g
 - Compare HIGH, BALANCED, and LOW at the same map locations and during sustained combat; record frame time and memory before increasing visual complexity.
 - Each asset pass must preserve movement, collision, bot navigation, weapon alignment, and authoritative multiplayer state. Treat screenshots and an in-engine smoke test as required review artifacts before calling the art pass complete.
 
+## Visual status snapshot (2026-09-29)
+
+### Implemented in the procedural prototype
+- Arena readability: labeled A/B sites, mid-lane markings/signage, deployment guides, sector plaques, and team-colored wayfinding.
+- Industrial dressing: gantry, service conduits, wall panels, operations displays, ventilation details, and restrained status accents.
+- Combat readability: distinct weapon tracers/muzzle flashes, impact cues, damage feedback, ally identification, and a minimap that does not expose enemy positions.
+- Presentation controls: HIGH/BALANCED/LOW quality profiles, reduced-motion mode, FOV presets, clean-screen mode, and compact HUD.
+- Lightweight implementation constraints: decorative meshes avoid collision/navigation changes; temporary effects are capped or short-lived where applicable.
+
+### Still required before calling the visuals production-ready
+- A cohesive authored modular environment kit and original character/weapon assets.
+- Material/texture atlas pass with consistent texel density and PBR response.
+- Lighting and readability review across all three quality profiles.
+- Captured in-engine screenshots and measured frame-time/memory comparisons on low-spec hardware.
+
 ## Delivery sequence
 
 ### Phase 0 — Stability and boundaries
