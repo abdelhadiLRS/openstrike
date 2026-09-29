@@ -98,6 +98,8 @@ var network_debug_visible := false
 var view_weapon_root: Node3D
 var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
+var camera_bob_time := 0.0
+var camera_bob_offset := Vector2.ZERO
 var view_weapon_recoil := 0.0
 var view_weapon_reload_timer := 0.0
 var view_weapon_inspect_timer := 0.0
@@ -296,6 +298,19 @@ func _update_view_weapon_motion(delta: float) -> void:
     var inspect_amount := sin(clampf(inspect_phase, 0.0, 1.0) * PI)
     var bob_amount := speed_ratio * (0.012 if not crouched else 0.006)
     var bob_x := cos(view_weapon_bob_time * 0.5) * bob_amount * 0.65
+
+    # Subtle camera head-bob and lateral sway make movement feel grounded.
+    # The offset is cosmetic and remains local to the first-person camera.
+    camera_bob_time += delta * (2.0 + speed_ratio * (7.0 if not crouched else 5.0))
+    var camera_bob_strength := speed_ratio * (0.024 if not crouched else 0.010)
+    var camera_target_offset := Vector2(
+        -local_velocity.x * 0.0018 + sin(camera_bob_time * 0.5) * camera_bob_strength * 0.32,
+        absf(sin(camera_bob_time)) * camera_bob_strength
+    )
+    camera_bob_offset = camera_bob_offset.lerp(camera_target_offset, minf(delta * 8.0, 1.0))
+    if is_instance_valid(camera):
+        camera.position.x = camera_bob_offset.x
+        camera.position.y = (CROUCH_CAMERA_Y if crouched else STAND_CAMERA_Y) + camera_bob_offset.y
     var bob_y := absf(sin(view_weapon_bob_time)) * bob_amount
     var sway_x := clampf(-local_velocity.x * 0.006, -0.035, 0.035)
     var target_position := view_weapon_base_position + Vector3(
