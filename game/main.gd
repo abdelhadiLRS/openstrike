@@ -422,6 +422,9 @@ func _update_view_weapon_motion(delta: float) -> void:
     var switch_phase := 1.0 - view_weapon_switch_timer / VIEW_WEAPON_SWITCH_DURATION
     var switch_amount := sin(clampf(switch_phase, 0.0, 1.0) * PI)
     var inspect_amount := sin(clampf(inspect_phase, 0.0, 1.0) * PI)
+    # A small second-phase twist gives the inspection gesture a deliberate
+    # turn-and-return silhouette while remaining entirely viewmodel-only.
+    var inspect_twist := sin(clampf(inspect_phase, 0.0, 1.0) * TAU)
     var bob_amount := 0.0 if reduced_motion_mode else speed_ratio * (0.012 if not crouched else 0.006)
     var bob_x := cos(view_weapon_bob_time * 0.5) * bob_amount * 0.65
 
@@ -471,14 +474,14 @@ func _update_view_weapon_motion(delta: float) -> void:
     var crouch_weapon_roll := 0.045 if crouched else 0.0
     var aim_offset := Vector3(-0.23, 0.13, 0.23)
     var target_position := view_weapon_base_position + aim_offset * aim_blend + Vector3(
-        (sway_x + bob_x + idle_sway_x + view_weapon_look_sway.x + 0.12 * inspect_amount) * (1.0 - aim_blend),
-        (bob_y + idle_sway_y + view_weapon_look_sway.y) * (1.0 - aim_blend) - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
+        (sway_x + bob_x + idle_sway_x + view_weapon_look_sway.x + 0.12 * inspect_amount + 0.035 * inspect_twist) * (1.0 - aim_blend),
+        (bob_y + idle_sway_y + view_weapon_look_sway.y) * (1.0 - aim_blend) - crouch_weapon_drop - 0.20 * reload_amount - 0.10 * inspect_amount - 0.035 * inspect_twist + 0.18 * switch_amount - landing_camera_kick * 0.45,
         view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount + 0.08 * switch_amount
     )
     var target_rotation := Vector3(
-        sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + landing_camera_kick * 0.55,
-        -view_weapon_look_sway.x * 0.55 + 0.38 * inspect_amount,
-        ((0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + crouch_weapon_roll) * (1.0 - aim_blend) + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
+        sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + 0.05 * inspect_twist + landing_camera_kick * 0.55,
+        -view_weapon_look_sway.x * 0.55 + 0.38 * inspect_amount + 0.14 * inspect_twist,
+        ((0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + crouch_weapon_roll) * (1.0 - aim_blend) + 0.22 * reload_amount - 0.48 * inspect_amount - 0.10 * inspect_twist + 0.22 * switch_amount
     )
     view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
     view_weapon_root.rotation = view_weapon_root.rotation.lerp(target_rotation, minf(delta * 9.0, 1.0))
