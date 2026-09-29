@@ -4893,6 +4893,12 @@ func _box(pos: Vector3, size: Vector3, color: Color) -> void:
     var mat := StandardMaterial3D.new()
     mat.albedo_color = color
     mesh.material_override = mat
+    # The arena floor uses a subtle world-space procedural concrete finish.
+    # It is a single shader material with no textures, extra geometry, or lights.
+    if pos == Vector3(0, -0.5, 0) and size == Vector3(36, 1, 36):
+        var floor_material := ShaderMaterial.new()
+        floor_material.shader = preload("res://shaders/concrete_floor.gdshader")
+        mesh.material_override = floor_material
     var shape := CollisionShape3D.new()
     var collision := BoxShape3D.new()
     collision.size = size
