@@ -121,6 +121,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 - Two edge drainage grates and rear service panels add a restrained industrial floor finish; all parts are mesh-only, cast no shadows, and do not alter collision or navigation.
 
 - Both bomb sites now have four low-cost emissive corner beacons and a matching center marker: cool cyan for Site A and amber for Site B.
+- Floating billboarded `SITE A / ALPHA` and `SITE B / BRAVO` labels make both objectives readable from different approach angles; labels use outlined `Label3D` text and add no collision or dynamic lights.
 - First-person AR-17/PX-9 viewmodels now emit a brief, unlit emissive muzzle flash on accepted shots; the effect uses a single visual mesh and a short timer, with no particles or extra dynamic lights.
 - The beacons are visual-only meshes with shadows disabled; they do not add collision, navigation obstacles, or gameplay effects.
 
