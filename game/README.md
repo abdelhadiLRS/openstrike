@@ -128,7 +128,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F: hold to plant/defuse the bomb at an objective site
 - ESC: release mouse
 - F3: toggle the network diagnostics overlay (NetGraph)
-- F4: cycle visual quality through HIGH, LOW, and BALANCED presets while playing; a brief on-screen notice confirms the active preset.
+- F4: cycle visual quality through HIGH → BALANCED → LOW → HIGH presets while playing; a brief on-screen notice confirms the active preset.
 - TAB (hold): show the live match scoreboard with team score, round/time, player status, credits, and bot health
 - F6: toggle compact HUD mode to hide the large match-information panel while keeping health, ammo, crosshair, and objective cues visible.
 - F7: toggle the tactical minimap in the upper-right corner.
