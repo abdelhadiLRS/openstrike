@@ -64,6 +64,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Paired overhead service conduits, support clamps, and small junction housings add layered industrial detail above the lanes; all are shadow-free visual meshes with no lights, collision, or navigation impact.
 - Industrial perimeter wall panels, hazard accents on cover, and concentric objective-site floor rings (visual-only; no collision or navigation changes)
 - New wall-mounted sector plaques with numbered wayfinding labels and restrained cyan/amber accents; render-only and non-colliding.
+- Team-colored blue/red deployment chevrons now mark the first movement lanes from each spawn side; they are emissive floor meshes with no collision, shadow, or navigation impact.
 - RED combatants use a layered low-poly silhouette with vest, head, helmet, and a readable team-color band
 - RED bot arms and legs now use a restrained alternating stride animation while moving; only render meshes rotate, while the capsule collider and gameplay/network transforms remain unchanged.
 - RED bots now have a faint, staggered idle-breathing motion that fades while moving; it affects only the visual rig and does not change hitboxes, collision, or network state.
