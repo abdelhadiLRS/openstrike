@@ -74,6 +74,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - First-person weapon motion adds restrained movement bob, lateral counter-sway, and a short recoil kick; the animation is visual-only and uses no extra physics or lights
 - Crouching lowers and gently rolls the first-person weapon to match the reduced stance; the eased viewmodel adjustment is cosmetic and does not change aim, hit registration, collision, or network state.
 - First-person camera adds a restrained walking bob and lateral sway, scaled down while crouching; it is cosmetic and does not alter player movement or network state
+- First-person weapon viewmodels now respond to quick mouse turns with a subtle eased counter-sway and settle; the effect is cosmetic, tightly capped, and disabled by reduced-motion mode.
 - First-person camera adds a very subtle, eased roll while strafing; the effect is capped at a small angle, disabled by reduced-motion mode, and does not change aim, movement, or network state.
 - Camera field of view widens slightly with movement and gives a brief, restrained pulse on accepted shots; the effect is cosmetic, smoothly eased, and does not change aim, movement, or network state.
 - Pressing T plays a short eased weapon-inspection gesture with a gentle tilt and dip; it is cosmetic, does not block firing or change weapon state, and adds no physics, particles, or lights.
@@ -116,7 +117,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F3: toggle the network diagnostics overlay (NetGraph)
 - F4: toggle visual quality between HIGH (fog + directional shadows, lower ambient fill) and LOW (fog/shadows off, brighter ambient fill) while playing
 - TAB (hold): show the live match scoreboard with team score, round/time, player status, credits, and bot health
-- F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway, strafe-linked camera roll, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay
+- F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway (including mouse-look counter-sway), strafe-linked camera roll, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay
 - Tactical minimap: north-up orientation; cyan arrow is you, amber/cyan markers are Sites A/B, and the red marker identifies a dropped or planted bomb.
 - Dynamic center reticle: expands with movement and recoil, tightens while crouched, and changes color for friendly/enemy targets
 - Landing feedback: a short, decaying camera and viewmodel dip on touchdown adds weight to jumps and drops; it is visual-only and does not alter movement or network state.
