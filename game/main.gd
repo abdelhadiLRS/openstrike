@@ -2067,6 +2067,7 @@ func _world() -> void:
     _setup_navigation_points()
     _setup_cover_points()
     _create_map_dressing()
+    _create_floor_grates()
     _create_cover_visual_details()
     _create_site_beacons()
     _spawn_bots()
@@ -2074,6 +2075,46 @@ func _world() -> void:
     _objective_site(BOMB_SITE_B, "B")
     _create_bomb_visual()
 
+
+
+func _create_floor_grates() -> void:
+    # Decorative drainage grates add industrial surface detail at the arena edges.
+    # They are mesh-only and intentionally do not affect collision or navigation.
+    var frame_material := StandardMaterial3D.new()
+    frame_material.albedo_color = Color(0.055, 0.075, 0.09)
+    frame_material.metallic = 0.62
+    frame_material.roughness = 0.58
+
+    var slat_material := StandardMaterial3D.new()
+    slat_material.albedo_color = Color(0.19, 0.23, 0.27)
+    slat_material.metallic = 0.48
+    slat_material.roughness = 0.72
+
+    for x in [-13.0, 13.0]:
+        var center := Vector3(x, 0.025, 0.0)
+        # Outer rails and end caps.
+        _visual_box(center + Vector3(-1.45, 0.0, 0.0), Vector3(0.07, 0.045, 2.0), frame_material)
+        _visual_box(center + Vector3(1.45, 0.0, 0.0), Vector3(0.07, 0.045, 2.0), frame_material)
+        _visual_box(center + Vector3(0.0, 0.0, -0.97), Vector3(2.9, 0.045, 0.07), frame_material)
+        _visual_box(center + Vector3(0.0, 0.0, 0.97), Vector3(2.9, 0.045, 0.07), frame_material)
+        # Parallel metal slats sit flush with the floor and remain non-colliding.
+        for slat in range(1, 10):
+            var offset_x := -1.3 + float(slat) * 0.26
+            _visual_box(
+                center + Vector3(offset_x, 0.012, 0.0),
+                Vector3(0.045, 0.028, 1.82),
+                slat_material
+            )
+
+    # Small inset service panels near the rear wall break up the empty corners.
+    for x in [-10.0, 10.0]:
+        _visual_box(Vector3(x, 0.025, -13.0), Vector3(1.5, 0.035, 0.85), frame_material)
+        for offset in [-0.42, -0.14, 0.14, 0.42]:
+            _visual_box(
+                Vector3(x + offset, 0.048, -13.0),
+                Vector3(0.035, 0.018, 0.72),
+                slat_material
+            )
 
 func _create_cover_visual_details() -> void:
     # Visual-only face plates make the existing cover read as modular arena
