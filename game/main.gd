@@ -2077,11 +2077,21 @@ func _create_visual_environment() -> void:
     var environment_node := WorldEnvironment.new()
     environment_node.name = "OpenStrikeWorldEnvironment"
     var environment := Environment.new()
-    environment.background_mode = Environment.BG_COLOR
-    environment.background_color = Color(0.055, 0.075, 0.105)
-    environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    environment.ambient_light_color = Color(0.48, 0.58, 0.72)
-    environment.ambient_light_energy = 0.72
+    # Procedural sky gives the arena a real horizon and a consistent cool
+    # daylight gradient while staying asset-free and compatible with GLES3.
+    var sky := Sky.new()
+    var sky_material := ProceduralSkyMaterial.new()
+    sky_material.sky_top_color = Color(0.055, 0.12, 0.22)
+    sky_material.sky_horizon_color = Color(0.42, 0.53, 0.64)
+    sky_material.ground_bottom_color = Color(0.075, 0.09, 0.11)
+    sky_material.ground_horizon_color = Color(0.28, 0.34, 0.40)
+    sky_material.sun_angle_max = 18.0
+    sky_material.use_debanding = true
+    sky.sky_material = sky_material
+    environment.background_mode = Environment.BG_SKY
+    environment.sky = sky
+    environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+    environment.ambient_light_energy = 0.62
     environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     # A light atmospheric haze softens distant wall edges while keeping the
     # compact arena readable; restrained grading separates cool concrete
