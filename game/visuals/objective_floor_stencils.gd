@@ -36,15 +36,17 @@ func _build_site_stencil(site: Dictionary) -> void:
             var bar := _add_box(center + offset, Vector3(1.05, 0.018, 0.075), paint)
             bar.rotation.y = -0.42 if side == axis else 0.42
 
-    # Three small forward chevrons point from the center lane toward each site.
-    var forward := -1.0 if center.z < 0.0 else 1.0
+    # Three small approach chevrons point from each site back toward mid.
+    var toward_mid := Vector3(-center.x, 0.0, -center.z).normalized()
+    var side_axis := Vector3(toward_mid.z, 0.0, -toward_mid.x)
+    var heading := atan2(-toward_mid.z, toward_mid.x)
     for index in range(3):
-        var z := center.z + forward * (4.0 + float(index) * 0.72)
-        var x := center.x
-        var left := _add_box(Vector3(x - 0.20, 0.022, z), Vector3(0.48, 0.014, 0.055), paint)
-        var right := _add_box(Vector3(x + 0.20, 0.022, z), Vector3(0.48, 0.014, 0.055), paint)
-        left.rotation.y = 0.52 if forward < 0.0 else -0.52
-        right.rotation.y = -0.52 if forward < 0.0 else 0.52
+        var distance := 4.0 + float(index) * 0.72
+        var mark_center := center + toward_mid * distance
+        var left := _add_box(mark_center - side_axis * 0.16 + Vector3(0.0, 0.022, 0.0), Vector3(0.42, 0.014, 0.055), paint)
+        var right := _add_box(mark_center + side_axis * 0.16 + Vector3(0.0, 0.022, 0.0), Vector3(0.42, 0.014, 0.055), paint)
+        left.rotation.y = heading - 0.58
+        right.rotation.y = heading + 0.58
 
     # Floor stencil uses a dark backing and a restrained team-color title.
     var backing := _add_box(center + Vector3(0.0, 0.019, -1.55), Vector3(2.45, 0.012, 0.72), dark)
