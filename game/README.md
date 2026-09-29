@@ -80,7 +80,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Pressing T plays a short eased weapon-inspection gesture with a gentle tilt and dip; it is cosmetic, does not block firing or change weapon state, and adds no physics, particles, or lights.
 - Reloading now dips and rolls the first-person weapon through a short, eased motion; it is visual-only and adds no physics, particles, or lights.
 - Switching weapons now uses a short eased dip-and-roll animation, including authoritative weapon changes received by network clients; the transition is cosmetic and does not delay firing or alter weapon state.
-- Accepted local shots eject a small brass casing that tumbles beside the weapon and then shrinks away; the casing is visual-only, short-lived, shadow-free, and uses no collision, rigid bodies, particles, or extra lights.
+- Accepted local shots eject a small brass casing with subtle per-shot variation in its ejection path and spin; casings fade quickly, are capped at 12 active instances, and use no collision, rigid bodies, particles, shadows, or extra lights.
 - First-person weapon silhouettes now include low-poly barrel tubes, muzzle collars, top rails, and contrasting iron sights; all viewmodel parts are visual-only and cast no shadows
 - First-person muzzle flashes now use a brief emissive core with a compact four-ray starburst, improving shot readability without particles, extra lights, or physics.
 - Team-colored spawn-side floor bands, modular concrete seams, and objective approach chevrons improve spatial orientation without changing collision or bot navigation
