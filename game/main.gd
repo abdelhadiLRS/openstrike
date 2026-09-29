@@ -2520,6 +2520,7 @@ func _world() -> void:
     _create_mid_lane_markings()
     _create_spawn_wayfinding()
     _create_wall_ribs()
+_create_wall_light_fixtures()
     _create_overhead_gantry()
     _create_wall_signage()
     _create_floor_grates()
@@ -2651,6 +2652,41 @@ func _create_overhead_gantry() -> void:
             _visual_box(Vector3(float(coordinate), 3.98, z), Vector3(0.14, 0.42, 0.14), beam_material)
         for x in [-16.9, 16.9]:
             _visual_box(Vector3(x, 3.98, float(coordinate)), Vector3(0.14, 0.42, 0.14), beam_material)
+
+func _create_wall_light_fixtures() -> void:
+    # Static wall-mounted light housings add visual depth and warm/cool contrast.
+    # The fixtures are render-only: no extra lights, collision, or navigation cost.
+    var housing_material := StandardMaterial3D.new()
+    housing_material.albedo_color = Color(0.035, 0.052, 0.068)
+    housing_material.metallic = 0.48
+    housing_material.roughness = 0.56
+
+    var cyan_lens := StandardMaterial3D.new()
+    cyan_lens.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    cyan_lens.albedo_color = Color(0.08, 0.62, 0.86)
+    cyan_lens.emission_enabled = true
+    cyan_lens.emission = Color(0.025, 0.32, 0.58)
+    cyan_lens.emission_energy_multiplier = 1.2
+
+    var amber_lens := StandardMaterial3D.new()
+    amber_lens.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    amber_lens.albedo_color = Color(0.98, 0.56, 0.18)
+    amber_lens.emission_enabled = true
+    amber_lens.emission = Color(0.62, 0.22, 0.035)
+    amber_lens.emission_energy_multiplier = 1.0
+
+    # Alternating fixture colors reinforce the industrial arena's sector language.
+    for index in range(5):
+        var coordinate := float(-12 + index * 6)
+        var lens_material: StandardMaterial3D = cyan_lens if index % 2 == 0 else amber_lens
+        for side in [-1.0, 1.0]:
+            var z := side * 17.25
+            _visual_box(Vector3(coordinate, 3.25, z), Vector3(1.65, 0.30, 0.28), housing_material)
+            _visual_box(Vector3(coordinate, 3.25, z - side * 0.16), Vector3(1.28, 0.075, 0.035), lens_material)
+        for side in [-1.0, 1.0]:
+            var x := side * 17.25
+            _visual_box(Vector3(x, 3.25, coordinate), Vector3(0.28, 0.30, 1.65), housing_material)
+            _visual_box(Vector3(x - side * 0.16, 3.25, coordinate), Vector3(0.035, 0.075, 1.28), lens_material)
 
 func _create_wall_ribs() -> void:
     # Vertical steel ribs add depth to the perimeter walls without changing
