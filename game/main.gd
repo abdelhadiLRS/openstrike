@@ -2974,7 +2974,7 @@ func _create_site_beacons() -> void:
         site_label.no_depth_test = false
         add_child(site_label)
 
-func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> void:
+func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> MeshInstance3D:
     var mesh_instance := MeshInstance3D.new()
     var mesh := BoxMesh.new()
     mesh.size = size
@@ -2983,6 +2983,7 @@ func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> v
     mesh_instance.material_override = material
     mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(mesh_instance)
+    return mesh_instance
 
 func _create_bomb_visual() -> void:
     bomb_visual = MeshInstance3D.new()
