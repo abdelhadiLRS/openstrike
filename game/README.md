@@ -59,7 +59,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Bomb recovery uses a tighter pickup radius than the plant/defuse site radius
 - Damageable combat units
 - Procedural graybox training range with cool ambient lighting and directional shadows
-- Arena floor uses a subtle procedural concrete shader with broad slab mottling and fine grain; it is texture-free and adds no geometry, lights, or collision.
+- Arena floor uses a procedural concrete shader with broad slab mottling, fine grain, and faint world-space slab joints with subtle edge highlights; it is texture-free and adds no geometry, lights, or collision.
 - Perimeter walls now use a procedural modular-concrete shader with subtle panel seams and surface variation; it adds no texture files, geometry, collision, or navigation work.
 - Ambient GPU dust now fades smoothly across each particle's lifetime, softening the arena atmosphere without adding collision, lights, or shadow work; LOW visual quality disables the layer.
 - Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
