@@ -2448,9 +2448,9 @@ func _update_objective_progress_ui() -> void:
     if fill_style != null:
         fill_style.bg_color = tint
     if objective_state == "PLANTED":
-        var urgency := clampf(1.0 - progress, 0.0, 1.0)
-        var pulse := (sin(Time.get_ticks_msec() / 1000.0 * lerpf(2.0, 7.0, urgency)) + 1.0) * 0.5
-        objective_progress_label.modulate = Color(1.0, 0.78 + pulse * 0.22, 0.68 + pulse * 0.18, 1.0)
+        var planted_urgency := clampf(1.0 - progress, 0.0, 1.0)
+        var label_pulse := (sin(Time.get_ticks_msec() / 1000.0 * lerpf(2.0, 7.0, planted_urgency)) + 1.0) * 0.5
+        objective_progress_label.modulate = Color(1.0, 0.78 + label_pulse * 0.22, 0.68 + label_pulse * 0.18, 1.0)
     else:
         objective_progress_label.modulate = Color.WHITE
 
