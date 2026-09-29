@@ -456,6 +456,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Incoming bot fire now displays a short-lived red direction arrow around the reticle, pointing toward the attacker; the cue fades quickly and does not affect aim, damage, or network simulation.
 - Rifle and sidearm tracers use distinct cool/amber tints. The effect is visual-only and uses a tiny temporary mesh rather than particles or dynamic lights.
 - First-person muzzle flashes now include a compact diagonal starburst in addition to the horizontal and vertical rays, improving shot readability while remaining mesh-only, shadow-free, and free of particles or dynamic lights.
+- A small first-person muzzle-smoke wisp expands and fades after each shot. It is capped at three temporary meshes, uses no particles, lights, or collision, and is omitted in low-spec mode.
 - Player landings briefly expand a translucent ground ring at the feet for impact feedback; it reuses one shadow-free mesh, adds no particles or collision, and is suppressed by low-spec and reduced-motion modes.
 - The first-person rifle now includes a short, animated bolt-carrier cycle on each shot. It is a camera-only mesh animation with no collision, gameplay, or network-state impact.
 
