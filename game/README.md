@@ -45,6 +45,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Planted-bomb defuse uses an explicit active defuser instead of a shared anonymous timer
 - Bomb drops at the player's death position and can be recovered after respawn with a dedicated pickup radius
 - Visible original bomb entity with dropped/planted world states and planted-state blinking light
+- Bomb detonation triggers a brief expanding emissive core and ground ring on host and clients; the mesh-only effect fades out without particles, collision, or persistent scene objects.
 - Planted-bomb defense distributes RED bots between one active defuser and separate tactical cover positions
 - Bomb-cover assignments persist for the planted site instead of being recalculated every frame
 - Each bomb site has dedicated tactical cover anchors, with LOS and occupancy validation before assignment
