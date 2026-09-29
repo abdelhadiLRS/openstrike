@@ -3752,6 +3752,54 @@ func _refresh_view_weapon() -> void:
         _view_cylinder(Vector3(0.0, 0.0, -0.32), 0.024, 0.20, body_material)
         _view_cylinder(Vector3(0.0, 0.0, -0.425), 0.03, 0.03, grip_material)
 
+    # Fine receiver details improve the first-person silhouette while keeping
+    # the weapon fully procedural, low-poly, and free of extra physics.
+    var detail_material := StandardMaterial3D.new()
+    detail_material.albedo_color = Color(0.32, 0.39, 0.43) if is_rifle else Color(0.40, 0.43, 0.45)
+    detail_material.metallic = 0.72
+    detail_material.roughness = 0.34
+    var dark_detail_material := StandardMaterial3D.new()
+    dark_detail_material.albedo_color = Color(0.025, 0.032, 0.038)
+    dark_detail_material.metallic = 0.18
+    dark_detail_material.roughness = 0.86
+
+    if is_rifle:
+        # Top rail notches and side receiver plates.
+        for rail_index in range(6):
+            _view_box(
+                Vector3(0.0, 0.121, -0.34 + float(rail_index) * 0.075),
+                Vector3(0.072, 0.012, 0.025),
+                detail_material
+            )
+        _view_box(Vector3(0.084, 0.025, -0.10), Vector3(0.012, 0.075, 0.16), detail_material)
+        _view_box(Vector3(-0.084, 0.025, -0.10), Vector3(0.012, 0.075, 0.16), detail_material)
+        _view_box(Vector3(0.086, 0.045, -0.22), Vector3(0.012, 0.035, 0.09), dark_detail_material)
+        # Magazine ribs and compact fasteners add a manufactured finish.
+        for rib_index in range(4):
+            _view_box(
+                Vector3(0.0, -0.13 + float(rib_index) * 0.035, 0.126),
+                Vector3(0.092, 0.012, 0.012),
+                detail_material
+            )
+        for side in [-1.0, 1.0]:
+            _view_cylinder(Vector3(side * 0.087, 0.025, -0.04), 0.012, 0.018, detail_material)
+            _view_cylinder(Vector3(side * 0.087, 0.025, -0.16), 0.012, 0.018, detail_material)
+    else:
+        # Pistol slide serrations, front sight insert, and grip texture.
+        for serration in range(5):
+            _view_box(
+                Vector3(0.0, 0.128, -0.22 + float(serration) * 0.032),
+                Vector3(0.092, 0.012, 0.010),
+                detail_material
+            )
+        _view_box(Vector3(0.0, 0.187, -0.245), Vector3(0.025, 0.018, 0.035), accent_material)
+        for grip_rib in range(4):
+            _view_box(
+                Vector3(0.0, -0.16 + float(grip_rib) * 0.035, 0.125),
+                Vector3(0.095, 0.012, 0.012),
+                detail_material
+            )
+
     # A brief emissive flash at the muzzle adds shot feedback without lights,
     # particles, physics, or per-frame allocations.
     muzzle_flash = MeshInstance3D.new()
