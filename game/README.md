@@ -447,3 +447,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Landing feedback
 - Hard player landings now emit a short expanding floor-level dust ring, paired with the existing landing camera response.
 - The effect is render-only, uses one lightweight mesh/tween, and is disabled by **F4 low-spec** and **F5 reduced-motion** modes. It does not affect collision, movement, damage, or networking.
+
+### Planted-site visual urgency
+- When the bomb is planted, the active site's elevated marker switches to a pulsing red/orange warning and accelerates its rotation; the inactive site's marker dims so the objective location reads clearly at a distance.
+- The effect is render-only and reuses the existing marker meshes/materials. It adds no dynamic lights, particles, collision, or gameplay/network changes.
