@@ -1274,68 +1274,68 @@ func _move_toward_goal(delta: float) -> void:
     look_at(global_position + Vector3(direction.x, 0.0, direction.z), Vector3.UP)
 
 func apply_network_snapshot(snapshot: Dictionary) -> void:
-	if snapshot.is_empty():
-		return
-	var snapshot_round := int(snapshot.get("round_number", network_round_number))
-	if network_round_number != snapshot_round:
-		network_round_number = snapshot_round
-		network_snapshot_age = 0.0
-		network_snapshot_fresh = false
-		velocity = Vector3.ZERO
-		global_position = snapshot.get("position", global_position)
-		dead = false
-		visible = true
-		if collision_shape:
-			collision_shape.disabled = false
-		collision_layer = 1
-		collision_mask = 1
-	network_target_position = snapshot.get("position", global_position)
-	network_target_velocity = snapshot.get("velocity", Vector3.ZERO)
-	network_target_yaw = float(snapshot.get("yaw", rotation.y))
-	network_snapshot_age = 0.0
-	network_snapshot_fresh = true
-	var previous_health := health
-	health = int(snapshot.get("health", health))
-	if health < previous_health:
-		_trigger_damage_flash()
-		_spawn_damage_number(previous_health - health)
-	var snapshot_dead := bool(snapshot.get("dead", false))
-	state = str(snapshot.get("state", state))
-	combat_assignment = str(snapshot.get("assignment", combat_assignment))
-	if snapshot_dead and not dead:
-		_spawn_elimination_effect()
-		dead = true
-		velocity = Vector3.ZERO
-		visible = false
-		if collision_shape:
-			collision_shape.disabled = true
-		collision_layer = 0
-		collision_mask = 0
-	elif not snapshot_dead and dead:
-		dead = false
-		visible = true
-		if collision_shape:
-			collision_shape.disabled = false
-		collision_layer = 1
-		collision_mask = 1
+    if snapshot.is_empty():
+        return
+    var snapshot_round := int(snapshot.get("round_number", network_round_number))
+    if network_round_number != snapshot_round:
+        network_round_number = snapshot_round
+        network_snapshot_age = 0.0
+        network_snapshot_fresh = false
+        velocity = Vector3.ZERO
+        global_position = snapshot.get("position", global_position)
+        dead = false
+        visible = true
+        if collision_shape:
+            collision_shape.disabled = false
+        collision_layer = 1
+        collision_mask = 1
+    network_target_position = snapshot.get("position", global_position)
+    network_target_velocity = snapshot.get("velocity", Vector3.ZERO)
+    network_target_yaw = float(snapshot.get("yaw", rotation.y))
+    network_snapshot_age = 0.0
+    network_snapshot_fresh = true
+    var previous_health := health
+    health = int(snapshot.get("health", health))
+    if health < previous_health:
+        _trigger_damage_flash()
+        _spawn_damage_number(previous_health - health)
+    var snapshot_dead := bool(snapshot.get("dead", false))
+    state = str(snapshot.get("state", state))
+    combat_assignment = str(snapshot.get("assignment", combat_assignment))
+    if snapshot_dead and not dead:
+        _spawn_elimination_effect()
+        dead = true
+        velocity = Vector3.ZERO
+        visible = false
+        if collision_shape:
+            collision_shape.disabled = true
+        collision_layer = 0
+        collision_mask = 0
+    elif not snapshot_dead and dead:
+        dead = false
+        visible = true
+        if collision_shape:
+            collision_shape.disabled = false
+        collision_layer = 1
+        collision_mask = 1
 
 func _update_network_presentation(delta: float) -> void:
-	if not network_snapshot_fresh:
-		return
-	network_snapshot_age += delta
-	if network_snapshot_age <= NETWORK_EXTRAPOLATION_TIME:
-		var predicted_position := network_target_position + network_target_velocity * network_snapshot_age
-		if global_position.distance_to(predicted_position) > NETWORK_SNAP_DISTANCE:
-			global_position = network_target_position
-		else:
-			global_position = global_position.lerp(predicted_position, minf(delta * 18.0, 1.0))
-	else:
-		global_position = global_position.lerp(network_target_position, minf(delta * 10.0, 1.0))
-	velocity = network_target_velocity if network_snapshot_age <= NETWORK_SNAPSHOT_STALE_TIME else Vector3.ZERO
-	rotation.y = lerp_angle(rotation.y, network_target_yaw, minf(delta * 16.0, 1.0))
-	visible = not dead
-	if network_snapshot_age > NETWORK_SNAPSHOT_STALE_TIME:
-		velocity = Vector3.ZERO
+    if not network_snapshot_fresh:
+        return
+    network_snapshot_age += delta
+    if network_snapshot_age <= NETWORK_EXTRAPOLATION_TIME:
+        var predicted_position := network_target_position + network_target_velocity * network_snapshot_age
+        if global_position.distance_to(predicted_position) > NETWORK_SNAP_DISTANCE:
+            global_position = network_target_position
+        else:
+            global_position = global_position.lerp(predicted_position, minf(delta * 18.0, 1.0))
+    else:
+        global_position = global_position.lerp(network_target_position, minf(delta * 10.0, 1.0))
+    velocity = network_target_velocity if network_snapshot_age <= NETWORK_SNAPSHOT_STALE_TIME else Vector3.ZERO
+    rotation.y = lerp_angle(rotation.y, network_target_yaw, minf(delta * 16.0, 1.0))
+    visible = not dead
+    if network_snapshot_age > NETWORK_SNAPSHOT_STALE_TIME:
+        velocity = Vector3.ZERO
 func _has_line_of_sight() -> bool:
     var origin := global_position + Vector3(0, 1.0, 0)
     var target_position := target.global_position + Vector3(0, 0.5, 0)
