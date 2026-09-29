@@ -2618,6 +2618,7 @@ func _world() -> void:
     _create_overhead_gantry()
     _create_distant_skyline()
     _create_wall_signage()
+    _create_wall_ventilation_details()
     _create_floor_grates()
     _create_floor_service_panels()
     _create_cover_visual_details()
