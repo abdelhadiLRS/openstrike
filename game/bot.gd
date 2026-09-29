@@ -112,6 +112,9 @@ var damage_flash_timer := 0.0
 var damage_health_bar_root: Node3D
 var damage_health_bar_fill: MeshInstance3D
 var damage_health_bar_timer := 0.0
+var damage_popup: Label3D
+var damage_popup_tween: Tween
+var damage_popup_total := 0
 const DAMAGE_HEALTH_BAR_DURATION := 1.65
 const MUZZLE_FLASH_DURATION := 0.055
 const DAMAGE_FLASH_DURATION := 0.16
@@ -188,29 +191,49 @@ func _create_damage_health_bar() -> void:
     damage_health_bar_root.add_child(damage_health_bar_fill)
 
 func _spawn_damage_number(amount: int) -> void:
-    # Floating damage text gives a quick, readable hit result without adding
-    # physics, particles, lights, or persistent scene nodes.
+    # Reuse one short-lived popup per bot and stack rapid hits into a single
+    # readable total instead of spawning overlapping labels during burst fire.
     if amount <= 0 or dead:
         return
-    var popup := Label3D.new()
-    popup.name = "DamageNumber"
-    popup.text = "-%d" % amount
-    popup.font_size = 38
-    popup.pixel_size = 0.008
-    popup.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-    popup.modulate = Color(1.0, 0.76, 0.34, 1.0)
-    popup.outline_size = 7
-    popup.outline_modulate = Color(0.055, 0.025, 0.01, 0.95)
-    popup.position = Vector3(randf_range(-0.18, 0.18), 1.85, randf_range(-0.12, 0.12))
-    popup.no_depth_test = false
-    add_child(popup)
-    var tween := create_tween()
-    tween.set_parallel(true)
-    tween.tween_property(popup, "position:y", popup.position.y + 0.72, 0.62).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-    tween.tween_property(popup, "modulate:a", 0.0, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-    tween.set_parallel(false)
-    tween.tween_callback(popup.queue_free)
+    if is_instance_valid(damage_popup):
+        if is_instance_valid(damage_popup_tween):
+            damage_popup_tween.kill()
+        damage_popup_total += amount
+        damage_popup.text = "-%d" % damage_popup_total
+        damage_popup.position = Vector3(randf_range(-0.18, 0.18), 1.85, randf_range(-0.12, 0.12))
+        damage_popup.modulate = Color(1.0, 0.76, 0.34, 1.0)
+    else:
+        damage_popup_total = amount
+        damage_popup = Label3D.new()
+        damage_popup.name = "DamageNumber"
+        damage_popup.text = "-%d" % damage_popup_total
+        damage_popup.font_size = 38
+        damage_popup.pixel_size = 0.008
+        damage_popup.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+        damage_popup.modulate = Color(1.0, 0.76, 0.34, 1.0)
+        damage_popup.outline_size = 7
+        damage_popup.outline_modulate = Color(0.055, 0.025, 0.01, 0.95)
+        damage_popup.position = Vector3(randf_range(-0.18, 0.18), 1.85, randf_range(-0.12, 0.12))
+        damage_popup.no_depth_test = false
+        add_child(damage_popup)
 
+    var popup := damage_popup
+    damage_popup_tween = create_tween()
+    damage_popup_tween.set_parallel(true)
+    damage_popup_tween.tween_property(popup, "position:y", popup.position.y + 0.72, 0.62).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+    damage_popup_tween.tween_property(popup, "modulate:a", 0.0, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+    damage_popup_tween.set_parallel(false)
+    damage_popup_tween.tween_callback(_finish_damage_popup.bind(popup))
+
+
+func _finish_damage_popup(popup: Label3D) -> void:
+    if not is_instance_valid(popup):
+        return
+    popup.queue_free()
+    if damage_popup == popup:
+        damage_popup = null
+        damage_popup_tween = null
+        damage_popup_total = 0
 
 func _show_damage_health_bar() -> void:
     if not is_instance_valid(damage_health_bar_root) or not is_instance_valid(damage_health_bar_fill):
@@ -1455,6 +1478,13 @@ func take_damage(amount: int, source_id: String = "player") -> void:
         _die()
 
 func reset_target() -> void:
+    if is_instance_valid(damage_popup_tween):
+        damage_popup_tween.kill()
+    if is_instance_valid(damage_popup):
+        damage_popup.queue_free()
+    damage_popup = null
+    damage_popup_tween = null
+    damage_popup_total = 0
     network_snapshot_fresh = false
     network_snapshot_age = 0.0
     network_round_number = 0
