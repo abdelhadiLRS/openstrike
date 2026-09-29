@@ -4575,6 +4575,26 @@ func _create_bot(index: int) -> CharacterBody3D:
     var right_pouch := _bot_detail(Vector3(0.16, 0.19, 0.11), Vector3(0.20, -0.02, -0.25), dark_material)
     var shoulder_mark := _bot_detail(Vector3(0.07, 0.15, 0.18), Vector3(-0.47, 0.24, -0.02), weapon_accent)
 
+    # Extra silhouette details: visor, segmented chest webbing, knee guards,
+    # and a compact radio aerial. They remain cosmetic and share no colliders.
+    var visor_material := StandardMaterial3D.new()
+    visor_material.albedo_color = Color(0.025, 0.075, 0.095)
+    visor_material.metallic = 0.28
+    visor_material.roughness = 0.32
+    var visor_glint_material := StandardMaterial3D.new()
+    visor_glint_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    visor_glint_material.albedo_color = Color(0.10, 0.58, 0.72)
+    visor_glint_material.emission_enabled = true
+    visor_glint_material.emission = Color(0.025, 0.20, 0.30)
+    visor_glint_material.emission_energy_multiplier = 0.55
+    var visor := _bot_detail(Vector3(0.30, 0.085, 0.045), Vector3(0.0, 0.69, -0.205), visor_material)
+    var visor_glint := _bot_detail(Vector3(0.22, 0.018, 0.018), Vector3(0.0, 0.70, -0.232), visor_glint_material)
+    var chest_webbing := _bot_detail(Vector3(0.50, 0.055, 0.035), Vector3(0.0, 0.02, -0.225), dark_material)
+    var left_knee_guard := _bot_detail(Vector3(0.22, 0.14, 0.075), Vector3(-0.17, -0.78, -0.13), dark_material)
+    var right_knee_guard := _bot_detail(Vector3(0.22, 0.14, 0.075), Vector3(0.17, -0.78, -0.13), dark_material)
+    var radio_aerial := _bot_detail(Vector3(0.035, 0.34, 0.035), Vector3(0.29, 0.43, 0.20), weapon_material)
+    var shoulder_patch := _bot_detail(Vector3(0.10, 0.10, 0.035), Vector3(0.47, 0.25, -0.12), weapon_accent)
+
     visual_rig.add_child(mesh)
     visual_rig.add_child(vest)
     visual_rig.add_child(head)
@@ -4596,6 +4616,13 @@ func _create_bot(index: int) -> CharacterBody3D:
     visual_rig.add_child(left_pouch)
     visual_rig.add_child(right_pouch)
     visual_rig.add_child(shoulder_mark)
+    visual_rig.add_child(visor)
+    visual_rig.add_child(visor_glint)
+    visual_rig.add_child(chest_webbing)
+    visual_rig.add_child(left_knee_guard)
+    visual_rig.add_child(right_knee_guard)
+    visual_rig.add_child(radio_aerial)
+    visual_rig.add_child(shoulder_patch)
     bot.add_child(shape)
     bot.add_to_group("bots")
     add_child(bot)
