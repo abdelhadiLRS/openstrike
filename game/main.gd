@@ -91,6 +91,8 @@ var recoil_kick := 0.0
 var crouched := false
 var hud: Label
 var hud_layer: CanvasLayer
+var match_info_panel: PanelContainer
+var compact_hud_mode := false
 var round_banner_label: Label
 var visual_notice_label: Label
 var visual_notice_timer := 0.0
@@ -319,6 +321,11 @@ func _unhandled_input(event: InputEvent) -> void:
             if reduced_motion_mode:
                 damage_camera_kick = Vector2.ZERO
                 landing_camera_kick = 0.0
+        elif event.keycode == KEY_F6:
+            compact_hud_mode = not compact_hud_mode
+            if is_instance_valid(match_info_panel):
+                match_info_panel.visible = not compact_hud_mode
+            _show_visual_notice("COMPACT HUD  /  " + ("ON" if compact_hud_mode else "OFF"), Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_1 and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_buy_weapon_id = str(weapons[0]["id"])
@@ -1573,7 +1580,8 @@ func _hud() -> void:
     hud_layer.name = "OpenStrikeHUD"
     hud_layer.layer = 10
 
-    var panel := PanelContainer.new()
+    match_info_panel = PanelContainer.new()
+    var panel := match_info_panel
     panel.name = "MatchInfoPanel"
     panel.position = Vector2(18.0, 18.0)
     panel.custom_minimum_size = Vector2(570.0, 196.0)
@@ -2107,7 +2115,8 @@ func _update_hud() -> void:
         round_number, phase, ceili(phase_time), player_team, team_score, enemy_score,
         credits, buy_line, _objective_label(), weapon["name"], state, ammo, reserve, health, enemies_alive,
         "LOW" if low_spec_mode else "HIGH",
-        "REDUCED" if reduced_motion_mode else "FULL"
+        "REDUCED" if reduced_motion_mode else "FULL",
+        "ON" if compact_hud_mode else "OFF"
     ]
     _update_network_debug_hud()
     _update_objective_progress_ui()
