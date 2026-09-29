@@ -849,16 +849,29 @@ func _update_bomb_visual() -> void:
         bomb_light.visible = visible_bomb
 
     if not visible_bomb:
+        bomb_visual.scale = Vector3.ONE
         return
 
+    var now_seconds := Time.get_ticks_msec() / 1000.0
     var bomb_position := dropped_bomb_position
     if objective_state == "PLANTED":
         bomb_position = bomb_site_a if planted_site == "A" else bomb_site_b
 
-    bomb_visual.global_position = bomb_position + Vector3(0, 0.35, 0)
     var urgency := clampf(1.0 - bomb_time_left / BOMB_TIME, 0.0, 1.0) if objective_state == "PLANTED" else 0.0
+    # The dropped objective has a slow idle turn; a planted bomb stays anchored
+    # but gains a restrained pulse that accelerates with the countdown.
+    if objective_state == "DROPPED":
+        bomb_visual.rotation.y = now_seconds * 0.45
+        bomb_visual.global_position = bomb_position + Vector3(0.0, 0.35 + sin(now_seconds * 2.0) * 0.035, 0.0)
+    else:
+        bomb_visual.rotation.y = 0.0
+        var pulse_rate := lerpf(2.2, 7.0, urgency)
+        var pulse := 1.0 + absf(sin(now_seconds * pulse_rate)) * lerpf(0.025, 0.075, urgency)
+        bomb_visual.scale = Vector3.ONE * pulse
+        bomb_visual.global_position = bomb_position + Vector3(0.0, 0.35, 0.0)
+
     var blink_rate := lerpf(1.4, 5.0, urgency)
-    var blink_phase := sin(Time.get_ticks_msec() / 1000.0 * TAU * blink_rate)
+    var blink_phase := sin(now_seconds * TAU * blink_rate)
     var active_blink := blink_phase > 0.0 if objective_state == "PLANTED" else true
     if bomb_status_material != null:
         bomb_status_material.emission_energy_multiplier = 2.8 if active_blink else 0.12
