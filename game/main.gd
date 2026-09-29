@@ -1955,8 +1955,9 @@ func _update_crosshair() -> void:
 
     _refresh_crosshair_target()
     var reticle_color := Color(0.98, 0.30, 0.24, 0.98) if crosshair_target_state == 1 else (Color(0.24, 0.82, 1.0, 0.98) if crosshair_target_state == 2 else Color(0.78, 0.96, 1.0, 0.96))
+    var reticle_alpha := 0.30 if aim_blend > 0.65 else 0.98
     for segment_index in range(4):
-        crosshair_segments[segment_index].color = reticle_color
+        crosshair_segments[segment_index].color = Color(reticle_color.r, reticle_color.g, reticle_color.b, reticle_alpha)
     var viewport_size := get_viewport().get_visible_rect().size
     var center := viewport_size * 0.5
     var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length() if is_instance_valid(player) else 0.0
@@ -1965,6 +1966,10 @@ func _update_crosshair() -> void:
         target_spread += 5.0
     if crouched:
         target_spread *= 0.72
+    # ADS tightens the cosmetic reticle and dims the outer bars as the camera
+    # settles into the sight picture. This is presentation-only; hit registration
+    # and weapon spread remain governed by the existing combat rules.
+    target_spread *= lerpf(1.0, 0.34, aim_blend)
     # Smooth bloom recovery avoids a jittery reticle while retaining immediate
     # feedback for movement, jumps, and recoil.
     crosshair_spread_current = lerpf(crosshair_spread_current, target_spread, minf(get_process_delta_time() * 14.0, 1.0))
