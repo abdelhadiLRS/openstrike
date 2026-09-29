@@ -1275,12 +1275,37 @@ func _weapon_muzzle_world_position() -> Vector3:
 
 
 func _spawn_shot_tracer(start_position: Vector3, end_position: Vector3, tint: Color) -> void:
-    # A short-lived, emissive streak gives each shot a readable direction cue.
-    # It is render-only and deliberately avoids particles, physics, and lights.
+    # A layered emissive streak makes shots readable against both dark cover
+    # and bright sky. The translucent outer sleeve is omitted in low-spec mode.
+    # Both meshes are cosmetic and avoid particles, physics, and dynamic lights.
     var segment := end_position - start_position
     var length := segment.length()
     if length < 0.15:
         return
+
+    var midpoint := (start_position + end_position) * 0.5
+    var direction := segment / length
+    if not low_spec_mode:
+        var tracer_halo := MeshInstance3D.new()
+        tracer_halo.name = "ShotTracerHalo"
+        var halo_mesh := CylinderMesh.new()
+        halo_mesh.top_radius = 0.045
+        halo_mesh.bottom_radius = 0.045
+        halo_mesh.height = length
+        tracer_halo.mesh = halo_mesh
+        tracer_halo.global_position = midpoint
+        tracer_halo.quaternion = Quaternion(Vector3.UP, direction)
+        var halo_material := StandardMaterial3D.new()
+        halo_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        halo_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+        halo_material.albedo_color = Color(tint.r, tint.g, tint.b, 0.16)
+        halo_material.emission_enabled = true
+        halo_material.emission = tint * 0.28
+        halo_material.emission_energy_multiplier = 0.7
+        tracer_halo.material_override = halo_material
+        tracer_halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        add_child(tracer_halo)
+        get_tree().create_timer(0.065).timeout.connect(tracer_halo.queue_free)
 
     var tracer := MeshInstance3D.new()
     tracer.name = "ShotTracer"
@@ -1289,8 +1314,8 @@ func _spawn_shot_tracer(start_position: Vector3, end_position: Vector3, tint: Co
     tracer_mesh.bottom_radius = 0.014
     tracer_mesh.height = length
     tracer.mesh = tracer_mesh
-    tracer.global_position = (start_position + end_position) * 0.5
-    tracer.quaternion = Quaternion(Vector3.UP, segment / length)
+    tracer.global_position = midpoint
+    tracer.quaternion = Quaternion(Vector3.UP, direction)
 
     var tracer_material := StandardMaterial3D.new()
     tracer_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
