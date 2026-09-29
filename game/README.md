@@ -59,7 +59,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Bomb recovery uses a tighter pickup radius than the plant/defuse site radius
 - Damageable combat units
 - Procedural graybox training range with cool ambient lighting and directional shadows
-- Ambient GPU dust now fades smoothly across each particle's lifetime, softening the arena atmosphere without adding collision, lights, or shadow work; F4 low-spec mode still disables the layer.
+- Ambient GPU dust now fades smoothly across each particle's lifetime, softening the arena atmosphere without adding collision, lights, or shadow work; LOW visual quality disables the layer.
 - Visual-only tactical lane markings, perimeter strips, objective-corner markers, and cover accents (no collision changes)
 - New ceiling-level industrial light banks use emissive cyan diffusers with amber end caps; the fixture meshes are shadow-free and add no dynamic lights, collision, or navigation cost.
 - Paired overhead service conduits, support clamps, and small junction housings add layered industrial detail above the lanes; all are shadow-free visual meshes with no lights, collision, or navigation impact.
@@ -124,7 +124,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - F: hold to plant/defuse the bomb at an objective site
 - ESC: release mouse
 - F3: toggle the network diagnostics overlay (NetGraph)
-- F4: toggle visual quality between HIGH (fog, directional shadows, and restrained emissive glow) and LOW (fog/shadows/glow off, brighter ambient fill) while playing; a brief on-screen notice confirms the active preset
+- F4: cycle visual quality through HIGH, LOW, and BALANCED presets while playing; a brief on-screen notice confirms the active preset.
 - TAB (hold): show the live match scoreboard with team score, round/time, player status, credits, and bot health
 - F6: toggle compact HUD mode to hide the large match-information panel while keeping health, ammo, crosshair, and objective cues visible.
 - F7: toggle the tactical minimap in the upper-right corner.
@@ -174,7 +174,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 
 - Two wall-mounted ventilation fans rotate slowly as lightweight ambient animation; their meshes are visual-only, shadow-free, and add no collision, particles, or dynamic lights.
 
-- The `--low-spec` launch flag starts with atmospheric fog, directional shadows, and emissive glow disabled. Press F4 during play to switch between HIGH and LOW visual quality without restarting; LOW removes fog/shadows/glow and raises ambient fill to keep shadowed corners readable, while HIGH restores the atmospheric lighting balance and a restrained glow pass for emissive site beacons and warning strips. The toggle leaves map geometry, gameplay, and network simulation unchanged.
+- The `--low-spec` launch flag starts in LOW visual quality. Press F4 during play to cycle HIGH → LOW → BALANCED → HIGH without restarting. LOW disables fog, shadows, glow, and ambient dust while raising ambient fill; BALANCED keeps atmospheric haze and dust but disables glow and shadow maps; HIGH restores the full lighting presentation. The presets only change rendering and leave map geometry, gameplay, and network simulation unchanged.
 
 - A compact top-center objective compass displays the screen-space bearing and distance to Sites A and B, hides markers outside the camera's horizontal field of view, and uses cyan/amber labels; it is HUD-only and does not affect movement, navigation, or objective rules.
 
