@@ -484,3 +484,7 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 ### Remote avatar visual pass
 - Remote player avatars now use team-colored chest and shoulder identifiers, reinforced shoulder details, a rear equipment pack, and a belt accent to improve silhouette and team recognition.
 - The additions are lightweight render-only meshes; the existing capsule remains the sole collider, and movement, hitboxes, and networking are unchanged.
+
+### Animated arena status lighting
+- Cyan and amber wall-fixture strips now use a very slow, low-amplitude emissive pulse to make the industrial perimeter feel active.
+- The effect reuses two existing materials, adds no real-time lights, shadows, particles, collision, or gameplay changes, and is skipped in low-spec mode.
