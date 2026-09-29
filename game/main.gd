@@ -93,6 +93,8 @@ var elimination_feedback_label: Label
 var elimination_feedback_timer := 0.0
 var crosshair_root: Control
 var crosshair_segments: Array[ColorRect] = []
+var objective_compass_a: Label
+var objective_compass_b: Label
 var network_debug_hud: Label
 var network_debug_visible := false
 var view_weapon_root: Node3D
@@ -228,6 +230,7 @@ func _ready() -> void:
     _world()
     _hud()
     _create_crosshair()
+    _create_objective_compass()
     _create_elimination_feedback()
     _create_network_debug_hud()
     _start_round()
@@ -280,6 +283,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
     _update_view_weapon_motion(delta)
     _update_crosshair()
+    _update_objective_compass()
     _update_elimination_feedback(delta)
 
 func _update_view_weapon_motion(delta: float) -> void:
@@ -1277,6 +1281,68 @@ func _hud() -> void:
     panel.add_child(hud)
     hud_layer.add_child(panel)
     add_child(hud_layer)
+
+func _create_objective_compass() -> void:
+    # Compact top-center site bearings help players orient toward both
+    # objectives without adding world geometry or changing match rules.
+    objective_compass_a = Label.new()
+    objective_compass_a.name = "ObjectiveCompassA"
+    objective_compass_a.size = Vector2(150.0, 34.0)
+    objective_compass_a.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    objective_compass_a.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    objective_compass_a.add_theme_font_size_override("font_size", 17)
+    objective_compass_a.add_theme_color_override("font_color", Color(0.38, 0.91, 1.0, 0.98))
+    objective_compass_a.add_theme_color_override("font_outline_color", Color(0.015, 0.025, 0.04, 0.98))
+    objective_compass_a.add_theme_constant_override("outline_size", 4)
+    objective_compass_a.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud_layer.add_child(objective_compass_a)
+
+    objective_compass_b = Label.new()
+    objective_compass_b.name = "ObjectiveCompassB"
+    objective_compass_b.size = Vector2(150.0, 34.0)
+    objective_compass_b.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    objective_compass_b.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    objective_compass_b.add_theme_font_size_override("font_size", 17)
+    objective_compass_b.add_theme_color_override("font_color", Color(1.0, 0.70, 0.28, 0.98))
+    objective_compass_b.add_theme_color_override("font_outline_color", Color(0.015, 0.025, 0.04, 0.98))
+    objective_compass_b.add_theme_constant_override("outline_size", 4)
+    objective_compass_b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud_layer.add_child(objective_compass_b)
+    _update_objective_compass()
+
+func _update_objective_compass() -> void:
+    if not is_instance_valid(objective_compass_a) or not is_instance_valid(objective_compass_b):
+        return
+    if not is_instance_valid(player) or not is_instance_valid(camera) or dead:
+        objective_compass_a.visible = false
+        objective_compass_b.visible = false
+        return
+
+    var viewport_size := get_viewport().get_visible_rect().size
+    var aspect := maxf(0.1, viewport_size.x / maxf(1.0, viewport_size.y))
+    var horizontal_fov := 2.0 * atan(tan(deg_to_rad(camera.fov) * 0.5) * aspect)
+    var half_fov := maxf(0.1, horizontal_fov * 0.5)
+    var center_x := viewport_size.x * 0.5
+
+    var update_site := func(label: Label, site_position: Vector3, site_name: String) -> void:
+        var offset := site_position - player.global_position
+        var distance := offset.length()
+        var bearing := atan2(-offset.x, -offset.z)
+        var relative_bearing := wrapf(bearing - player.rotation.y, -PI, PI)
+        if absf(relative_bearing) > half_fov + 0.08:
+            label.visible = false
+            return
+        var screen_x := center_x + (relative_bearing / half_fov) * (viewport_size.x * 0.5)
+        label.position = Vector2(
+            clampf(screen_x - label.size.x * 0.5, 8.0, maxf(8.0, viewport_size.x - label.size.x - 8.0)),
+            76.0
+        )
+        label.text = "%s  •  %dm" % [site_name, roundi(distance)]
+        label.visible = true
+
+    update_site.call(objective_compass_a, bomb_site_a, "A  /  ALPHA")
+    update_site.call(objective_compass_b, bomb_site_b, "B  /  BRAVO")
+
 
 func _create_crosshair() -> void:
     # Screen-space combat feedback is layered beneath the reticle and has no
