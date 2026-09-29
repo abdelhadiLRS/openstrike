@@ -1198,29 +1198,51 @@ func _spawn_shell_casing() -> void:
     tween.finished.connect(casing.queue_free)
 
 func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color) -> void:
-    # Tiny short-lived impact flash improves hit readability without particles,
-    # dynamic lights, collision, or persistent decals.
-    var spark := MeshInstance3D.new()
-    spark.name = "ImpactSpark"
-    var spark_mesh := SphereMesh.new()
-    spark_mesh.radius = 0.055
-    spark_mesh.height = 0.11
-    spark.mesh = spark_mesh
+    # A compact star-shaped flash makes impacts readable against dark concrete.
+    # It uses four tiny unshaded meshes and a short lifetime—no particles,
+    # dynamic lights, collision, or persistent nodes.
     var normal := surface_normal.normalized()
     if normal.length_squared() < 0.01:
         normal = Vector3.UP
+
+    var spark := Node3D.new()
+    spark.name = "ImpactSpark"
     spark.global_position = position + normal * 0.035
-    spark.scale = Vector3(1.0, 0.8, 1.0)
+    spark.quaternion = Quaternion(Vector3.UP, normal)
+    add_child(spark)
+
     var material := StandardMaterial3D.new()
     material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
     material.albedo_color = tint
     material.emission_enabled = true
     material.emission = tint
-    material.emission_energy_multiplier = 2.4
-    spark.material_override = material
-    spark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    add_child(spark)
-    get_tree().create_timer(0.09).timeout.connect(spark.queue_free)
+    material.emission_energy_multiplier = 2.8
+
+    var core := MeshInstance3D.new()
+    core.name = "Core"
+    var core_mesh := SphereMesh.new()
+    core_mesh.radius = 0.045
+    core_mesh.height = 0.09
+    core.mesh = core_mesh
+    core.material_override = material
+    core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    spark.add_child(core)
+
+    for ray_index in range(3):
+        var ray := MeshInstance3D.new()
+        ray.name = "Ray%d" % ray_index
+        var ray_mesh := BoxMesh.new()
+        ray_mesh.size = Vector3(0.24 if ray_index == 0 else 0.16, 0.018, 0.018)
+        ray.mesh = ray_mesh
+        ray.rotation.z = deg_to_rad(float(ray_index) * 60.0)
+        ray.material_override = material
+        ray.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        spark.add_child(ray)
+
+    spark.scale = Vector3(0.72, 0.72, 0.72)
+    var tween := create_tween()
+    tween.tween_property(spark, "scale", Vector3(1.35, 1.35, 1.35), 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+    tween.finished.connect(spark.queue_free)
 
 
 func _spawn_impact_mark(position: Vector3, surface_normal: Vector3) -> void:
