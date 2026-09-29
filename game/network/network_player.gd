@@ -379,15 +379,82 @@ func _build_visual() -> void:
 	collision_shape.shape = capsule_shape
 	add_child(collision_shape)
 
+	# Keep the capsule as the single collider, but give remote teammates a
+	# readable low-poly tactical silhouette instead of a plain blue capsule.
 	mesh = MeshInstance3D.new()
 	var capsule := CapsuleMesh.new()
 	capsule.height = STAND_HEIGHT
 	capsule.radius = 0.35
 	mesh.mesh = capsule
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.20, 0.45, 0.82)
-	mesh.material_override = material
+	var body_material := StandardMaterial3D.new()
+	body_material.albedo_color = Color(0.12, 0.27, 0.40)
+	body_material.roughness = 0.9
+	mesh.material_override = body_material
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh)
+
+	var armor_material := StandardMaterial3D.new()
+	armor_material.albedo_color = Color(0.075, 0.12, 0.16)
+	armor_material.metallic = 0.08
+	armor_material.roughness = 0.88
+	var trim_material := StandardMaterial3D.new()
+	trim_material.albedo_color = Color(0.08, 0.48, 0.78)
+	trim_material.emission_enabled = true
+	trim_material.emission = Color(0.015, 0.12, 0.30)
+	trim_material.emission_energy_multiplier = 0.45
+	trim_material.roughness = 0.72
+	var skin_material := StandardMaterial3D.new()
+	skin_material.albedo_color = Color(0.43, 0.31, 0.23)
+	skin_material.roughness = 0.96
+	var dark_material := StandardMaterial3D.new()
+	dark_material.albedo_color = Color(0.025, 0.035, 0.045)
+	dark_material.metallic = 0.18
+	dark_material.roughness = 0.86
+
+	_add_visual_box(Vector3(0.0, 0.02, -0.015), Vector3(0.56, 0.48, 0.34), armor_material)
+	_add_visual_box(Vector3(0.0, 0.29, -0.205), Vector3(0.50, 0.12, 0.055), trim_material)
+	_add_visual_box(Vector3(-0.34, 0.19, 0.0), Vector3(0.22, 0.24, 0.30), armor_material)
+	_add_visual_box(Vector3(0.34, 0.19, 0.0), Vector3(0.22, 0.24, 0.30), armor_material)
+	_add_visual_box(Vector3(-0.35, -0.16, -0.01), Vector3(0.16, 0.42, 0.18), dark_material)
+	_add_visual_box(Vector3(0.35, -0.16, -0.01), Vector3(0.16, 0.42, 0.18), dark_material)
+	_add_visual_box(Vector3(-0.16, -0.63, 0.015), Vector3(0.22, 0.42, 0.26), armor_material)
+	_add_visual_box(Vector3(0.16, -0.63, 0.015), Vector3(0.22, 0.42, 0.26), armor_material)
+	_add_visual_box(Vector3(0.0, 0.04, 0.235), Vector3(0.38, 0.46, 0.18), dark_material)
+
+	var head := MeshInstance3D.new()
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.19
+	head_mesh.height = 0.38
+	head.mesh = head_mesh
+	head.position = Vector3(0.0, 0.62, 0.0)
+	head.material_override = skin_material
+	head.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(head)
+
+	var helmet := MeshInstance3D.new()
+	var helmet_mesh := SphereMesh.new()
+	helmet_mesh.radius = 0.22
+	helmet_mesh.height = 0.25
+	helmet.mesh = helmet_mesh
+	helmet.position = Vector3(0.0, 0.83, 0.0)
+	helmet.material_override = armor_material
+	helmet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(helmet)
+
+	# A compact rifle silhouette points along the avatar's forward (-Z) axis.
+	_add_visual_box(Vector3(0.20, -0.01, -0.34), Vector3(0.13, 0.12, 0.55), dark_material)
+	_add_visual_box(Vector3(0.20, -0.02, -0.70), Vector3(0.055, 0.055, 0.28), armor_material)
+	_add_visual_box(Vector3(0.20, -0.15, -0.27), Vector3(0.085, 0.20, 0.12), dark_material)
+
+func _add_visual_box(box_position: Vector3, box_size: Vector3, material: StandardMaterial3D) -> void:
+	var detail := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = box_size
+	detail.mesh = box
+	detail.position = box_position
+	detail.material_override = material
+	detail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(detail)
 
 func _update_collider() -> void:
 	if collision_shape == null:
