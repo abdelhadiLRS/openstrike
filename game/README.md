@@ -84,6 +84,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Team-colored spawn-side floor bands, modular concrete seams, and objective approach chevrons improve spatial orientation without changing collision or bot navigation
 - Blue and red deployment wall signs plus matching inward-facing floor guide bars make the starting sides easier to identify; they are render-only and do not alter collision, cover, or navigation.
 - HUD match information is displayed in a translucent, high-contrast panel; NetGraph sits separately below it
+- Holding TAB opens a centered, translucent scoreboard showing the current score, phase/time, connected players, local credits/health, and each bot's alive/health state; releasing TAB closes it. The overlay is HUD-only and does not pause or alter simulation.
 - Bottom-corner HUD bars display current health and magazine/reserve ammunition; the health fill shifts from green to amber/red at low health, and the ammo fill warns when the magazine is nearly empty.
 - Lightweight north-up tactical minimap in the upper-right corner shows the player's heading, A/B sites, and the dropped/planted bomb; it deliberately does not reveal enemy positions and uses only CanvasItem drawing.
 - Minimal crosshair and hit feedback
@@ -113,6 +114,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - ESC: release mouse
 - F3: toggle the network diagnostics overlay (NetGraph)
 - F4: toggle visual quality between HIGH (fog + directional shadows, lower ambient fill) and LOW (fog/shadows off, brighter ambient fill) while playing
+- TAB (hold): show the live match scoreboard with team score, round/time, player status, credits, and bot health
 - F5: toggle reduced-motion mode, disabling movement head-bob, weapon bob/sway, strafe-linked camera roll, speed-based FOV lift, landing camera kick, and damage camera shake while preserving aiming, recoil, and gameplay
 - Tactical minimap: north-up orientation; cyan arrow is you, amber/cyan markers are Sites A/B, and the red marker identifies a dropped or planted bomb.
 - Dynamic center reticle: expands with movement and recoil, tightens while crouched, and changes color for friendly/enemy targets
