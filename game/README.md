@@ -422,6 +422,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Contact and threat revision triggers remain unchanged, and the cached objective signature is reset at round start.
 
 ### Mid-lane floor graphics
+
+### Mid-lane overhead signage
+- Added a suspended, two-sided **MID / CONTROL** sign above the central lane, with restrained cyan/amber trim and readable text from either approach.
+- The sign is built from lightweight shadow-free meshes and `Label3D`; it adds no dynamic lights, collision, navigation, or gameplay changes.
 - Added a subtle MID / CONTROL floor stencil, broken centerline, and short lane chevrons to strengthen spatial orientation around the central engagement area.
 - The markings are render-only and cast no shadows; they do not alter collision, movement, cover, or bot navigation.
 
