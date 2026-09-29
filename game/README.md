@@ -119,6 +119,7 @@ The flags are parsed only at startup; without them the existing offline flow is 
 - Arena lighting now uses a slightly brighter cool ambient fill, subtle distance haze, and restrained contrast/saturation grading to separate concrete, team colors, and objective accents.
 - Thin emissive cyan and amber strips accent the upper perimeter walls; they are unlit mesh effects with shadows disabled and add no collision, navigation, or dynamic-light cost.
 - Existing high and low cover blocks now have inset-looking dark face plates with restrained cyan trim; the details are visual-only, cast no shadows, and do not change collision or bot navigation.
+- Perimeter walls now include slim dark steel ribs with small cyan edge accents, adding architectural depth while remaining non-colliding, shadow-free, and independent of bot navigation.
 - Two edge drainage grates and rear service panels add a restrained industrial floor finish; all parts are mesh-only, cast no shadows, and do not alter collision or navigation.
 
 - Both bomb sites now have four low-cost emissive corner beacons and a matching center marker: cool cyan for Site A and amber for Site B.
