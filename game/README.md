@@ -64,6 +64,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - First-person AR-17/PX-9 geometric viewmodels that follow weapon selection and authoritative network weapon state
 - First-person weapon viewmodels now include low-poly tactical sleeves, cuffs, and gloves positioned around the grip and fore-end; they are visual-only, shadow-free, and add no collision or physics.
 - First-person weapon motion adds restrained movement bob, lateral counter-sway, and a short recoil kick; the animation is visual-only and uses no extra physics or lights
+- Pressing T plays a short eased weapon-inspection gesture with a gentle tilt and dip; it is cosmetic, does not block firing or change weapon state, and adds no physics, particles, or lights.
 - Reloading now dips and rolls the first-person weapon through a short, eased motion; it is visual-only and adds no physics, particles, or lights.
 - Accepted local shots eject a small brass casing that tumbles beside the weapon and then shrinks away; the casing is visual-only, short-lived, shadow-free, and uses no collision, rigid bodies, particles, or extra lights.
 - First-person weapon silhouettes now include low-poly barrel tubes, muzzle collars, top rails, and contrasting iron sights; all viewmodel parts are visual-only and cast no shadows
@@ -85,6 +86,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Left mouse: fire
 - R: reload
 - E: switch weapon
+- T: inspect the current weapon (visual-only animation)
 - 1: buy/select AR-17 during buy phase
 - 2: select PX-9 during buy phase
 - F: hold to plant/defuse the bomb at an objective site
