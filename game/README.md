@@ -470,6 +470,10 @@ The current enemy units are original RED combat bots. Their navigation uses a li
 - Site A and Site B use distinct amber/cyan floor-zone tints and matching outlined 3D labels, making the two bomb locations easier to distinguish at a glance.
 - Objective markers are render-only, do not cast shadows, and do not change collision, movement, or bot navigation.
 
+### Suspended lane fixtures
+- Added six compact overhead service fixtures above the main lanes, with dark housings and restrained cyan/amber emissive strips to strengthen the arena's ceiling silhouette.
+- Fixtures are lightweight render-only meshes with no collision, navigation, dynamic lights, or gameplay changes.
+
 ### Industrial overhead gantry
 - The arena now has a raised perimeter gantry with cyan edge strips and repeating support braces, giving the graybox a stronger industrial silhouette and clearer upper-wall framing.
 - The gantry uses lightweight render-only meshes with shadows disabled; it does not add collision or change player movement, cover, or bot navigation.
