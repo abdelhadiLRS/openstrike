@@ -1251,6 +1251,8 @@ void fragment() {
     hit_marker.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
     hit_marker.position = Vector2(-18.0, -24.0)
     hit_marker.size = Vector2(36.0, 36.0)
+    hit_marker.pivot_offset = hit_marker.size * 0.5
+    hit_marker.scale = Vector2.ONE
     hit_marker.add_theme_font_size_override("font_size", 32)
     hit_marker.add_theme_color_override("font_color", Color(1.0, 0.88, 0.52, 1.0))
     hit_marker.add_theme_color_override("font_outline_color", Color(0.02, 0.025, 0.03, 0.95))
@@ -1372,7 +1374,14 @@ func _update_combat_feedback() -> void:
     if hit_marker != null:
         hit_marker.visible = hit_feedback_timer > 0.0 and not dead
         if hit_marker.visible:
-            hit_marker.modulate.a = clampf(hit_feedback_timer / 0.14, 0.0, 1.0)
+            var hit_progress := clampf(hit_feedback_timer / 0.14, 0.0, 1.0)
+            hit_marker.modulate.a = hit_progress
+            # A quick scale punch makes confirmed hits readable without
+            # adding particles, lights, or persistent scene nodes.
+            var hit_scale := 1.0 + 0.55 * hit_progress
+            hit_marker.scale = Vector2.ONE * hit_scale
+        else:
+            hit_marker.scale = Vector2.ONE
 
 func _update_hud() -> void:
     var weapon := _current_weapon()
