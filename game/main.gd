@@ -4985,9 +4985,18 @@ func _box(pos: Vector3, size: Vector3, color: Color) -> void:
     var mat := StandardMaterial3D.new()
     mat.albedo_color = color
     mesh.material_override = mat
+    # Perimeter walls use a procedural modular-concrete finish. It adds
+    # subtle panel seams and surface variation without textures or extra meshes.
+    var is_perimeter_wall := absf(pos.y - 2.0) < 0.01 and (
+        size == Vector3(36, 4, 1) or size == Vector3(1, 4, 36)
+    )
+    if is_perimeter_wall:
+        var wall_material := ShaderMaterial.new()
+        wall_material.shader = preload("res://shaders/industrial_wall.gdshader")
+        mesh.material_override = wall_material
     # The arena floor uses a subtle world-space procedural concrete finish.
     # It is a single shader material with no textures, extra geometry, or lights.
-    if pos == Vector3(0, -0.5, 0) and size == Vector3(36, 1, 36):
+    elif pos == Vector3(0, -0.5, 0) and size == Vector3(36, 1, 36):
         var floor_material := ShaderMaterial.new()
         floor_material.shader = preload("res://shaders/concrete_floor.gdshader")
         mesh.material_override = floor_material
