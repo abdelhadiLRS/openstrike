@@ -376,15 +376,20 @@ func _update_view_weapon_motion(delta: float) -> void:
         camera.fov = lerpf(camera.fov, target_fov, minf(delta * 8.0, 1.0))
     var bob_y := absf(sin(view_weapon_bob_time)) * bob_amount
     var sway_x := 0.0 if reduced_motion_mode else clampf(-local_velocity.x * 0.006, -0.035, 0.035)
+    # Gentle idle breathing keeps the weapon from looking frozen while standing.
+    # It is presentation-only and disabled by reduced-motion mode.
+    var idle_sway_x := 0.0 if reduced_motion_mode else sin(view_weapon_bob_time * 0.62) * 0.0035
+    var idle_sway_y := 0.0 if reduced_motion_mode else cos(view_weapon_bob_time * 0.62) * 0.0025
+    var idle_sway_roll := 0.0 if reduced_motion_mode else sin(view_weapon_bob_time * 0.42) * 0.006
     var target_position := view_weapon_base_position + Vector3(
-        sway_x + bob_x + 0.12 * inspect_amount,
-        bob_y - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
+        sway_x + bob_x + idle_sway_x + 0.12 * inspect_amount,
+        bob_y + idle_sway_y - 0.20 * reload_amount - 0.10 * inspect_amount + 0.18 * switch_amount - landing_camera_kick * 0.45,
         view_weapon_recoil + 0.06 * reload_amount + 0.06 * inspect_amount + 0.08 * switch_amount
     )
     var target_rotation := Vector3(
         sin(view_weapon_bob_time) * bob_amount * 0.65 + view_weapon_shot_pitch - 0.18 * reload_amount + 0.10 * inspect_amount + landing_camera_kick * 0.55,
         0.38 * inspect_amount,
-        (0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
+        (0.0 if reduced_motion_mode else -local_velocity.x * 0.006) + idle_sway_roll + 0.22 * reload_amount - 0.48 * inspect_amount + 0.22 * switch_amount
     )
     view_weapon_root.position = view_weapon_root.position.lerp(target_position, minf(delta * 10.0, 1.0))
     view_weapon_root.rotation = view_weapon_root.rotation.lerp(target_rotation, minf(delta * 9.0, 1.0))
