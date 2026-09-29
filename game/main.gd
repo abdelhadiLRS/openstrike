@@ -292,6 +292,9 @@ func _unhandled_input(event: InputEvent) -> void:
         elif event.keycode == KEY_F5:
             reduced_motion_mode = not reduced_motion_mode
             camera_bob_offset = Vector2.ZERO
+            if reduced_motion_mode:
+                damage_camera_kick = Vector2.ZERO
+                landing_camera_kick = 0.0
         elif event.keycode == KEY_1 and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_buy_weapon_id = str(weapons[0]["id"])
@@ -523,8 +526,8 @@ func _physics_process(delta: float) -> void:
     var landing_speed := player.velocity.y
     player.move_and_slide()
     if not was_on_floor and player.is_on_floor():
-        landing_camera_kick = clampf(absf(landing_speed) * 0.025, 0.045, 0.22)
-        if absf(landing_speed) >= 3.2:
+        landing_camera_kick = 0.0 if reduced_motion_mode else clampf(absf(landing_speed) * 0.025, 0.045, 0.22)
+        if not reduced_motion_mode and absf(landing_speed) >= 3.2:
             _spawn_landing_dust(absf(landing_speed))
     camera.rotation.x = pitch + recoil_kick
     _update_hud()
@@ -2745,7 +2748,7 @@ func _apply_damage(amount: int, source_position: Vector3 = Vector3.INF) -> void:
     damage_feedback_timer = 0.18
     _show_damage_direction(source_position)
     # A brief, damped camera impulse reinforces incoming damage without changing aim input or movement state.
-    damage_camera_kick = Vector2(randf_range(-0.028, 0.028), -0.055)
+    damage_camera_kick = Vector2.ZERO if reduced_motion_mode else Vector2(randf_range(-0.028, 0.028), -0.055)
     health = maxi(0, health - amount)
     if health == 0:
         _kill_player()
