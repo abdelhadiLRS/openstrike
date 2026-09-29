@@ -1099,7 +1099,7 @@ func _fire() -> void:
     query.exclude = [self]
     var hit := get_world_3d().direct_space_state.intersect_ray(query)
     if not hit.is_empty() and hit.collider == target:
-        main.call("_apply_damage", DAMAGE)
+        main.call("_apply_damage", DAMAGE, global_position)
 
     if burst_remaining <= 0:
         burst_pause = BURST_PAUSE
