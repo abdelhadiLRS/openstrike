@@ -1256,7 +1256,8 @@ func _spawn_shot_tracer(start_position: Vector3, end_position: Vector3, tint: Co
 func _spawn_shell_casing() -> void:
     # Eject a tiny brass casing with restrained per-shot variation. The effect
     # is render-only and bounded so sustained fire cannot grow the scene tree.
-    if not is_instance_valid(camera):
+    # Low-spec mode skips this decorative animation to reduce per-shot nodes/tweens.
+    if low_spec_mode or not is_instance_valid(camera):
         return
     for index in range(shell_casings.size() - 1, -1, -1):
         if not is_instance_valid(shell_casings[index]):
@@ -1338,7 +1339,10 @@ func _spawn_landing_dust(impact_speed: float) -> void:
 func _spawn_impact_spark(position: Vector3, surface_normal: Vector3, tint: Color) -> void:
     # A compact star-shaped flash makes impacts readable against dark concrete.
     # It uses four tiny unshaded meshes and a short lifetime—no particles,
-    # dynamic lights, collision, or persistent nodes.
+    # dynamic lights, collision, or persistent nodes. Low-spec mode keeps the
+    # tracer and impact mark but skips these extra transient meshes.
+    if low_spec_mode:
+        return
     var normal := surface_normal.normalized()
     if normal.length_squared() < 0.01:
         normal = Vector3.UP
