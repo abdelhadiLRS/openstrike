@@ -2457,6 +2457,7 @@ func _world() -> void:
     _create_overhead_gantry()
     _create_wall_signage()
     _create_floor_grates()
+    _create_floor_service_panels()
     _create_cover_visual_details()
     _create_site_beacons()
     _spawn_bots()
@@ -2699,6 +2700,36 @@ func _create_floor_grates() -> void:
                 Vector3(x + offset, 0.048, -13.0),
                 Vector3(0.035, 0.018, 0.72),
                 slat_material
+            )
+
+func _create_floor_service_panels() -> void:
+    # Thin floor-panel seams add a manufactured concrete finish along the
+    # outer lanes. These meshes are decorative only and cast no shadows.
+    var seam_material := StandardMaterial3D.new()
+    seam_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    seam_material.albedo_color = Color(0.035, 0.055, 0.072, 0.72)
+    seam_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+    var accent_material := StandardMaterial3D.new()
+    accent_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    accent_material.albedo_color = Color(0.50, 0.29, 0.10, 0.72)
+    accent_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+    for side in [-1.0, 1.0]:
+        for lane_z in [-11.0, 11.0]:
+            var center := Vector3(side * 12.0, 0.009, lane_z)
+            var width := 4.2
+            var depth := 4.2
+            # Four low-profile seams outline each maintenance plate.
+            _visual_box(center + Vector3(0.0, 0.0, -depth * 0.5), Vector3(width, 0.012, 0.025), seam_material)
+            _visual_box(center + Vector3(0.0, 0.0, depth * 0.5), Vector3(width, 0.012, 0.025), seam_material)
+            _visual_box(center + Vector3(-width * 0.5, 0.0, 0.0), Vector3(0.025, 0.012, depth), seam_material)
+            _visual_box(center + Vector3(width * 0.5, 0.0, 0.0), Vector3(0.025, 0.012, depth), seam_material)
+            # A short amber registration mark identifies one plate corner.
+            _visual_box(
+                center + Vector3(-side * (width * 0.5 - 0.36), 0.008, -depth * 0.5),
+                Vector3(0.48, 0.012, 0.055),
+                accent_material
             )
 
 func _create_cover_visual_details() -> void:
