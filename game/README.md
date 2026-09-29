@@ -37,6 +37,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - Per-weapon damage, fire delay, and recoil
 - Three RED combat bots with role-based defense, detection, line-of-sight, shooting, and death states
 - RED bot combat roles: Defender A, Defender B, and Roamer
+- Enemy bot role accents use restrained amber/red-orange variations to distinguish Defender A, Defender B, and Roamer while keeping all bots visibly on the RED team.
 - Combat standoff range, retreat behavior, strafing, burst fire, and accuracy spread
 - Obstacle-aware graph navigation between defensive objective sites
 - Procedural cover points with LOS-validated low-health retreat and bounded peek behavior
