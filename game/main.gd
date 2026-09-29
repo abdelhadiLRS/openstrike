@@ -103,6 +103,7 @@ var objective_compass_a: Label
 var objective_compass_b: Label
 var network_debug_hud: Label
 var network_debug_visible := false
+var low_spec_mode := false
 var view_weapon_root: Node3D
 var view_weapon_base_position := Vector3(0.28, -0.24, -0.56)
 var view_weapon_bob_time := 0.0
@@ -221,6 +222,7 @@ var red_spawn_points := [
 ]
 
 func _ready() -> void:
+    low_spec_mode = OS.get_cmdline_user_args().has("--low-spec")
     _configure_bot_count_from_command_line()
     _load_weapon_catalog()
     combat_events = OpenStrikeCombatEvents.new()
@@ -3145,7 +3147,7 @@ func _create_visual_environment() -> void:
     # A light atmospheric haze softens distant wall edges while keeping the
     # compact arena readable; restrained grading separates cool concrete
     # from the cyan/amber objective accents.
-    environment.fog_enabled = true
+    environment.fog_enabled = not low_spec_mode
     environment.fog_light_color = Color(0.16, 0.22, 0.30)
     environment.fog_density = 0.004
     environment.fog_sky_affect = 0.08
@@ -3161,7 +3163,7 @@ func _create_visual_environment() -> void:
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
     sun.light_color = Color(0.80, 0.87, 1.0)
     sun.light_energy = 1.05
-    sun.shadow_enabled = true
+    sun.shadow_enabled = not low_spec_mode
     sun.directional_shadow_max_distance = 45.0
     add_child(sun)
 
