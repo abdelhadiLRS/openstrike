@@ -159,6 +159,8 @@ var dropped_bomb_position := Vector3.ZERO
 var bomb_visual: MeshInstance3D
 var bomb_light: OmniLight3D
 var bomb_status_material: StandardMaterial3D
+var site_beacon_materials: Array[StandardMaterial3D] = []
+var site_beacon_time := 0.0
 var bomb_time_left := 0.0
 var objective_action := ""
 var objective_action_time_left := 0.0
@@ -293,6 +295,7 @@ func _unhandled_input(event: InputEvent) -> void:
         Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _process(delta: float) -> void:
+    _update_site_beacon_pulse(delta)
     _update_view_weapon_motion(delta)
     _update_crosshair()
     _update_objective_compass()
@@ -3324,6 +3327,7 @@ func _create_site_beacons() -> void:
         trim_material.emission = site_color
         trim_material.emission_energy_multiplier = 1.8
         trim_material.roughness = 0.3
+        site_beacon_materials.append(trim_material)
 
         for offset in [
             Vector3(-2.55, 0.0, -2.55), Vector3(2.55, 0.0, -2.55),
@@ -3349,6 +3353,17 @@ func _create_site_beacons() -> void:
         site_label.outline_modulate = Color(0.015, 0.025, 0.04, 0.96)
         site_label.no_depth_test = false
         add_child(site_label)
+
+func _update_site_beacon_pulse(delta: float) -> void:
+    if site_beacon_materials.is_empty():
+        return
+    site_beacon_time = fmod(site_beacon_time + delta, TAU)
+    # A slow, low-amplitude pulse makes A/B easier to notice without lights,
+    # particles, shader work, or gameplay-affecting geometry.
+    var pulse := 1.45 + (sin(site_beacon_time * 1.6) + 1.0) * 0.30
+    for material in site_beacon_materials:
+        if is_instance_valid(material):
+            material.emission_energy_multiplier = pulse
 
 func _visual_box(pos: Vector3, size: Vector3, material: StandardMaterial3D) -> MeshInstance3D:
     var mesh_instance := MeshInstance3D.new()
