@@ -113,6 +113,8 @@ var objective_compass_a: Label
 var objective_compass_b: Label
 var network_debug_hud: Label
 var network_debug_visible := false
+var tactical_minimap: Control
+var tactical_minimap_visible := true
 var scoreboard_panel: PanelContainer
 var scoreboard_label: Label
 var scoreboard_visible := false
@@ -288,6 +290,7 @@ func _ready() -> void:
     _create_objective_compass()
     _create_elimination_feedback()
     _create_network_debug_hud()
+    _create_tactical_minimap()
     _create_scoreboard_overlay()
     _start_round()
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -326,6 +329,11 @@ func _unhandled_input(event: InputEvent) -> void:
             if is_instance_valid(match_info_panel):
                 match_info_panel.visible = not compact_hud_mode
             _show_visual_notice("COMPACT HUD  /  " + ("ON" if compact_hud_mode else "OFF"), Color(0.35, 0.86, 1.0))
+        elif event.keycode == KEY_F7:
+            tactical_minimap_visible = not tactical_minimap_visible
+            if is_instance_valid(tactical_minimap):
+                tactical_minimap.visible = tactical_minimap_visible
+            _show_visual_notice("TACTICAL MAP  /  " + ("ON" if tactical_minimap_visible else "OFF"), Color(0.35, 0.86, 1.0))
         elif event.keycode == KEY_1 and not dead:
             if network_session != null and network_session.is_online and not network_session.is_server:
                 pending_buy_weapon_id = str(weapons[0]["id"])
@@ -1973,6 +1981,17 @@ func _update_elimination_feedback(delta: float) -> void:
     var progress := clampf(elimination_feedback_timer / 1.15, 0.0, 1.0)
     elimination_feedback_label.modulate.a = minf(1.0, progress * 2.8)
     elimination_feedback_label.scale = Vector2.ONE * (1.0 + 0.10 * (1.0 - progress))
+
+func _create_tactical_minimap() -> void:
+    var minimap_script = load("res://ui/tactical_minimap.gd")
+    if minimap_script == null:
+        push_warning("OpenStrike: tactical minimap script could not be loaded.")
+        return
+    tactical_minimap = minimap_script.new()
+    tactical_minimap.setup(self)
+    tactical_minimap.visible = tactical_minimap_visible
+    hud_layer.add_child(tactical_minimap)
+
 
 func _create_network_debug_hud() -> void:
     network_debug_hud = Label.new()
