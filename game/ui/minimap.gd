@@ -9,6 +9,7 @@ var player_yaw := 0.0
 var bomb_position := Vector3.ZERO
 var bomb_visible := false
 var planted_site := ""
+var teammate_positions: Array[Vector3] = []
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(156.0, 156.0)
@@ -29,12 +30,24 @@ func _process(_delta: float) -> void:
 	if objective_state == "PLANTED":
 		var site := str(game_root.get("planted_site"))
 		objective_position = Vector3(-10.0, 0.0, -7.0) if site == "A" else Vector3(10.0, 0.0, 7.0)
+	var allies: Array[Vector3] = []
+	var session = game_root.get("network_session")
+	var local_team := str(game_root.get("player_team"))
+	if is_instance_valid(session):
+		var network_players = session.get("network_players")
+		if network_players is Dictionary:
+			for peer_value in network_players.values():
+				if not is_instance_valid(peer_value) or bool(peer_value.get("dead")):
+					continue
+				if str(peer_value.get("team")) == local_team:
+					allies.append(peer_value.global_position)
 	set_match_state(
 		player_value.global_position,
 		player_value.rotation.y,
 		objective_position,
 		show_bomb,
-		str(game_root.get("planted_site"))
+		str(game_root.get("planted_site")),
+		allies
 	)
 
 func set_match_state(
@@ -42,13 +55,15 @@ func set_match_state(
 	yaw_value: float,
 	bomb_position_value: Vector3,
 	show_bomb: bool,
-	planted_site_value: String
+	planted_site_value: String,
+	allies: Array[Vector3] = []
 ) -> void:
 	player_position = position_value
 	player_yaw = yaw_value
 	bomb_position = bomb_position_value
 	bomb_visible = show_bomb
 	planted_site = planted_site_value
+	teammate_positions = allies.duplicate()
 	queue_redraw()
 
 func _map_point(world_position: Vector3) -> Vector2:
@@ -85,6 +100,12 @@ func _draw() -> void:
 		draw_circle(bomb_point, 5.5, Color(1.0, 0.22, 0.10, 0.98))
 		draw_arc(bomb_point, 8.0, 0.0, TAU, 24, Color(1.0, 0.68, 0.25, 0.95), 1.5, true)
 		draw_string(get_theme_default_font(), bomb_point + Vector2(7.0, -5.0), "BOMB", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1.0, 0.78, 0.55))
+
+	# Friendly network players are shown, but enemy positions are never read or drawn.
+	for ally_position in teammate_positions:
+		var ally_point := _map_point(ally_position)
+		draw_circle(ally_point, 4.2, Color(0.20, 0.62, 1.0, 0.98))
+		draw_arc(ally_point, 6.2, 0.0, TAU, 20, Color(0.72, 0.88, 1.0, 0.95), 1.2, true)
 
 	# Directional player arrow; no enemy markers are shown through walls.
 	var player_point := _map_point(player_position)
