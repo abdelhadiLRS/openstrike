@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource path="res://ui/minimap.gd" type="Script" id="1"]
+
+[node name="ObjectiveMinimapLayer" type="CanvasLayer"]
+layer = 11
+
+[node name="ObjectiveMinimap" type="Control" parent="."]
+anchors_preset = 1
+offset_left = -172.0
+offset_top = 18.0
+offset_right = -16.0
+offset_bottom = 174.0
+mouse_filter = 2
+script = ExtResource("1")
