@@ -99,6 +99,7 @@ Original Godot 4 vertical slice for the OpenStrike project.
 - ESC: release mouse
 - F3: toggle the network diagnostics overlay (NetGraph)
 - Dynamic center reticle: expands with movement and recoil, tightens while crouched
+- Landing feedback: a short, decaying camera and viewmodel dip on touchdown adds weight to jumps and drops; it is visual-only and does not alter movement or network state.
 
 This prototype uses original code and procedurally generated geometry. It does not use Counter-Strike proprietary code or assets.
 
