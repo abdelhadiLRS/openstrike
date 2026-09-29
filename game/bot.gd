@@ -98,14 +98,47 @@ var squad_threat_revision := -1
 var applied_threat_revision := -1
 var flank_goal_revision := -1
 var collision_shape: CollisionShape3D
+var muzzle_flash: MeshInstance3D
+var muzzle_flash_timer := 0.0
+const MUZZLE_FLASH_DURATION := 0.055
 
 func _ready() -> void:
     collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
     main = get_parent()
     health = max_health
     target = main.get("player")
+    _create_bot_muzzle_flash()
+
+func _create_bot_muzzle_flash() -> void:
+    muzzle_flash = MeshInstance3D.new()
+    muzzle_flash.name = "BotMuzzleFlash"
+    var flash_mesh := SphereMesh.new()
+    flash_mesh.radius = 0.075
+    flash_mesh.height = 0.15
+    muzzle_flash.mesh = flash_mesh
+    muzzle_flash.position = Vector3(0.18, -0.02, -1.08)
+    muzzle_flash.scale = Vector3(0.65, 0.75, 1.65)
+    var flash_material := StandardMaterial3D.new()
+    flash_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    flash_material.albedo_color = Color(1.0, 0.68, 0.24)
+    flash_material.emission_enabled = true
+    flash_material.emission = Color(1.0, 0.28, 0.035)
+    flash_material.emission_energy_multiplier = 2.6
+    muzzle_flash.material_override = flash_material
+    muzzle_flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    muzzle_flash.visible = false
+    add_child(muzzle_flash)
+
+func _trigger_bot_muzzle_flash() -> void:
+    if not is_instance_valid(muzzle_flash):
+        return
+    muzzle_flash_timer = MUZZLE_FLASH_DURATION
+    muzzle_flash.visible = true
 
 func _physics_process(delta: float) -> void:
+    muzzle_flash_timer = maxf(0.0, muzzle_flash_timer - delta)
+    if muzzle_flash_timer <= 0.0 and is_instance_valid(muzzle_flash):
+        muzzle_flash.visible = false
     var network_session = main.get("network_session") if main != null else null
     if network_session != null and network_session.is_online and not network_session.is_server:
         _update_network_presentation(delta)
@@ -1089,6 +1122,7 @@ func _fire() -> void:
 
     fire_cooldown = FIRE_DELAY
     burst_remaining -= 1
+    _trigger_bot_muzzle_flash()
 
     var origin := global_position + Vector3(0, 1.0, 0)
     var aim := target.global_position + Vector3(0, 0.5, 0)
