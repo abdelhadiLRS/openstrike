@@ -1452,7 +1452,6 @@ func _spawn_elimination_effect() -> void:
     ring_mesh.ring_segments = 12
     ring_mesh.radial_segments = 4
     pulse.mesh = ring_mesh
-    pulse.rotation.x = PI * 0.5
     pulse.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var pulse_material := StandardMaterial3D.new()
     pulse_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
